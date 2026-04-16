@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle } from 'lucide-react';
+import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap } from 'lucide-react';
 import type { Account, Attendee } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { PersonaStory } from './PersonaStory';
@@ -63,6 +63,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
   const [refreshKey, setRefreshKey] = useState(0);
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [showPersonaNow, setShowPersonaNow] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
 
   const key = `${account.customer_name}::${persona.persona}`;
@@ -160,7 +161,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
                 <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 ${
                   msg.role === 'you'
                     ? 'bg-amber-500/15 text-amber-200 rounded-br-md'
-                    : `bg-navy-800 border border-navy-600 text-slate-200 rounded-bl-md`
+                    : `bg-dark-800 border border-dark-600 text-slate-200 rounded-bl-md`
                 }`}>
                   <p className="text-xs leading-relaxed whitespace-pre-line">{msg.text}</p>
                 </div>
@@ -171,12 +172,101 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
             <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendChat()}
               placeholder={`Say something to ${persona.name.split(' ')[0]}...`}
-              className="flex-1 px-3.5 py-2.5 bg-navy-800 border border-navy-600 rounded-full text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400/50" />
+              className="flex-1 px-3.5 py-2.5 bg-dark-800 border border-dark-600 rounded-full text-sm text-white placeholder-muted focus:outline-none focus:border-purple-400/50" />
             <button onClick={sendChat}
               className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} flex items-center justify-center active:opacity-80 shrink-0`}>
               <Send className="w-4 h-4 text-white" />
             </button>
           </div>
+
+          {/* Now button for this persona */}
+          <button onClick={() => setShowPersonaNow(!showPersonaNow)}
+            className={`w-full flex items-center justify-center gap-2 mt-3 py-2.5 rounded-xl border ${showPersonaNow ? 'bg-blue-500/15 border-blue-500/30 text-blue-400' : 'bg-dark-800 border-dark-600 text-muted'} text-xs font-medium active:opacity-80`}>
+            <Zap className="w-4 h-4" />
+            {showPersonaNow ? 'Hide Now' : `Now — What to know about ${persona.name.split(' ')[0]}`}
+          </button>
+
+          {/* Persona-specific Now panel */}
+          {showPersonaNow && (
+            <div className="mt-3 bg-blue-500/5 border border-blue-500/15 rounded-xl p-4 space-y-3 animate-fade-in">
+              {/* Their social activity */}
+              {social && (
+                <div>
+                  <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Their latest post</span>
+                  <p className="text-sm text-white italic mt-1">"{social.post_theme}"</p>
+                  <p className="text-[11px] text-muted mt-0.5">Use this as your opening — it shows you've done your homework.</p>
+                </div>
+              )}
+
+              {/* What they care about based on persona */}
+              <div>
+                <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">What {persona.name.split(' ')[0]} cares about</span>
+                <div className="space-y-1.5 mt-1.5">
+                  {persona.persona === 'CEO' && <>
+                    <p className="text-xs text-slate-300">→ Competitive positioning and market leadership</p>
+                    <p className="text-xs text-slate-300">→ Transformation timeline and execution speed</p>
+                    <p className="text-xs text-slate-300">→ Board confidence in the cloud investment</p>
+                  </>}
+                  {persona.persona === 'CFO' && <>
+                    <p className="text-xs text-slate-300">→ ROI on cloud and training investments</p>
+                    <p className="text-xs text-slate-300">→ Build vs. buy economics for talent</p>
+                    <p className="text-xs text-slate-300">→ Board-ready data and payback periods</p>
+                  </>}
+                  {persona.persona === 'CHRO' && <>
+                    <p className="text-xs text-slate-300">→ Talent retention and employer brand</p>
+                    <p className="text-xs text-slate-300">→ Scaling workforce development programs</p>
+                    <p className="text-xs text-slate-300">→ Dedicated learning time and manager accountability</p>
+                  </>}
+                  {(persona.persona === 'CTO' || persona.persona === 'CIO') && <>
+                    <p className="text-xs text-slate-300">→ Time-to-competency and delivery speed</p>
+                    <p className="text-xs text-slate-300">→ Filling the {account.public_intelligence.linkedin_job_postings.cloud_ai_roles} open cloud/AI roles</p>
+                    <p className="text-xs text-slate-300">→ Role-based skills aligned to {account.sfdc_data.account_plan_priority}</p>
+                  </>}
+                  {persona.persona === 'Other' && <>
+                    <p className="text-xs text-slate-300">→ Their team's specific skills gaps</p>
+                    <p className="text-xs text-slate-300">→ How training connects to their functional goals</p>
+                  </>}
+                </div>
+              </div>
+
+              {/* Relevant signals */}
+              <div>
+                <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Signals relevant to {persona.persona}</span>
+                <div className="space-y-1.5 mt-1.5">
+                  {account.signals.filter(s => {
+                    if (persona.persona === 'CHRO') return s.label.includes('Talent') || s.label.includes('Subscription');
+                    if (persona.persona === 'CFO') return s.label.includes('Board') || s.label.includes('ROI');
+                    if (persona.persona === 'CEO') return s.severity === 'HIGH';
+                    if (persona.persona === 'CTO' || persona.persona === 'CIO') return s.label.includes('Talent') || s.label.includes('Greenfield');
+                    return true;
+                  }).slice(0, 3).map(s => (
+                    <div key={s.label} className="flex items-start gap-2">
+                      <span className={`mt-1 w-2 h-2 rounded-full shrink-0 ${s.severity === 'HIGH' ? 'bg-red-400' : 'bg-orange-400'}`} />
+                      <div><span className="text-xs text-white font-medium">{s.label}</span><p className="text-[11px] text-muted">{s.evidence.split(';')[0]}</p></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key ask for this persona */}
+              <div>
+                <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider">Key ask for {persona.name.split(' ')[0]}</span>
+                <p className="text-xs text-slate-300 mt-1">
+                  {persona.persona === 'CEO' ? `"What does the workforce of 2030 look like for ${account.customer_name}?"` :
+                   persona.persona === 'CFO' ? `"How are you factoring workforce readiness into your transformation financial model?"` :
+                   persona.persona === 'CHRO' ? `"What would it take to make training work for your teams at scale?"` :
+                   persona.persona === 'CTO' || persona.persona === 'CIO' ? `"Which roles are the biggest bottleneck on your transformation timeline?"` :
+                   `"What skills does your team need most to deliver on ${account.sfdc_data.account_plan_priority}?"`}
+                </p>
+              </div>
+
+              {/* Industry context */}
+              <div className="pt-2 border-t border-blue-500/10">
+                <span className="text-[10px] text-muted uppercase">Industry context</span>
+                <p className="text-xs text-slate-300 mt-1">{account.public_intelligence.industry_context.split(';')[0]}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

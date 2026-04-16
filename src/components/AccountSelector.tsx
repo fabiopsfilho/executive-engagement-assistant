@@ -14,13 +14,19 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   );
 
   return (
-    <div className="px-4 py-8">
-      <div className="text-center mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mx-auto mb-3">
-          <span className="text-xl">⚡</span>
+    <div className="px-4 py-6">
+      {/* Header banner */}
+      <div className="flex items-center gap-3 mb-6">
+        <img src="/aws-logo.svg" alt="AWS" className="h-7" />
+        <div>
+          <h1 className="text-sm font-semibold text-white leading-tight">Executive Engagement Advisor</h1>
+          <p className="text-[11px] text-muted">AWS Training & Certification</p>
         </div>
-        <h1 className="text-xl font-bold text-white mb-1">Executive Brief</h1>
-        <p className="text-sm text-muted">Win the Meeting.</p>
+      </div>
+
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-bold text-white mb-1">Who are you meeting with?</h2>
+        <p className="text-sm text-muted">Select an account to build your engagement story</p>
       </div>
 
       <div className="relative mb-5">

@@ -22,7 +22,7 @@ function CopyAll({ text }: { text: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-700 hover:bg-navy-600 text-sm text-slate-300 transition-colors"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-600 active:bg-dark-700 text-xs text-slate-300 transition-colors"
       aria-label="Copy full agenda"
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -115,40 +115,36 @@ export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () =
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
       <div
-        className="bg-navy-800 border border-navy-600 rounded-b-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto animate-fade-in"
+        className="bg-dark-800 border border-dark-600 rounded-b-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto animate-fade-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-4 border-b border-navy-700">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-white leading-tight">{agenda.title}</h2>
-            <p className="text-xs text-slate-400 mt-1">{agenda.subtitle}</p>
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-slate-400">
-              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{agenda.date}</span>
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{agenda.location}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 ml-3">
-            <CopyAll text={fullText} />
-            <button
-              onClick={() => exportSlides(agenda)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 text-sm text-white font-medium active:opacity-80"
-              aria-label="Generate slides"
-            >
-              <Presentation className="w-3.5 h-3.5" />
-              Slides
+        <div className="p-4 border-b border-dark-600">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-bold text-white leading-tight flex-1 mr-2">{agenda.title}</h2>
+            <button onClick={onClose} className="p-1.5 rounded-lg active:bg-dark-700 shrink-0" aria-label="Close">
+              <X className="w-5 h-5 text-muted" />
             </button>
-            <button onClick={onClose} className="p-2 rounded-lg active:bg-navy-700" aria-label="Close">
-              <X className="w-5 h-5 text-slate-400" />
+          </div>
+          <p className="text-xs text-muted">{agenda.subtitle}</p>
+          <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-muted">
+            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{agenda.date}</span>
+            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{agenda.location}</span>
+          </div>
+          <div className="flex gap-1.5 mt-3">
+            <CopyAll text={fullText} />
+            <button onClick={() => exportSlides(agenda)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 text-xs text-white font-medium active:opacity-80">
+              <Presentation className="w-3.5 h-3.5" />Slides
             </button>
           </div>
         </div>
 
         {/* AWS Principles */}
-        <div className="px-4 py-3 border-b border-navy-700">
+        <div className="px-4 py-3 border-b border-dark-600">
           <div className="flex flex-wrap gap-1.5">
             {agenda.principles.map(p => (
-              <span key={p} className="text-[11px] px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded-lg">{p.split(' — ')[0]}</span>
+              <span key={p} className="text-[11px] px-2 py-0.5 bg-purple-500/15 text-purple-400 rounded-lg">{p.split(' — ')[0]}</span>
             ))}
           </div>
         </div>
@@ -158,24 +154,24 @@ export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () =
           {agenda.blocks.map((block, i) => (
             <div key={i} className={`border-l-2 ${typeColors[block.type]} rounded-r-xl p-3`}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-mono text-amber-400">{block.time}</span>
-                <span className="text-[11px] text-slate-500">{block.duration}</span>
+                <span className="text-xs font-mono text-purple-400">{block.time}</span>
+                <span className="text-[11px] text-muted">{block.duration}</span>
                 <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase font-medium ${
-                  block.type === 'break' ? 'bg-slate-700 text-slate-400' : 'bg-navy-700 text-slate-300'
+                  block.type === 'break' ? 'bg-dark-600 text-muted' : 'bg-dark-600 text-slate-300'
                 }`}>{typeLabels[block.type]}</span>
               </div>
               <h4 className="text-sm font-semibold text-white mb-1">{block.title}</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">{block.description}</p>
+              <p className="text-xs text-slate-300 leading-relaxed">{block.description}</p>
               {block.connectedTo && (
-                <p className="text-[11px] text-sky-400/80 leading-relaxed mt-2 pl-2 border-l-2 border-sky-500/30">{block.connectedTo}</p>
+                <p className="text-[11px] text-blue-400/80 leading-relaxed mt-2 pl-2 border-l-2 border-blue-500/30">{block.connectedTo}</p>
               )}
-              <div className="mt-1.5 text-[11px] text-slate-500">Owner: {block.owner}</div>
+              <div className="mt-1.5 text-[11px] text-muted">Owner: {block.owner}</div>
             </div>
           ))}
         </div>
 
         {/* Preparation Notes */}
-        <div className="px-4 py-3 border-t border-navy-700">
+        <div className="px-4 py-3 border-t border-dark-600">
           <button
             onClick={() => setExpandedPrep(!expandedPrep)}
             className="flex items-center gap-2 w-full text-left"
@@ -187,8 +183,8 @@ export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () =
           {expandedPrep && (
             <ul className="mt-3 space-y-2">
               {agenda.preparation_notes.map((note, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                  <span className="w-5 h-5 rounded bg-navy-700 flex items-center justify-center text-xs text-slate-400 shrink-0 mt-0.5">{i + 1}</span>
+                <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
+                  <span className="w-5 h-5 rounded bg-dark-600 flex items-center justify-center text-[10px] text-muted shrink-0 mt-0.5">{i + 1}</span>
                   {note}
                 </li>
               ))}
