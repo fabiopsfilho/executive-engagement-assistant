@@ -1,89 +1,106 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText, BarChart3, Bot, Sparkles } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
 import { AccountSelector } from './components/AccountSelector';
-import { AccountView } from './components/AccountView';
+import { ExecBrief } from './components/ExecBrief';
+import { AccountData } from './components/AccountData';
+import { AdvisorChat } from './components/AdvisorChat';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
-import { PersonaPickerSheet } from './components/PersonaPickerSheet';
+
+type MainTab = 'brief' | 'data' | 'advisor' | 'ask-ai';
 
 export default function App() {
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
-  const [selectedPersona, setSelectedPersona] = useState<Attendee | null>(null);
-  const [showScoreExplainer, setShowScoreExplainer] = useState(false);
-  const [showPersonaPicker, setShowPersonaPicker] = useState(false);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [persona, setPersona] = useState<Attendee | null>(null);
+  const [tab, setTab] = useState<MainTab>('brief');
+  const [showScore, setShowScore] = useState(false);
 
-  return (
-    <div className="min-h-screen bg-navy-900 flex justify-center">
-      <div className="w-full max-w-[430px] min-h-screen bg-navy-900 relative">
-        {showScoreExplainer && selectedAccount && (
-          <ScoreExplainer account={selectedAccount} onClose={() => setShowScoreExplainer(false)} />
-        )}
-        {showPersonaPicker && selectedAccount && (
-          <PersonaPickerSheet
-            account={selectedAccount}
-            onSelect={(att) => { setShowPersonaPicker(false); setSelectedPersona(att); }}
-            onClose={() => setShowPersonaPicker(false)}
-          />
-        )}
+  if (!account) return (
+    <div className="min-h-screen bg-dark-900 flex justify-center">
+      <div className="w-full max-w-[430px]">
+        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); }} />
+      </div>
+    </div>
+  );
 
-        {/* Header */}
-        <header className="border-b border-navy-700 bg-navy-800/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="px-4 py-3 flex items-center gap-3">
-            {selectedAccount && (
-              <button
-                onClick={() => { if (selectedPersona) setSelectedPersona(null); else setSelectedAccount(null); }}
-                className="p-1.5 rounded-lg active:bg-navy-700"
-                aria-label="Go back"
-              >
-                <ArrowLeft className="w-5 h-5 text-slate-400" />
-              </button>
-            )}
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-navy-900 font-bold text-xs shrink-0">
-                T&C
-              </div>
-              <div className="min-w-0">
-                {!selectedAccount ? (
-                  <>
-                    <h1 className="text-sm font-semibold text-white leading-tight">Executive Engagement</h1>
-                    <p className="text-[11px] text-slate-400">AWS Training & Certification</p>
-                  </>
-                ) : !selectedPersona ? (
-                  <>
-                    <h1 className="text-sm font-semibold text-white leading-tight truncate">{selectedAccount.customer_name}</h1>
-                    <p className="text-[11px] text-slate-400">{selectedAccount.industry} · {selectedAccount.segment}</p>
-                  </>
-                ) : (
-                  <>
-                    <h1 className="text-sm font-semibold text-white leading-tight truncate">{selectedPersona.name}</h1>
-                    <p className="text-[11px] text-slate-400 truncate">{selectedPersona.title}</p>
-                  </>
-                )}
-              </div>
-            </div>
-            {selectedAccount && (
-              <button onClick={() => setShowScoreExplainer(true)} className="flex flex-col items-center shrink-0 active:opacity-80" aria-label="AWS Score">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${selectedAccount.tc_opportunity_score >= 8 ? 'from-rose-500 to-orange-500' : selectedAccount.tc_opportunity_score >= 6 ? 'from-amber-500 to-yellow-500' : 'from-sky-500 to-cyan-500'} flex items-center justify-center text-white font-bold text-sm`}>
-                  {selectedAccount.tc_opportunity_score}
-                </div>
-                <span className="text-[9px] text-slate-500 mt-0.5">AWS Score</span>
-              </button>
-            )}
+  if (persona) return (
+    <div className="min-h-screen bg-dark-900 flex justify-center">
+      <div className="w-full max-w-[430px]">
+        <header className="sticky top-0 z-50 bg-dark-800/90 backdrop-blur-md border-b border-dark-600 px-4 py-3 flex items-center gap-3">
+          <button onClick={() => setPersona(null)} className="p-1 active:opacity-70"><ArrowLeft className="w-5 h-5 text-muted" /></button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm font-semibold text-white truncate">{persona.name}</h1>
+            <p className="text-[11px] text-muted">{persona.title}</p>
           </div>
         </header>
+        <PersonaView account={account} persona={persona} />
+      </div>
+    </div>
+  );
 
-        {/* Main Content */}
-        <main>
-          {!selectedAccount ? (
-            <AccountSelector accounts={accounts} onSelect={setSelectedAccount} />
-          ) : !selectedPersona ? (
-            <AccountView account={selectedAccount} onEngagePersona={() => setShowPersonaPicker(true)} />
-          ) : (
-            <PersonaView account={selectedAccount} persona={selectedPersona} />
-          )}
+  const tabs: { id: MainTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'brief', label: 'Brief', icon: FileText },
+    { id: 'data', label: 'Data', icon: BarChart3 },
+    { id: 'advisor', label: 'Advisor', icon: Bot },
+    { id: 'ask-ai', label: 'Ask AI', icon: Sparkles },
+  ];
+
+  return (
+    <div className="min-h-screen bg-dark-900 flex justify-center">
+      <div className="w-full max-w-[430px] pb-16 relative">
+        {showScore && <ScoreExplainer account={account} onClose={() => setShowScore(false)} />}
+
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-dark-800/90 backdrop-blur-md border-b border-dark-600 px-4 py-3 flex items-center gap-3">
+          <button onClick={() => { setAccount(null); setTab('brief'); }} className="p-1 active:opacity-70">
+            <ArrowLeft className="w-5 h-5 text-muted" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm font-semibold text-white truncate">{account.customer_name}</h1>
+            <p className="text-[11px] text-muted">{account.industry} · {account.segment}</p>
+          </div>
+          <button onClick={() => setShowScore(true)} className="flex flex-col items-center active:opacity-80">
+            <div className={`w-9 h-9 rounded-xl ${account.tc_opportunity_score >= 8 ? 'bg-green-500' : account.tc_opportunity_score >= 6 ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center text-white font-bold text-sm`}>
+              {account.tc_opportunity_score}
+            </div>
+            <span className="text-[9px] text-muted mt-0.5">AWS Score</span>
+          </button>
+        </header>
+
+        {/* Content */}
+        <main className="px-4 py-4">
+          {tab === 'brief' && <ExecBrief account={account} onSelectPersona={setPersona} />}
+          {tab === 'data' && <AccountData account={account} />}
+          {tab === 'advisor' && <AdvisorChat account={account} />}
+          {tab === 'ask-ai' && <AdvisorChat account={account} />}
         </main>
+
+        {/* Bottom Nav */}
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-dark-800/95 backdrop-blur-md border-t border-dark-600 z-50">
+          <div className="flex">
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 ${tab === t.id ? 'text-purple-500' : 'text-muted'}`}>
+                <t.icon className="w-5 h-5" />
+                <span className="text-[10px] font-medium">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* Stats bar */}
+        <div className="fixed bottom-[52px] left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-dark-900 border-t border-dark-700 flex items-center justify-center gap-8 py-1.5 z-40">
+          <div className="flex items-center gap-1.5">
+            <span className="text-purple-500 font-bold text-sm">3 min</span>
+            <span className="text-[10px] text-muted">Prep Time</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-green-500 font-bold text-sm">87%</span>
+            <span className="text-[10px] text-muted">Win Rate Lift</span>
+          </div>
+        </div>
       </div>
     </div>
   );
