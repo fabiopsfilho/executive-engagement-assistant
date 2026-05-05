@@ -128,7 +128,7 @@ export async function generateEngagementPlan(
   persona: { name: string; title: string; persona: string },
   userNotes?: string[]
 ): Promise<EngagementPlanResponse> {
-  return post<EngagementPlanResponse>('/accounts/dynamic/engage', {
+  return post<EngagementPlanResponse>('/accounts/default/engage', {
     accountData,
     persona,
     userNotes,
@@ -143,7 +143,7 @@ export async function getIntelligence(
   awsSpend: number,
   executives?: string
 ): Promise<IntelligenceResponse> {
-  return get<IntelligenceResponse>('/accounts/dynamic/intelligence', {
+  return get<IntelligenceResponse>(`/accounts/${encodeURIComponent(companyName)}/intelligence`, {
     company: companyName,
     industry,
     awsSpend: String(awsSpend),
@@ -173,7 +173,7 @@ export async function sendAdvisorMessage(
   selectedPersona?: { name: string; title: string; persona: string },
   capability?: string
 ): Promise<AdvisorResponse> {
-  return post<AdvisorResponse>('/accounts/dynamic/advisor', {
+  return post<AdvisorResponse>('/accounts/default/advisor', {
     message,
     conversationHistory,
     accountContext,
@@ -204,7 +204,7 @@ export async function sendRolePlayMessage(
     industry_context: string;
   }
 ): Promise<RolePlayResponse> {
-  return post<RolePlayResponse>('/accounts/dynamic/roleplay', {
+  return post<RolePlayResponse>('/accounts/default/roleplay', {
     message,
     conversationHistory,
     persona,
@@ -231,7 +231,7 @@ export async function generateAgenda(
   persona?: { name: string; title: string; persona: string },
   userNotes?: string[]
 ): Promise<AgendaResponse> {
-  return post<AgendaResponse>('/accounts/dynamic/agenda', {
+  return post<AgendaResponse>('/accounts/default/agenda', {
     accountContext,
     format,
     persona,
@@ -269,7 +269,7 @@ export async function generatePitchDeck(
   },
   userNotes?: string[]
 ): Promise<PitchResponse> {
-  return post<PitchResponse>('/accounts/dynamic/pitch', {
+  return post<PitchResponse>('/accounts/default/pitch', {
     accountContext,
     persona,
     engagementPlan,

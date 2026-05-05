@@ -25,11 +25,12 @@ export default function App() {
   // When a live account is selected with empty intelligence, fetch from Bedrock
   useEffect(() => {
     if (!account) return;
-    const hasIntel = account.public_intelligence.earnings_call_signals.length > 1 ||
-      account.public_intelligence.executive_social.length > 0 ||
-      account.public_intelligence.linkedin_job_postings.cloud_ai_roles > 0;
+    // Check if this account has real intelligence (more than just CSV-derived data)
+    const hasRealIntel = account.public_intelligence.executive_social.length > 0 ||
+      account.public_intelligence.linkedin_job_postings.cloud_ai_roles > 0 ||
+      account.public_intelligence.glassdoor_signals.length > 0;
 
-    if (!hasIntel && isBackendAvailable()) {
+    if (!hasRealIntel && isBackendAvailable()) {
       setLoadingIntel(true);
       getIntelligence(
         account.customer_name,
@@ -42,12 +43,12 @@ export default function App() {
           return {
             ...prev,
             public_intelligence: {
-              earnings_call_signals: intel.earnings_call_signals || prev.public_intelligence.earnings_call_signals,
-              linkedin_job_postings: intel.linkedin_job_postings || prev.public_intelligence.linkedin_job_postings,
-              executive_social: intel.executive_social || prev.public_intelligence.executive_social,
-              glassdoor_signals: intel.glassdoor_signals || prev.public_intelligence.glassdoor_signals,
+              earnings_call_signals: intel.earnings_call_signals && intel.earnings_call_signals.length > 0 ? intel.earnings_call_signals : prev.public_intelligence.earnings_call_signals,
+              linkedin_job_postings: intel.linkedin_job_postings && intel.linkedin_job_postings.cloud_ai_roles > 0 ? intel.linkedin_job_postings : prev.public_intelligence.linkedin_job_postings,
+              executive_social: intel.executive_social && intel.executive_social.length > 0 ? intel.executive_social : prev.public_intelligence.executive_social,
+              glassdoor_signals: intel.glassdoor_signals && intel.glassdoor_signals.length > 0 ? intel.glassdoor_signals : prev.public_intelligence.glassdoor_signals,
               industry_context: intel.industry_context || prev.public_intelligence.industry_context,
-              news_signals: intel.news_signals || prev.public_intelligence.news_signals,
+              news_signals: intel.news_signals && intel.news_signals.length > 0 ? intel.news_signals : prev.public_intelligence.news_signals,
             },
             signals: intel.signals && intel.signals.length > 0 ? intel.signals : prev.signals,
             tc_opportunity_score: intel.tc_opportunity_score || prev.tc_opportunity_score,
@@ -57,11 +58,11 @@ export default function App() {
                 ? intel.executive_social.map(e => ({
                     name: e.name,
                     title: e.title,
-                    persona: (e.title.includes('CEO') ? 'CEO' :
-                      e.title.includes('CFO') || e.title.includes('Finance') ? 'CFO' :
-                      e.title.includes('CTO') || e.title.includes('Technology') ? 'CTO' :
-                      e.title.includes('CIO') || e.title.includes('Information') ? 'CIO' :
-                      e.title.includes('CHRO') || e.title.includes('People') || e.title.includes('Human') ? 'CHRO' :
+                    persona: (e.title.toLowerCase().includes('ceo') || e.title.toLowerCase().includes('chief executive') ? 'CEO' :
+                      e.title.toLowerCase().includes('cfo') || e.title.toLowerCase().includes('chief financial') ? 'CFO' :
+                      e.title.toLowerCase().includes('cto') || e.title.toLowerCase().includes('chief technology') ? 'CTO' :
+                      e.title.toLowerCase().includes('cio') || e.title.toLowerCase().includes('chief information') ? 'CIO' :
+                      e.title.toLowerCase().includes('chro') || e.title.toLowerCase().includes('people') || e.title.toLowerCase().includes('human') ? 'CHRO' :
                       'Other') as 'CEO' | 'CFO' | 'CTO' | 'CIO' | 'CHRO' | 'Other',
                   }))
                 : prev.ebc_data.attendees,
@@ -69,7 +70,7 @@ export default function App() {
           };
         });
       }).catch(err => {
-        console.warn('Failed to fetch intelligence:', err);
+        console.error('Failed to fetch intelligence:', err);
       }).finally(() => {
         setLoadingIntel(false);
       });
