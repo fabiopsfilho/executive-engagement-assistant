@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Copy, Check, Sparkles, ArrowRight, Globe, Users, MessageSquareText, Target, Search, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Copy, Check, Sparkles, ArrowRight, Globe, Users, MessageSquareText, Target, Search, CheckCircle2, Loader2 } from 'lucide-react';
 import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
+import { isBackendAvailable, generateEngagementPlan } from '../services/api';
 
 
 function CopyBtn({ text }: { text: string }) {
@@ -56,7 +57,7 @@ function generateKeyAsks(a: Account): { ask: string; connection: string }[] {
 }
 
 
-function SayThisSection({ account, bestStarter, allStarters }: { account: Account; bestStarter: string; allStarters: string[] }) {
+function SayThisSection({ account, bestStarter, allStarters, followUps }: { account: Account; bestStarter: string; allStarters: string[]; followUps?: string[] }) {
   const a = account;
   const [expanded, setExpanded] = useState(false);
   const [showMore, setShowMore] = useState(false);
@@ -95,9 +96,17 @@ function SayThisSection({ account, bestStarter, allStarters }: { account: Accoun
         <div className="mx-4 mb-4 p-3.5 border border-dark-600 rounded-xl">
           <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Follow-ups</span>
           <ul className="mt-2 space-y-1.5">
-            <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Are {a.industry === 'Financial Services' ? 'GenAI' : 'cloud'} skills part of your hiring strategy?</li>
-            <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Build vs. buy vs. train — what's the plan?</li>
-            <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Where are you seeing the biggest delays?</li>
+            {followUps && followUps.length > 0 ? (
+              followUps.map((f, i) => (
+                <li key={i} className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>{f}</li>
+              ))
+            ) : (
+              <>
+                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Are {a.industry === 'Financial Services' ? 'GenAI' : 'cloud'} skills part of your hiring strategy?</li>
+                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Build vs. buy vs. train — what's the plan?</li>
+                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Where are you seeing the biggest delays?</li>
+              </>
+            )}
           </ul>
         </div>
       </div>
@@ -134,7 +143,43 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
     .slice(0, 3);
 
   const plan0 = engagementPlans[`${a.customer_name}::${rankedPersonas[0]?.persona}`];
-  const bestStarter = plan0?.conversation_starters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
+  const [aiStarters, setAiStarters] = useState<string[]>([]);
+  const [aiFollowUps, setAiFollowUps] = useState<string[]>([]);
+  const [loadingQuote, setLoadingQuote] = useState(false);
+
+  // Fetch AI-generated conversation starters for live accounts without pre-built plans
+  useEffect(() => {
+    if (plan0 || !isBackendAvailable()) return;
+    if (aiStarters.length > 0) return; // Already fetched
+
+    setLoadingQuote(true);
+    const topPersona = rankedPersonas[0] || a.ebc_data.attendees[0];
+    if (!topPersona) { setLoadingQuote(false); return; }
+
+    generateEngagementPlan(
+      a,
+      { name: topPersona.name, title: topPersona.title, persona: topPersona.persona },
+    ).then(result => {
+      if (result.conversation_starters && result.conversation_starters.length > 0) {
+        setAiStarters(result.conversation_starters);
+      }
+      // Generate follow-ups from the narrative
+      if (result.narrative) {
+        setAiFollowUps([
+          `What's your biggest skills bottleneck on ${a.sfdc_data.account_plan_priority}?`,
+          result.recommended_plays?.[0] ? `Have you explored ${result.recommended_plays[0].play_name.toLowerCase()}?` : 'Build vs. buy vs. train — what\'s the plan?',
+          `What does success look like in 90 days for your workforce?`,
+        ]);
+      }
+    }).catch(err => {
+      console.warn('Failed to generate engagement plan:', err);
+    }).finally(() => {
+      setLoadingQuote(false);
+    });
+  }, [a.customer_name]);
+
+  const bestStarter = plan0?.conversation_starters[0] || aiStarters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
+  const allStarters = plan0?.conversation_starters || (aiStarters.length > 0 ? aiStarters : [bestStarter]);
 
   const nextSteps = generateNextSteps(a);
   const keyAsks = generateKeyAsks(a);
@@ -263,7 +308,14 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
       </section>
 
       {/* Say This */}
-      <SayThisSection account={a} bestStarter={bestStarter} allStarters={plan0?.conversation_starters || [bestStarter]} />
+      {loadingQuote ? (
+        <div className="flex items-center justify-center gap-2 py-8">
+          <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+          <span className="text-xs text-muted">Generating conversation starters...</span>
+        </div>
+      ) : (
+        <SayThisSection account={a} bestStarter={bestStarter} allStarters={allStarters} followUps={aiFollowUps} />
+      )}
 
       {/* Next Best Move — Figma style colored cards */}
       <div>
