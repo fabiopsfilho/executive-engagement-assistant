@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Search, Building2, MapPin, Calendar, Upload, Database, FlaskConical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Building2, MapPin, Calendar, Database, FlaskConical, Loader2 } from 'lucide-react';
 import type { Account } from '../types';
 import { parseEBCCsv, ebcRecordsToAccounts } from '../services/csvParser';
 import { isBackendAvailable, loadEBCDataFromS3 } from '../services/api';
@@ -16,15 +16,26 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   const [mode, setMode] = useState<DataMode>('demo');
   const [liveAccounts, setLiveAccounts] = useState<Account[]>([]);
   const [csvLoaded, setCsvLoaded] = useState(false);
+  const [loadingLive, setLoadingLive] = useState(false);
   const [geoFilter, setGeoFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const activeAccounts = mode === 'demo' ? accounts : liveAccounts;
 
-  // Get unique geos and locations for filters
+  // Get unique geos
   const geos = [...new Set(activeAccounts.map(a => a.geo))].sort();
-  const locations = [...new Set(activeAccounts.map(a => a.ebc_data.location))].sort();
+
+  // Get briefing centers filtered by selected geo
+  const locationsForGeo = geoFilter === 'all'
+    ? [...new Set(activeAccounts.map(a => a.ebc_data.location))].sort()
+    : [...new Set(activeAccounts.filter(a => a.geo === geoFilter).map(a => a.ebc_data.location))].sort();
+
+  // Reset location filter when geo changes and current location isn't available
+  useEffect(() => {
+    if (locationFilter !== 'all' && !locationsForGeo.includes(locationFilter)) {
+      setLocationFilter('all');
+    }
+  }, [geoFilter]);
 
   const filtered = activeAccounts.filter(a => {
     if (geoFilter !== 'all' && a.geo !== geoFilter) return false;
@@ -39,30 +50,21 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
 
   // Auto-load EBC data from S3 when switching to Live mode
   useEffect(() => {
-    if (mode !== 'live' || csvLoaded || !isBackendAvailable()) return;
-    loadEBCDataFromS3().then(csv => {
-      if (csv) {
-        const records = parseEBCCsv(csv);
-        const parsed = ebcRecordsToAccounts(records);
-        setLiveAccounts(parsed);
-        setCsvLoaded(true);
-      }
-    });
+    if (mode !== 'live' || csvLoaded) return;
+    setLoadingLive(true);
+    if (isBackendAvailable()) {
+      loadEBCDataFromS3().then(csv => {
+        if (csv) {
+          const records = parseEBCCsv(csv);
+          const parsed = ebcRecordsToAccounts(records);
+          setLiveAccounts(parsed);
+          setCsvLoaded(true);
+        }
+      }).finally(() => setLoadingLive(false));
+    } else {
+      setLoadingLive(false);
+    }
   }, [mode]);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const records = parseEBCCsv(text);
-      const parsed = ebcRecordsToAccounts(records);
-      setLiveAccounts(parsed);
-      setCsvLoaded(true);
-    };
-    reader.readAsText(file);
-  };
 
   return (
     <div className="px-4 py-6">
@@ -106,25 +108,18 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
         </button>
       </div>
 
-      {/* CSV Upload (Live mode) */}
-      {mode === 'live' && !csvLoaded && (
-        <div className="mb-5">
-          <input ref={fileRef} type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="w-full flex flex-col items-center gap-2 py-6 border-2 border-dashed border-green-500/30 rounded-xl bg-green-500/5 active:bg-green-500/10"
-          >
-            <Upload className="w-6 h-6 text-green-400" />
-            <span className="text-sm text-green-400 font-medium">Upload EBC Calendar CSV</span>
-            <span className="text-[11px] text-muted">Export from QuickSight → drop here</span>
-          </button>
+      {/* Loading state for Live mode */}
+      {mode === 'live' && loadingLive && (
+        <div className="flex items-center justify-center gap-2 py-6 mb-4">
+          <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
+          <span className="text-xs text-green-400">Loading EBC calendar...</span>
         </div>
       )}
 
       {mode === 'live' && csvLoaded && (
         <div className="flex items-center justify-between mb-4 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
-          <span className="text-xs text-green-400 font-medium">✓ {liveAccounts.length} accounts loaded from EBC calendar</span>
-          <button onClick={() => { setCsvLoaded(false); setLiveAccounts([]); }} className="text-[11px] text-muted active:text-white">Reset</button>
+          <span className="text-xs text-green-400 font-medium">✓ {liveAccounts.length} accounts loaded</span>
+          <span className="text-[11px] text-muted">{filtered.length} shown</span>
         </div>
       )}
 
@@ -152,15 +147,15 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
             className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
           >
             <option value="all">All Briefing Centers</option>
-            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+            {locationsForGeo.map(l => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
       )}
 
       {/* Account List */}
-      {filtered.length === 0 && mode === 'live' && !csvLoaded && (
+      {filtered.length === 0 && mode === 'live' && !csvLoaded && !loadingLive && (
         <div className="text-center py-8">
-          <p className="text-sm text-muted">Upload an EBC calendar CSV to see real accounts</p>
+          <p className="text-sm text-muted">No EBC data available. Upload a CSV to the S3 bucket.</p>
         </div>
       )}
 
