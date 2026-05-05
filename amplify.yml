@@ -6,6 +6,7 @@ frontend:
         - npm ci
     build:
       commands:
+        - echo "VITE_API_URL=https://gy5b6oev95.execute-api.us-east-1.amazonaws.com/prod" > .env
         - npm run build
   artifacts:
     baseDirectory: dist
