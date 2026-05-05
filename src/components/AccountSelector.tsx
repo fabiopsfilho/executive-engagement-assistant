@@ -16,14 +16,26 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   const [mode, setMode] = useState<DataMode>('demo');
   const [liveAccounts, setLiveAccounts] = useState<Account[]>([]);
   const [csvLoaded, setCsvLoaded] = useState(false);
+  const [geoFilter, setGeoFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const activeAccounts = mode === 'demo' ? accounts : liveAccounts;
-  const filtered = activeAccounts.filter(a =>
-    a.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-    a.industry.toLowerCase().includes(search.toLowerCase()) ||
-    a.geo.toLowerCase().includes(search.toLowerCase())
-  );
+
+  // Get unique geos and locations for filters
+  const geos = [...new Set(activeAccounts.map(a => a.geo))].sort();
+  const locations = [...new Set(activeAccounts.map(a => a.ebc_data.location))].sort();
+
+  const filtered = activeAccounts.filter(a => {
+    if (geoFilter !== 'all' && a.geo !== geoFilter) return false;
+    if (locationFilter !== 'all' && a.ebc_data.location !== locationFilter) return false;
+    if (search) {
+      return a.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+        a.industry.toLowerCase().includes(search.toLowerCase()) ||
+        a.geo.toLowerCase().includes(search.toLowerCase());
+    }
+    return true;
+  });
 
   // Auto-load EBC data from S3 when switching to Live mode
   useEffect(() => {
@@ -117,11 +129,33 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
       )}
 
       {/* Search */}
-      <div className="relative mb-5">
+      <div className="relative mb-3">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
         <input type="text" placeholder="Search accounts..." value={search} onChange={e => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-muted text-sm focus:outline-none focus:border-purple-500/50" />
       </div>
+
+      {/* Filters (Live mode only, when data is loaded) */}
+      {mode === 'live' && csvLoaded && (
+        <div className="flex gap-2 mb-4">
+          <select
+            value={geoFilter}
+            onChange={e => setGeoFilter(e.target.value)}
+            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+          >
+            <option value="all">All Geos</option>
+            {geos.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+          <select
+            value={locationFilter}
+            onChange={e => setLocationFilter(e.target.value)}
+            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+          >
+            <option value="all">All Briefing Centers</option>
+            {locations.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      )}
 
       {/* Account List */}
       {filtered.length === 0 && mode === 'live' && !csvLoaded && (
