@@ -1,0 +1,278 @@
+/**
+ * API Service for the Executive Engagement Assistant
+ * 
+ * Connects the frontend to the Bedrock-powered Lambda backend.
+ * Set VITE_API_URL in your .env file to point to your API Gateway endpoint.
+ * 
+ * When API_URL is not set, the app falls back to the local mock data.
+ */
+
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+export function isBackendAvailable(): boolean {
+  return !!API_URL;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface EngagementPlanResponse {
+  persona: string;
+  persona_name: string;
+  persona_title: string;
+  narrative: string;
+  conversation_starters: string[];
+  recommended_plays: { play_name: string; description: string }[];
+  revenue_estimate: { offering: string; estimated_value: string; timeline: string }[];
+  total_pipeline: string;
+  proof_points: { customer: string; industry: string; metric: string; demonstrates: string }[];
+}
+
+export interface IntelligenceResponse {
+  earnings_call_signals: string[];
+  linkedin_job_postings: { cloud_ai_roles: number; yoy_change: string };
+  executive_social: { name: string; title: string; post_theme: string }[];
+  glassdoor_signals: string[];
+  industry_context: string;
+  news_signals: string[];
+  signals: { severity: 'HIGH' | 'MEDIUM'; label: string; evidence: string }[];
+  tc_opportunity_score: number;
+}
+
+export interface AdvisorResponse {
+  response: string;
+  capability: string;
+}
+
+export interface RolePlayResponse {
+  response: string;
+  persona: string;
+  personaType: string;
+}
+
+export interface AgendaBlock {
+  time: string;
+  duration: string;
+  title: string;
+  description: string;
+  owner: string;
+  type: 'welcome' | 'discovery' | 'insight' | 'demo' | 'workshop' | 'action' | 'break';
+}
+
+export interface AgendaResponse {
+  title: string;
+  subtitle: string;
+  format: string;
+  date: string;
+  location: string;
+  duration: string;
+  blocks: AgendaBlock[];
+  principles: string[];
+  preparation: string[];
+}
+
+export interface PitchSlide {
+  slideNumber: number;
+  title: string;
+  content: string;
+  speakerNotes: string;
+  type: 'title' | 'story' | 'data' | 'insight' | 'action' | 'close';
+}
+
+export interface PitchResponse {
+  title: string;
+  subtitle: string;
+  duration: string;
+  audience: string;
+  slides: PitchSlide[];
+}
+
+// ─── API Calls ────────────────────────────────────────────────────────────────
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function get<T>(path: string, params?: Record<string, string>): Promise<T> {
+  const url = new URL(`${API_URL}${path}`);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  }
+
+  const response = await fetch(url.toString(), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// ─── Engagement Plan Generation ───────────────────────────────────────────────
+
+export async function generateEngagementPlan(
+  accountData: unknown,
+  persona: { name: string; title: string; persona: string },
+  userNotes?: string[]
+): Promise<EngagementPlanResponse> {
+  return post<EngagementPlanResponse>('/accounts/dynamic/engage', {
+    accountData,
+    persona,
+    userNotes,
+  });
+}
+
+// ─── Intelligence Aggregation ─────────────────────────────────────────────────
+
+export async function getIntelligence(
+  companyName: string,
+  industry: string,
+  awsSpend: number,
+  executives?: string
+): Promise<IntelligenceResponse> {
+  return get<IntelligenceResponse>('/accounts/dynamic/intelligence', {
+    company: companyName,
+    industry,
+    awsSpend: String(awsSpend),
+    ...(executives ? { executives } : {}),
+  });
+}
+
+// ─── AI Advisor Chat ──────────────────────────────────────────────────────────
+
+export async function sendAdvisorMessage(
+  message: string,
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[],
+  accountContext: {
+    customer_name: string;
+    industry: string;
+    segment: string;
+    aws_spend_current: number;
+    ppa: string;
+    account_plan_priority: string;
+    open_opps: number;
+    t2k: boolean;
+    smgs_phase: string;
+    tc_state: string;
+    signals: { label: string; severity: string; evidence: string }[];
+    public_intelligence_summary: string;
+  },
+  selectedPersona?: { name: string; title: string; persona: string },
+  capability?: string
+): Promise<AdvisorResponse> {
+  return post<AdvisorResponse>('/accounts/dynamic/advisor', {
+    message,
+    conversationHistory,
+    accountContext,
+    selectedPersona,
+    capability,
+  });
+}
+
+// ─── Role-Play Engine ─────────────────────────────────────────────────────────
+
+export async function sendRolePlayMessage(
+  message: string,
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[],
+  persona: { name: string; title: string; persona: string },
+  accountContext: {
+    customer_name: string;
+    industry: string;
+    aws_spend_current: number;
+    ppa: string;
+    account_plan_priority: string;
+    open_opps: number;
+    linkedin_roles: number;
+    linkedin_yoy: string;
+    executive_social_theme?: string;
+    glassdoor_signals: string[];
+    earnings_signals: string[];
+    tc_state: string;
+    industry_context: string;
+  }
+): Promise<RolePlayResponse> {
+  return post<RolePlayResponse>('/accounts/dynamic/roleplay', {
+    message,
+    conversationHistory,
+    persona,
+    accountContext,
+  });
+}
+
+// ─── Agenda Generation ────────────────────────────────────────────────────────
+
+export async function generateAgenda(
+  accountContext: {
+    customer_name: string;
+    industry: string;
+    account_plan_priority: string;
+    attendees: { name: string; title: string; persona: string }[];
+    ebc_date: string;
+    ebc_location: string;
+    ebc_themes: string[];
+    tc_state: string;
+    signals_summary: string;
+    public_intelligence_summary: string;
+  },
+  format: 'ebc' | 'training-session',
+  persona?: { name: string; title: string; persona: string },
+  userNotes?: string[]
+): Promise<AgendaResponse> {
+  return post<AgendaResponse>('/accounts/dynamic/agenda', {
+    accountContext,
+    format,
+    persona,
+    userNotes,
+  });
+}
+
+// ─── Pitch Deck Generation ───────────────────────────────────────────────────
+
+export async function generatePitchDeck(
+  accountContext: {
+    customer_name: string;
+    industry: string;
+    segment: string;
+    aws_spend_current: number;
+    ppa: string;
+    account_plan_priority: string;
+    linkedin_roles: number;
+    linkedin_yoy: string;
+    tc_state: string;
+    earnings_signals: string[];
+    executive_social: { name: string; title: string; post_theme: string }[];
+    glassdoor_signals: string[];
+    industry_context: string;
+    news_signals: string[];
+  },
+  persona: { name: string; title: string; persona: string },
+  engagementPlan: {
+    narrative: string;
+    conversation_starters: string[];
+    recommended_plays: { play_name: string; description: string }[];
+    revenue_estimate: { offering: string; estimated_value: string; timeline: string }[];
+    total_pipeline: string;
+    proof_points: { customer: string; industry: string; metric: string; demonstrates: string }[];
+  },
+  userNotes?: string[]
+): Promise<PitchResponse> {
+  return post<PitchResponse>('/accounts/dynamic/pitch', {
+    accountContext,
+    persona,
+    engagementPlan,
+    userNotes,
+  });
+}
