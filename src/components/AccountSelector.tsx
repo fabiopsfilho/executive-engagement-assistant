@@ -36,6 +36,14 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
           <span className="flex items-center gap-1 text-blue-400"><Calendar className="w-3 h-3" />{ebcDate}</span>
           {daysUntilEbc !== null && <span className="text-muted">{daysUntilEbc > 0 ? `in ${daysUntilEbc} days` : daysUntilEbc === 0 ? 'Today' : `${Math.abs(daysUntilEbc)}d ago`}</span>}
           <span className="flex items-center gap-1 text-muted"><MapPin className="w-3 h-3" />{account.ebc_data.location}</span>
+          {account.ebc_data.status && (
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              account.ebc_data.status === 'InProgress' ? 'bg-blue-500/15 text-blue-400' :
+              account.ebc_data.status === 'Completed' ? 'bg-green-500/15 text-green-400' :
+              account.ebc_data.status === 'Cancelled' ? 'bg-red-500/15 text-red-400' :
+              'bg-orange-500/15 text-orange-400'
+            }`}>{account.ebc_data.status}</span>
+          )}
         </div>
       )}
       <div className="flex flex-wrap gap-1.5">
@@ -60,6 +68,7 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   const [loadingLive, setLoadingLive] = useState(false);
   const [geoFilter, setGeoFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
 
   const activeAccounts = mode === 'demo' ? accounts : liveAccounts;
 
@@ -72,6 +81,21 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
     ? [...new Set(activeAccounts.map(a => a.ebc_data.location))].sort()
     : [...new Set(activeAccounts.filter(a => a.geo === geoFilter).map(a => a.ebc_data.location))].sort();
 
+  // Get unique months from EBC dates
+  const months = [...new Set(activeAccounts.map(a => {
+    const d = a.ebc_data.meeting_dates[0];
+    if (!d) return '';
+    const date = new Date(d);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }).filter(Boolean))].sort();
+
+  const monthLabels: Record<string, string> = {};
+  months.forEach(m => {
+    const [y, mo] = m.split('-');
+    const date = new Date(Number(y), Number(mo) - 1);
+    monthLabels[m] = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  });
+
   // Reset location filter when geo changes and current location isn't available
   useEffect(() => {
     if (locationFilter !== 'all' && !locationsForGeo.includes(locationFilter)) {
@@ -82,6 +106,14 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   const filtered = activeAccounts.filter(a => {
     if (geoFilter !== 'all' && a.geo !== geoFilter) return false;
     if (locationFilter !== 'all' && a.ebc_data.location !== locationFilter) return false;
+    if (monthFilter !== 'all') {
+      const d = a.ebc_data.meeting_dates[0];
+      if (d) {
+        const date = new Date(d);
+        const m = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (m !== monthFilter) return false;
+      } else return false;
+    }
     if (search) {
       return a.customer_name.toLowerCase().includes(search.toLowerCase()) ||
         a.industry.toLowerCase().includes(search.toLowerCase()) ||
@@ -188,8 +220,16 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
             onChange={e => setLocationFilter(e.target.value)}
             className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
           >
-            <option value="all">All Briefing Centers</option>
+            <option value="all">All Centers</option>
             {locationsForGeo.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <select
+            value={monthFilter}
+            onChange={e => setMonthFilter(e.target.value)}
+            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+          >
+            <option value="all">All Months</option>
+            {months.map(m => <option key={m} value={m}>{monthLabels[m]}</option>)}
           </select>
         </div>
       )}

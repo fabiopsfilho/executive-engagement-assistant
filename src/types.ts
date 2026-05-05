@@ -27,6 +27,7 @@ export interface Account {
     attendees: Attendee[];
     location: string;
     requestor: string;
+    status?: string;
   };
   tc_current_state: {
     skill_builder: boolean;

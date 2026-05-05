@@ -139,6 +139,7 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
         ],
         location: nextEbc.briefingCenter,
         requestor: `${primary.geo} ${primary.industry} Team`,
+        status: nextEbc.status || 'InProgress',
       },
       tc_current_state: {
         skill_builder: primary.palPhase === 'SCALING' || primary.palPhase === 'RAMPING',
