@@ -26,8 +26,8 @@ export function parseEBCCsv(csvText: string): EBCRecord[] {
   const lines = csvText.split('\n').filter(l => l.trim());
   if (lines.length < 2) return [];
 
-  // Parse header
-  const headers = parseCSVLine(lines[0]);
+  // Parse header (skip it, we use positional indexing)
+  // const headers = parseCSVLine(lines[0]);
 
   return lines.slice(1).map(line => {
     const values = parseCSVLine(line);
