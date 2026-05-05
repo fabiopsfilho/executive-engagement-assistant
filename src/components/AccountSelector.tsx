@@ -200,7 +200,7 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
           </div>
 
           {/* Account List grouped by briefing center */}
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
             {(() => {
               if (locationFilter === 'all' && filtered.length > 0) {
                 const grouped = new Map<string, typeof filtered>();
@@ -211,15 +211,17 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
                 }
 
                 return [...grouped.entries()].map(([location, accts]) => (
-                  <div key={location}>
+                  <div key={location} className="md:col-span-2">
                     <div className="flex items-center gap-2 mt-4 mb-2 first:mt-0">
                       <MapPin className="w-3.5 h-3.5 text-green-400" />
                       <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wider">{location}</h3>
                       <span className="text-[10px] text-muted">({accts.length})</span>
                     </div>
-                    {accts.map((account, idx) => (
-                      <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} />
-                    ))}
+                    <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+                      {accts.map((account, idx) => (
+                        <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} />
+                      ))}
+                    </div>
                   </div>
                 ));
               }

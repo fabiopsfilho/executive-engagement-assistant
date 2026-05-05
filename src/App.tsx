@@ -79,7 +79,7 @@ export default function App() {
 
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
-      <div className="w-full max-w-[430px]">
+      <div className="w-full max-w-[430px] md:max-w-[800px] lg:max-w-[1000px]">
         <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); }} />
       </div>
     </div>
@@ -87,7 +87,7 @@ export default function App() {
 
   if (persona) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
-      <div className="w-full max-w-[430px]">
+      <div className="w-full max-w-[430px] md:max-w-[700px]">
         <header className="sticky top-0 z-50 bg-dark-800/90 backdrop-blur-md border-b border-dark-600 px-4 py-3 flex items-center gap-3">
           <button onClick={() => setPersona(null)} className="p-1 active:opacity-70"><ArrowLeft className="w-5 h-5 text-muted" /></button>
           <div className="min-w-0 flex-1">
@@ -108,7 +108,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
-      <div className="w-full max-w-[430px] pb-16 relative">
+      <div className="w-full max-w-[430px] md:max-w-[700px] pb-16 relative">
         {showScore && <ScoreExplainer account={account} onClose={() => setShowScore(false)} />}
         {showPersonaPicker && (
           <PersonaPickerSheet account={account} onSelect={(att) => { setShowPersonaPicker(false); setPersona(att); }} onClose={() => setShowPersonaPicker(false)} />
@@ -156,7 +156,7 @@ export default function App() {
         {/* Insight popup — Now / Buzz */}
         {insightPopup && (
           <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm" onClick={() => setInsightPopup(null)}>
-            <div className="bg-dark-800 border border-dark-600 rounded-b-2xl w-full max-w-[430px] max-h-[70vh] overflow-y-auto animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="bg-dark-800 border border-dark-600 rounded-b-2xl w-full max-w-[430px] md:max-w-[700px] max-h-[70vh] overflow-y-auto animate-fade-in" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 pt-4 pb-2">
                 <h3 className="text-sm font-semibold text-white">{insightPopup === 'now' ? '⚡ What to focus on now' : '📢 What people are saying'}</h3>
                 <button onClick={() => setInsightPopup(null)} className="p-2 rounded-lg active:bg-dark-700"><span className="text-muted text-lg">✕</span></button>
@@ -255,7 +255,7 @@ export default function App() {
         </main>
 
         {/* Bottom Nav */}
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-dark-800/95 backdrop-blur-md border-t border-dark-600 z-50">
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] md:max-w-[700px] bg-dark-800/95 backdrop-blur-md border-t border-dark-600 z-50">
           <div className="flex">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
