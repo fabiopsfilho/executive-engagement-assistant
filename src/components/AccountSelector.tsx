@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Search, Building2, MapPin, Calendar, Database, FlaskConical, Loader2 } from 'lucide-react';
+import { Search, Building2, MapPin, Calendar, Loader2 } from 'lucide-react';
 import type { Account } from '../types';
 import { parseEBCCsv, ebcRecordsToAccounts } from '../services/csvParser';
 import { isBackendAvailable, loadEBCDataFromS3 } from '../services/api';
 
-function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect: (a: Account) => void; isLive: boolean }) {
+function AccountCard({ account, onSelect }: { account: Account; onSelect: (a: Account) => void }) {
   const nextEbc = account.ebc_data.meeting_dates[0];
   const daysUntilEbc = nextEbc ? Math.ceil((new Date(nextEbc).getTime() - Date.now()) / 86400000) : null;
-  const ebcStart = account.ebc_data.meeting_dates[0];
-  // Calculate EBC duration from the data if available
-  const ebcDate = ebcStart ? new Date(ebcStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const ebcDate = nextEbc ? new Date(nextEbc).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
     <button onClick={() => onSelect(account)}
@@ -23,7 +21,6 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
             <span>{account.segment}</span>
             <span className="text-dark-600">·</span>
             <span>{account.geo}</span>
-            {isLive && <span className="text-[10px] px-1.5 py-0.5 bg-green-500/15 text-green-400 rounded">LIVE</span>}
           </div>
         </div>
         <div className={`w-10 h-10 rounded-xl ${account.tc_opportunity_score >= 8 ? 'bg-green-500' : account.tc_opportunity_score >= 6 ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
@@ -32,7 +29,7 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
       </div>
       {/* EBC info bar */}
       {ebcDate && (
-        <div className="flex items-center gap-3 mb-2 text-[11px]">
+        <div className="flex items-center gap-3 mb-2 text-[11px] flex-wrap">
           <span className="flex items-center gap-1 text-blue-400"><Calendar className="w-3 h-3" />{ebcDate}</span>
           {daysUntilEbc !== null && <span className="text-muted">{daysUntilEbc > 0 ? `in ${daysUntilEbc} days` : daysUntilEbc === 0 ? 'Today' : `${Math.abs(daysUntilEbc)}d ago`}</span>}
           <span className="flex items-center gap-1 text-muted"><MapPin className="w-3 h-3" />{account.ebc_data.location}</span>
@@ -58,31 +55,45 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
   );
 }
 
-type DataMode = 'demo' | 'live';
-
 export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; onSelect: (a: Account) => void }) {
   const [search, setSearch] = useState('');
-  const [mode, setMode] = useState<DataMode>('demo');
-  const [liveAccounts, setLiveAccounts] = useState<Account[]>([]);
-  const [csvLoaded, setCsvLoaded] = useState(false);
-  const [loadingLive, setLoadingLive] = useState(false);
+  const [allAccounts, setAllAccounts] = useState<Account[]>(accounts);
+  const [loading, setLoading] = useState(true);
   const [geoFilter, setGeoFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
 
-  const activeAccounts = mode === 'demo' ? accounts : liveAccounts;
+  // Auto-load EBC data from S3 on startup
+  useEffect(() => {
+    if (!isBackendAvailable()) {
+      setAllAccounts(accounts);
+      setLoading(false);
+      return;
+    }
+    loadEBCDataFromS3().then(csv => {
+      if (csv) {
+        const records = parseEBCCsv(csv);
+        const parsed = ebcRecordsToAccounts(records);
+        setAllAccounts(parsed);
+      } else {
+        setAllAccounts(accounts); // Fallback to demo data
+      }
+    }).catch(() => {
+      setAllAccounts(accounts);
+    }).finally(() => setLoading(false));
+  }, []);
 
-  // Get unique geos — only show real geo names, not business units
+  // Get unique geos — only show real geo names
   const validGeos = ['NAMER', 'EMEA', 'APJ', 'LATAM', 'GFS', 'GCR'];
-  const geos = [...new Set(activeAccounts.map(a => a.geo))].filter(g => validGeos.includes(g)).sort();
+  const geos = [...new Set(allAccounts.map(a => a.geo))].filter(g => validGeos.includes(g)).sort();
 
   // Get briefing centers filtered by selected geo
   const locationsForGeo = geoFilter === 'all'
-    ? [...new Set(activeAccounts.map(a => a.ebc_data.location))].sort()
-    : [...new Set(activeAccounts.filter(a => a.geo === geoFilter).map(a => a.ebc_data.location))].sort();
+    ? [...new Set(allAccounts.map(a => a.ebc_data.location))].sort()
+    : [...new Set(allAccounts.filter(a => a.geo === geoFilter).map(a => a.ebc_data.location))].sort();
 
   // Get unique months from EBC dates
-  const months = [...new Set(activeAccounts.map(a => {
+  const months = [...new Set(allAccounts.map(a => {
     const d = a.ebc_data.meeting_dates[0];
     if (!d) return '';
     const date = new Date(d);
@@ -96,14 +107,14 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
     monthLabels[m] = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   });
 
-  // Reset location filter when geo changes and current location isn't available
+  // Reset location filter when geo changes
   useEffect(() => {
     if (locationFilter !== 'all' && !locationsForGeo.includes(locationFilter)) {
       setLocationFilter('all');
     }
   }, [geoFilter]);
 
-  const filtered = activeAccounts.filter(a => {
+  const filtered = allAccounts.filter(a => {
     if (geoFilter !== 'all' && a.geo !== geoFilter) return false;
     if (locationFilter !== 'all' && a.ebc_data.location !== locationFilter) return false;
     if (monthFilter !== 'all') {
@@ -122,24 +133,6 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
     return true;
   });
 
-  // Auto-load EBC data from S3 when switching to Live mode
-  useEffect(() => {
-    if (mode !== 'live' || csvLoaded) return;
-    setLoadingLive(true);
-    if (isBackendAvailable()) {
-      loadEBCDataFromS3().then(csv => {
-        if (csv) {
-          const records = parseEBCCsv(csv);
-          const parsed = ebcRecordsToAccounts(records);
-          setLiveAccounts(parsed);
-          setCsvLoaded(true);
-        }
-      }).finally(() => setLoadingLive(false));
-    } else {
-      setLoadingLive(false);
-    }
-  }, [mode]);
-
   return (
     <div className="px-4 py-6">
       {/* Header banner */}
@@ -156,122 +149,88 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
         <p className="text-sm text-muted">Select an account to build your engagement story</p>
       </div>
 
-      {/* Data Mode Toggle */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setMode('demo')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-colors ${
-            mode === 'demo'
-              ? 'bg-purple-500/20 border border-purple-500/40 text-purple-400'
-              : 'bg-dark-800 border border-dark-600 text-muted'
-          }`}
-        >
-          <FlaskConical className="w-3.5 h-3.5" />
-          Demo Mode
-        </button>
-        <button
-          onClick={() => setMode('live')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-medium transition-colors ${
-            mode === 'live'
-              ? 'bg-green-500/20 border border-green-500/40 text-green-400'
-              : 'bg-dark-800 border border-dark-600 text-muted'
-          }`}
-        >
-          <Database className="w-3.5 h-3.5" />
-          Live EBC Data
-        </button>
-      </div>
-
-      {/* Loading state for Live mode */}
-      {mode === 'live' && loadingLive && (
-        <div className="flex items-center justify-center gap-2 py-6 mb-4">
-          <Loader2 className="w-4 h-4 text-green-400 animate-spin" />
-          <span className="text-xs text-green-400">Loading EBC calendar...</span>
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center gap-2 py-8">
+          <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
+          <span className="text-xs text-muted">Loading EBC calendar...</span>
         </div>
       )}
 
-      {mode === 'live' && csvLoaded && (
-        <div className="flex items-center justify-between mb-4 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl">
-          <span className="text-xs text-green-400 font-medium">✓ {liveAccounts.length} accounts loaded</span>
-          <span className="text-[11px] text-muted">{filtered.length} shown</span>
-        </div>
+      {!loading && (
+        <>
+          {/* Search */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <input type="text" placeholder="Search accounts..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-muted text-sm focus:outline-none focus:border-purple-500/50" />
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-2 mb-4">
+            <select
+              value={geoFilter}
+              onChange={e => setGeoFilter(e.target.value)}
+              className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+            >
+              <option value="all">All Geos</option>
+              {geos.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select
+              value={locationFilter}
+              onChange={e => setLocationFilter(e.target.value)}
+              className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+            >
+              <option value="all">All Centers</option>
+              {locationsForGeo.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <select
+              value={monthFilter}
+              onChange={e => setMonthFilter(e.target.value)}
+              className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
+            >
+              <option value="all">All Months</option>
+              {months.map(m => <option key={m} value={m}>{monthLabels[m]}</option>)}
+            </select>
+          </div>
+
+          {/* Results count */}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <span className="text-[11px] text-muted">{filtered.length} accounts</span>
+          </div>
+
+          {/* Account List grouped by briefing center */}
+          <div className="space-y-2.5">
+            {(() => {
+              if (locationFilter === 'all' && filtered.length > 0) {
+                const grouped = new Map<string, typeof filtered>();
+                for (const account of filtered) {
+                  const loc = account.ebc_data.location || 'Unknown';
+                  if (!grouped.has(loc)) grouped.set(loc, []);
+                  grouped.get(loc)!.push(account);
+                }
+
+                return [...grouped.entries()].map(([location, accts]) => (
+                  <div key={location}>
+                    <div className="flex items-center gap-2 mt-4 mb-2 first:mt-0">
+                      <MapPin className="w-3.5 h-3.5 text-green-400" />
+                      <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wider">{location}</h3>
+                      <span className="text-[10px] text-muted">({accts.length})</span>
+                    </div>
+                    {accts.map((account, idx) => (
+                      <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} />
+                    ))}
+                  </div>
+                ));
+              }
+
+              return filtered.map((account, idx) => (
+                <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} />
+              ));
+            })()}
+          </div>
+        </>
       )}
-
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-        <input type="text" placeholder="Search accounts..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-muted text-sm focus:outline-none focus:border-purple-500/50" />
-      </div>
-
-      {/* Filters (Live mode only, when data is loaded) */}
-      {mode === 'live' && csvLoaded && (
-        <div className="flex gap-2 mb-4">
-          <select
-            value={geoFilter}
-            onChange={e => setGeoFilter(e.target.value)}
-            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
-          >
-            <option value="all">All Geos</option>
-            {geos.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <select
-            value={locationFilter}
-            onChange={e => setLocationFilter(e.target.value)}
-            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
-          >
-            <option value="all">All Centers</option>
-            {locationsForGeo.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <select
-            value={monthFilter}
-            onChange={e => setMonthFilter(e.target.value)}
-            className="flex-1 px-3 py-2 bg-dark-800 border border-dark-600 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500/50"
-          >
-            <option value="all">All Months</option>
-            {months.map(m => <option key={m} value={m}>{monthLabels[m]}</option>)}
-          </select>
-        </div>
-      )}
-
-      {/* Account List */}
-      {filtered.length === 0 && mode === 'live' && !csvLoaded && !loadingLive && (
-        <div className="text-center py-8">
-          <p className="text-sm text-muted">No EBC data available. Upload a CSV to the S3 bucket.</p>
-        </div>
-      )}
-
-      <div className="space-y-2.5">
-        {(() => {
-          // Group by briefing center when no specific location is selected
-          if (mode === 'live' && csvLoaded && locationFilter === 'all') {
-            const grouped = new Map<string, typeof filtered>();
-            for (const account of filtered) {
-              const loc = account.ebc_data.location || 'Unknown';
-              if (!grouped.has(loc)) grouped.set(loc, []);
-              grouped.get(loc)!.push(account);
-            }
-
-            return [...grouped.entries()].map(([location, accts]) => (
-              <div key={location}>
-                <div className="flex items-center gap-2 mt-4 mb-2 first:mt-0">
-                  <MapPin className="w-3.5 h-3.5 text-green-400" />
-                  <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wider">{location}</h3>
-                  <span className="text-[10px] text-muted">({accts.length})</span>
-                </div>
-                {accts.map((account, idx) => (
-                  <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} isLive={true} />
-                ))}
-              </div>
-            ));
-          }
-
-          // Default: flat list
-          return filtered.map((account, idx) => (
-            <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} isLive={mode === 'live'} />
-          ));
-        })()}
-      </div>
     </div>
   );
 }
