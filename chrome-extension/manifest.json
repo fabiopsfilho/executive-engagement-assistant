@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AWS T&C Executive Engagement Advisor",
+  "version": "1.0.0",
+  "description": "Get AI-powered T&C engagement insights for any Salesforce account",
+  "permissions": ["activeTab", "sidePanel", "storage"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "T&C Engagement Advisor"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.lightning.force.com/*", "https://*.salesforce.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

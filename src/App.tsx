@@ -22,6 +22,20 @@ export default function App() {
   const [insightPopup, setInsightPopup] = useState<'now' | 'buzz' | null>(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
 
+  // Check URL params for direct account selection (used by Chrome extension)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accountName = params.get('account');
+    if (accountName) {
+      // Try to find in demo accounts first
+      const found = accounts.find(a => a.customer_name.toLowerCase() === accountName.toLowerCase());
+      if (found) {
+        setAccount(found);
+      }
+      // If not found in demo, the AccountSelector will handle it via S3 data
+    }
+  }, []);
+
   // When a live account is selected with empty intelligence, fetch from Bedrock
   useEffect(() => {
     if (!account) return;
