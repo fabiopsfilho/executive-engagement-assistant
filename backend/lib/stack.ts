@@ -41,7 +41,7 @@ class EngagementAssistantStack extends cdk.Stack {
       ACCOUNTS_TABLE: accountsTable.tableName,
       INTELLIGENCE_CACHE_TABLE: intelligenceCache.tableName,
       CONVERSATIONS_TABLE: conversationsTable.tableName,
-      BEDROCK_MODEL_ID: 'anthropic.claude-sonnet-4-20250514',
+      BEDROCK_MODEL_ID: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
       BEDROCK_REGION: 'us-east-1',
     };
 
