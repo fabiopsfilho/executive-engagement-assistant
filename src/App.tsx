@@ -178,9 +178,12 @@ export default function App() {
                     </div>
                     <div>
                       <span className="text-xs font-semibold text-muted uppercase">Ask right now</span>
-                      <p className="text-xs text-slate-300 mt-1">→ Who is the executive sponsor?</p>
-                      <p className="text-xs text-slate-300 mt-1">→ Timeline pressure on {account.sfdc_data.account_plan_priority}?</p>
-                      <p className="text-xs text-slate-300 mt-1">→ {!account.tc_current_state.skill_builder ? 'Which teams are most critical?' : 'Why has training stalled?'}</p>
+                      {account.signals.length > 0 && (
+                        <p className="text-xs text-slate-300 mt-1">→ {account.signals[0].label === 'Talent War' ? `How are you planning to close the ${account.public_intelligence.linkedin_job_postings.cloud_ai_roles || ''} cloud/AI talent gaps?` : account.signals[0].label === 'T2K Account' ? `What's your biggest skills bottleneck on ${account.sfdc_data.account_plan_priority}?` : account.signals[0].label === 'Greenfield T&C' ? `What structured workforce development have you explored so far?` : `What's driving the urgency on ${account.sfdc_data.account_plan_priority}?`}</p>
+                      )}
+                      <p className="text-xs text-slate-300 mt-1">→ {account.public_intelligence.executive_social.length > 0 ? `${account.public_intelligence.executive_social[0].name} mentioned "${account.public_intelligence.executive_social[0].post_theme.slice(0, 50)}" — how does that connect to your cloud strategy?` : `Who on your leadership team is championing workforce development?`}</p>
+                      <p className="text-xs text-slate-300 mt-1">→ {account.ebc_data.themes[0] ? `For the upcoming ${account.ebc_data.themes[0].split(':')[0]} — what does success look like in 12 months?` : `What would it take to accelerate your ${account.sfdc_data.smgs_phase} phase?`}</p>
+                      <p className="text-xs text-slate-300 mt-1">→ {account.public_intelligence.glassdoor_signals.length > 0 ? `Your teams are saying "${account.public_intelligence.glassdoor_signals[0].slice(0, 60)}" — how are you addressing that?` : `Where are the skills gaps slowing down delivery right now?`}</p>
                     </div>
                   </div>
                 )}

@@ -224,7 +224,7 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
             <Globe className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
             <div>
               <span className="text-sm font-medium text-white">What's happening in their world?</span>
-              <p className="text-xs text-muted mt-0.5">{a.public_intelligence.industry_context.split(';')[0]}.</p>
+              <p className="text-xs text-muted mt-0.5">{a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.</p>
               <ConnectionToggle text={`Buzz: Industry trends & news. Agenda: Welcome & Intelligence Briefing. Now: Frames urgency.`} />
             </div>
           </div>
