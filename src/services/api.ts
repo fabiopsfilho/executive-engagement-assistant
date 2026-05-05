@@ -13,6 +13,22 @@ export function isBackendAvailable(): boolean {
   return !!API_URL;
 }
 
+// ─── Load EBC Data from S3 ───────────────────────────────────────────────────
+
+export async function loadEBCDataFromS3(): Promise<string | null> {
+  if (!API_URL) return null;
+  try {
+    const response = await fetch(`${API_URL}/ebc-data`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.csv || null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface EngagementPlanResponse {

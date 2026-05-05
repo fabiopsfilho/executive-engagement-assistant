@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Search, Building2, MapPin, Calendar, Upload, Database, FlaskConical } from 'lucide-react';
 import type { Account } from '../types';
 import { parseEBCCsv, ebcRecordsToAccounts } from '../services/csvParser';
+import { isBackendAvailable, loadEBCDataFromS3 } from '../services/api';
 
 function fmt(n: number) {
   if (n === 0) return '—';
@@ -23,6 +24,19 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
     a.industry.toLowerCase().includes(search.toLowerCase()) ||
     a.geo.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Auto-load EBC data from S3 when switching to Live mode
+  useEffect(() => {
+    if (mode !== 'live' || csvLoaded || !isBackendAvailable()) return;
+    loadEBCDataFromS3().then(csv => {
+      if (csv) {
+        const records = parseEBCCsv(csv);
+        const parsed = ebcRecordsToAccounts(records);
+        setLiveAccounts(parsed);
+        setCsvLoaded(true);
+      }
+    });
+  }, [mode]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

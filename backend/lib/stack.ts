@@ -3,6 +3,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -36,6 +37,18 @@ class EngagementAssistantStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // ─── S3 Bucket for EBC Data ────────────────────────────────────────
+    const ebcDataBucket = new s3.Bucket(this, 'EBCDataBucket', {
+      bucketName: `engagement-assistant-ebc-data-${this.account}`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      cors: [{
+        allowedMethods: [s3.HttpMethods.GET],
+        allowedOrigins: ['*'],
+        allowedHeaders: ['*'],
+      }],
+    });
+
     // ─── Shared Lambda Environment ──────────────────────────────────────
     const sharedEnv = {
       ACCOUNTS_TABLE: accountsTable.tableName,
@@ -43,6 +56,8 @@ class EngagementAssistantStack extends cdk.Stack {
       CONVERSATIONS_TABLE: conversationsTable.tableName,
       BEDROCK_MODEL_ID: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
       BEDROCK_REGION: 'us-east-1',
+      EBC_DATA_BUCKET: ebcDataBucket.bucketName,
+      EBC_DATA_KEY: 'ebc-calendar.csv',
     };
 
     // ─── Bedrock IAM Policy ─────────────────────────────────────────────
@@ -120,13 +135,25 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 7. Load EBC Data from S3
+    const ebcDataFn = new NodejsFunction(this, 'EBCDataFn', {
+      functionName: 'engagement-assistant-ebc-data',
+      entry: path.join(__dirname, '../lambdas/ebc-data/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
       intelligenceCache.grantReadWriteData(fn);
       conversationsTable.grantReadWriteData(fn);
+      ebcDataBucket.grantRead(fn);
     }
 
     // ─── API Gateway ────────────────────────────────────────────────────
@@ -168,10 +195,19 @@ class EngagementAssistantStack extends cdk.Stack {
     const pitch = account.addResource('pitch');
     pitch.addMethod('POST', new apigateway.LambdaIntegration(pitchFn));
 
+    // GET /ebc-data (load EBC calendar from S3)
+    const ebcData = api.root.addResource('ebc-data');
+    ebcData.addMethod('GET', new apigateway.LambdaIntegration(ebcDataFn));
+
     // ─── Outputs ────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: api.url,
       description: 'API Gateway URL',
+    });
+
+    new cdk.CfnOutput(this, 'EBCDataBucketName', {
+      value: ebcDataBucket.bucketName,
+      description: 'S3 bucket for EBC calendar CSV — drop your file here',
     });
   }
 }
