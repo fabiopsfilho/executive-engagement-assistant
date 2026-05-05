@@ -28,7 +28,7 @@ export async function invokeClaudeJSON<T>(
   });
 
   const command = new InvokeModelCommand({
-    modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-5-20250929-v1:0',
+    modelId: process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
     contentType: 'application/json',
     accept: 'application/json',
     body: new TextEncoder().encode(body),
@@ -69,7 +69,7 @@ export async function invokeClaudeText(
   });
 
   const command = new InvokeModelCommand({
-    modelId: process.env.BEDROCK_MODEL_ID || 'anthropic.claude-sonnet-4-5-20250929-v1:0',
+    modelId: process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
     contentType: 'application/json',
     accept: 'application/json',
     body: new TextEncoder().encode(body),

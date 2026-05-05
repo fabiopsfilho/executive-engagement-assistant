@@ -41,7 +41,7 @@ class EngagementAssistantStack extends cdk.Stack {
       ACCOUNTS_TABLE: accountsTable.tableName,
       INTELLIGENCE_CACHE_TABLE: intelligenceCache.tableName,
       CONVERSATIONS_TABLE: conversationsTable.tableName,
-      BEDROCK_MODEL_ID: 'anthropic.claude-sonnet-4-5-20250929-v1:0',
+      BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
       BEDROCK_REGION: 'us-east-1',
     };
 
@@ -49,7 +49,7 @@ class EngagementAssistantStack extends cdk.Stack {
     const bedrockPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: ['arn:aws:bedrock:*::foundation-model/*'],
+      resources: ['arn:aws:bedrock:*::foundation-model/*', 'arn:aws:bedrock:*:*:inference-profile/*'],
     });
 
     // ─── Lambda Functions ───────────────────────────────────────────────
