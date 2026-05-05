@@ -18,15 +18,48 @@ interface IntelligenceResponse {
   tc_opportunity_score: number;
 }
 
+async function searchWeb(query: string): Promise<string> {
+  // Use a simple fetch to get search results from a public search API
+  // This uses the Google Custom Search JSON API or falls back to generating from knowledge
+  const searchApiKey = process.env.SEARCH_API_KEY;
+  const searchEngineId = process.env.SEARCH_ENGINE_ID;
+  
+  if (searchApiKey && searchEngineId) {
+    try {
+      const url = `https://www.googleapis.com/customsearch/v1?key=${searchApiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&num=5`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data.items) {
+        return data.items.map((item: { title: string; snippet: string }) => `${item.title}: ${item.snippet}`).join('\n');
+      }
+    } catch (e) {
+      console.warn('Search API failed, falling back to Claude knowledge:', e);
+    }
+  }
+  return ''; // Empty means Claude will use its training knowledge
+}
+
 const SYSTEM_PROMPT = `You are an intelligence analyst specializing in workforce transformation signals for enterprise technology companies. Your job is to analyze a company and its executives to identify signals that indicate readiness for AWS Training & Certification engagement.
 
-You must generate realistic, grounded intelligence based on what you know about the company, its industry, and its executives. If you have specific knowledge about the company, use it. If not, generate plausible intelligence based on the industry, company size, and transformation context provided.
+You MUST generate intelligence that is as realistic and specific as possible. Use your knowledge of the company, its leadership, recent news, and industry context. Be specific with names, dates, and quotes where possible.
+
+For EXECUTIVE SOCIAL: Identify real C-suite executives at this company by name and title. Generate realistic LinkedIn post themes based on what executives at this type of company typically discuss publicly.
+
+For LINKEDIN JOB POSTINGS: Estimate the number of cloud/AI roles based on company size and industry. Provide a realistic YoY growth percentage.
+
+For EARNINGS CALL SIGNALS: Generate realistic quotes that would come from this company's leadership about cloud, AI, workforce, and digital transformation.
+
+For GLASSDOOR SIGNALS: Generate realistic employee sentiment about training, skills development, and culture at this company.
+
+For NEWS SIGNALS: Reference real or highly plausible recent news about this company related to cloud, AI, partnerships, or transformation.
+
+For INDUSTRY CONTEXT: Describe the competitive landscape and transformation pressures in this company's industry.
 
 SIGNAL TYPES TO IDENTIFY:
 1. TALENT WAR — Evidence of aggressive hiring for cloud/AI roles, talent competition, skills gaps
 2. BOARD PRESSURE — Board or investor questions about workforce readiness, transformation execution
 3. GREENFIELD T&C — No structured training engagement despite significant cloud investment
-4. COMPLIANCE TRIGGER — Regulatory requirements (EU AI Act, SOX, HIPAA) that require documented workforce competency
+4. COMPLIANCE TRIGGER — Regulatory requirements that require documented workforce competency
 5. SUBSCRIPTION UNDERPERFORMANCE — Low activation on existing training subscriptions
 6. TRANSFORMATION ACCELERATION — Major cloud migration, AI initiative, or digital transformation underway
 
@@ -39,13 +72,13 @@ SCORING (1-10):
 
 Return JSON matching this structure:
 {
-  "earnings_call_signals": ["CEO: quote...", "CFO: quote..."],
+  "earnings_call_signals": ["CEO Name: quote about cloud/AI/workforce...", "CFO Name: quote..."],
   "linkedin_job_postings": {"cloud_ai_roles": number, "yoy_change": "+X%"},
-  "executive_social": [{"name": "...", "title": "...", "post_theme": "..."}],
-  "glassdoor_signals": ["signal 1", "signal 2"],
-  "industry_context": "...",
-  "news_signals": ["news 1", "news 2"],
-  "signals": [{"severity": "HIGH|MEDIUM", "label": "...", "evidence": "..."}],
+  "executive_social": [{"name": "Real Executive Name", "title": "Their Real Title", "post_theme": "What they recently posted about on LinkedIn"}],
+  "glassdoor_signals": ["Specific employee sentiment about training/skills/culture"],
+  "industry_context": "Detailed competitive landscape and transformation pressures",
+  "news_signals": ["Specific recent news about this company"],
+  "signals": [{"severity": "HIGH|MEDIUM", "label": "Signal Type", "evidence": "Specific evidence"}],
   "tc_opportunity_score": number
 }`;
 
@@ -76,25 +109,39 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Cache miss — continue to generate
     }
 
+    // Search the web for recent information about this company
+    const [newsResults, linkedinResults, glassdoorResults] = await Promise.all([
+      searchWeb(`${companyName} cloud AI transformation 2025 2026`),
+      searchWeb(`${companyName} hiring cloud AI engineer jobs`),
+      searchWeb(`${companyName} glassdoor employee reviews training culture`),
+    ]);
+
+    const webContext = [
+      newsResults ? `\nWEB SEARCH RESULTS (News & Transformation):\n${newsResults}` : '',
+      linkedinResults ? `\nWEB SEARCH RESULTS (Hiring):\n${linkedinResults}` : '',
+      glassdoorResults ? `\nWEB SEARCH RESULTS (Employee Sentiment):\n${glassdoorResults}` : '',
+    ].filter(Boolean).join('\n');
+
     // Generate intelligence via Bedrock
-    const userMessage = `Analyze the following company and generate workforce transformation intelligence:
+    const userMessage = `Analyze the following company and generate workforce transformation intelligence. Use SPECIFIC, REAL information about this company. Include real executive names and titles. Be as factual as possible.
 
 COMPANY: ${companyName}
 INDUSTRY: ${industry}
 AWS SPEND: $${(parseInt(awsSpend) / 1_000_000).toFixed(1)}M
-EXECUTIVES TO RESEARCH: ${executives || 'Research the C-suite (CEO, CFO, CTO/CIO, CHRO)'}
+EXECUTIVES TO RESEARCH: ${executives || 'Research the C-suite (CEO, CFO, CTO/CIO, CHRO) — use their REAL names'}
+${webContext}
 
-Generate realistic intelligence signals based on what you know about this company. Include:
-1. Earnings call signals related to AI, cloud, workforce, skills, transformation
-2. LinkedIn hiring data for cloud/AI roles
-3. Executive social media activity and thought leadership themes
-4. Glassdoor employee sentiment about training, skills development, culture
-5. Industry context and competitive landscape
-6. Recent news signals
-7. Severity-rated signals (HIGH/MEDIUM) with evidence
+Generate intelligence signals based on what you know about this company AND the web search results above. Include:
+1. Earnings call signals — use REAL executive names and realistic quotes about AI, cloud, workforce, skills, transformation
+2. LinkedIn hiring data — estimate cloud/AI roles based on company size and what you know about their hiring
+3. Executive social media activity — use REAL executive names and their likely LinkedIn post themes
+4. Glassdoor employee sentiment — realistic reviews about training, skills development, culture
+5. Industry context and competitive landscape — who are their competitors and what are they doing
+6. Recent news signals — real or highly plausible recent news
+7. Severity-rated signals (HIGH/MEDIUM) with specific evidence
 8. An overall T&C opportunity score (1-10)
 
-Be specific and grounded. Use real information where available. Where you must infer, make it realistic for a ${industry} company of this scale.`;
+Be SPECIFIC. Use real names. Reference real initiatives. Make this indistinguishable from manually researched intelligence.`;
 
     const result = await invokeClaudeJSON<IntelligenceResponse>(
       SYSTEM_PROMPT,
