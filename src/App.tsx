@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, FileText, BookOpen, Bot, Zap, Megaphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, FileText, BookOpen, Bot, Zap, Megaphone, Loader2 } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
 import { AccountSelector } from './components/AccountSelector';
@@ -9,6 +9,7 @@ import { AdvisorChat } from './components/AdvisorChat';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
+import { isBackendAvailable, getIntelligence } from './services/api';
 
 type MainTab = 'brief' | 'summary' | 'advisor';
 
@@ -19,6 +20,61 @@ export default function App() {
   const [showScore, setShowScore] = useState(false);
   const [showPersonaPicker, setShowPersonaPicker] = useState(false);
   const [insightPopup, setInsightPopup] = useState<'now' | 'buzz' | null>(null);
+  const [loadingIntel, setLoadingIntel] = useState(false);
+
+  // When a live account is selected with empty intelligence, fetch from Bedrock
+  useEffect(() => {
+    if (!account) return;
+    const hasIntel = account.public_intelligence.earnings_call_signals.length > 1 ||
+      account.public_intelligence.executive_social.length > 0 ||
+      account.public_intelligence.linkedin_job_postings.cloud_ai_roles > 0;
+
+    if (!hasIntel && isBackendAvailable()) {
+      setLoadingIntel(true);
+      getIntelligence(
+        account.customer_name,
+        account.industry,
+        account.aws_spend.current_year,
+        account.ebc_data.attendees.map(a => `${a.name} (${a.title})`).join(', ')
+      ).then(intel => {
+        setAccount(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            public_intelligence: {
+              earnings_call_signals: intel.earnings_call_signals || prev.public_intelligence.earnings_call_signals,
+              linkedin_job_postings: intel.linkedin_job_postings || prev.public_intelligence.linkedin_job_postings,
+              executive_social: intel.executive_social || prev.public_intelligence.executive_social,
+              glassdoor_signals: intel.glassdoor_signals || prev.public_intelligence.glassdoor_signals,
+              industry_context: intel.industry_context || prev.public_intelligence.industry_context,
+              news_signals: intel.news_signals || prev.public_intelligence.news_signals,
+            },
+            signals: intel.signals && intel.signals.length > 0 ? intel.signals : prev.signals,
+            tc_opportunity_score: intel.tc_opportunity_score || prev.tc_opportunity_score,
+            ebc_data: {
+              ...prev.ebc_data,
+              attendees: intel.executive_social && intel.executive_social.length > 0
+                ? intel.executive_social.map(e => ({
+                    name: e.name,
+                    title: e.title,
+                    persona: (e.title.includes('CEO') ? 'CEO' :
+                      e.title.includes('CFO') || e.title.includes('Finance') ? 'CFO' :
+                      e.title.includes('CTO') || e.title.includes('Technology') ? 'CTO' :
+                      e.title.includes('CIO') || e.title.includes('Information') ? 'CIO' :
+                      e.title.includes('CHRO') || e.title.includes('People') || e.title.includes('Human') ? 'CHRO' :
+                      'Other') as 'CEO' | 'CFO' | 'CTO' | 'CIO' | 'CHRO' | 'Other',
+                  }))
+                : prev.ebc_data.attendees,
+            },
+          };
+        });
+      }).catch(err => {
+        console.warn('Failed to fetch intelligence:', err);
+      }).finally(() => {
+        setLoadingIntel(false);
+      });
+    }
+  }, [account?.customer_name]);
 
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
@@ -77,6 +133,12 @@ export default function App() {
           </div>
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
+            {loadingIntel && (
+              <div className="absolute top-full left-0 right-0 flex items-center justify-center gap-2 py-1.5 bg-blue-500/10 border-b border-blue-500/20 z-10">
+                <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
+                <span className="text-[10px] text-blue-400">Researching {account.customer_name}...</span>
+              </div>
+            )}
             <button onClick={() => setInsightPopup(insightPopup === 'now' ? null : 'now')}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'now' ? 'text-blue-400' : 'text-muted'}`}>
               <Zap className="w-4 h-4" />
