@@ -4,14 +4,12 @@ import type { Account } from '../types';
 import { parseEBCCsv, ebcRecordsToAccounts } from '../services/csvParser';
 import { isBackendAvailable, loadEBCDataFromS3 } from '../services/api';
 
-function fmt(n: number) {
-  if (n === 0) return '—';
-  return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : `${n}`;
-}
-
 function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect: (a: Account) => void; isLive: boolean }) {
   const nextEbc = account.ebc_data.meeting_dates[0];
   const daysUntilEbc = nextEbc ? Math.ceil((new Date(nextEbc).getTime() - Date.now()) / 86400000) : null;
+  const ebcStart = account.ebc_data.meeting_dates[0];
+  // Calculate EBC duration from the data if available
+  const ebcDate = ebcStart ? new Date(ebcStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
     <button onClick={() => onSelect(account)}
@@ -19,9 +17,12 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-white truncate">{account.customer_name}</h3>
-          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted">
+          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted flex-wrap">
             <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{account.industry}</span>
-            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{account.geo}</span>
+            <span className="text-dark-600">·</span>
+            <span>{account.segment}</span>
+            <span className="text-dark-600">·</span>
+            <span>{account.geo}</span>
             {isLive && <span className="text-[10px] px-1.5 py-0.5 bg-green-500/15 text-green-400 rounded">LIVE</span>}
           </div>
         </div>
@@ -29,18 +30,21 @@ function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect
           {account.tc_opportunity_score}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1.5 mb-2">
+      {/* EBC info bar */}
+      {ebcDate && (
+        <div className="flex items-center gap-3 mb-2 text-[11px]">
+          <span className="flex items-center gap-1 text-blue-400"><Calendar className="w-3 h-3" />{ebcDate}</span>
+          {daysUntilEbc !== null && <span className="text-muted">{daysUntilEbc > 0 ? `in ${daysUntilEbc} days` : daysUntilEbc === 0 ? 'Today' : `${Math.abs(daysUntilEbc)}d ago`}</span>}
+          <span className="flex items-center gap-1 text-muted"><MapPin className="w-3 h-3" />{account.ebc_data.location}</span>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5">
         {account.signals.slice(0, 3).map(s => (
           <span key={s.label} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
             s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'
           }`}>{s.label}</span>
         ))}
-      </div>
-      <div className="flex items-center gap-4 text-[11px] text-muted">
-        {account.aws_spend.current_year > 0 && <span>{fmt(account.aws_spend.current_year)} spend</span>}
-        <span>{account.segment}</span>
-        {daysUntilEbc !== null && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />EBC {daysUntilEbc > 0 ? `in ${daysUntilEbc}d` : 'today'}</span>}
-        {!account.tc_current_state.skill_builder && account.sfdc_data.smgs_phase === 'Greenfield' && <span className="text-orange-400">Greenfield</span>}
+        {!account.tc_current_state.skill_builder && account.sfdc_data.smgs_phase === 'Greenfield' && <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 font-medium">Greenfield</span>}
       </div>
     </button>
   );
@@ -59,8 +63,9 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
 
   const activeAccounts = mode === 'demo' ? accounts : liveAccounts;
 
-  // Get unique geos
-  const geos = [...new Set(activeAccounts.map(a => a.geo))].sort();
+  // Get unique geos — only show real geo names, not business units
+  const validGeos = ['NAMER', 'EMEA', 'APJ', 'LATAM', 'GFS', 'GCR'];
+  const geos = [...new Set(activeAccounts.map(a => a.geo))].filter(g => validGeos.includes(g)).sort();
 
   // Get briefing centers filtered by selected geo
   const locationsForGeo = geoFilter === 'all'
