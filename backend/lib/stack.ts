@@ -146,8 +146,19 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 8. Load T&C Opportunity Data from S3 (xlsx)
+    const tcDataFn = new NodejsFunction(this, 'TCDataFn', {
+      functionName: 'engagement-assistant-tc-data',
+      entry: path.join(__dirname, '../lambdas/tc-data/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 512,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -198,6 +209,10 @@ class EngagementAssistantStack extends cdk.Stack {
     // GET /ebc-data (load EBC calendar from S3)
     const ebcData = api.root.addResource('ebc-data');
     ebcData.addMethod('GET', new apigateway.LambdaIntegration(ebcDataFn));
+
+    // GET /tc-data (load T&C opportunities from S3)
+    const tcData = api.root.addResource('tc-data');
+    tcData.addMethod('GET', new apigateway.LambdaIntegration(tcDataFn));
 
     // ─── Outputs ────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ApiUrl', {
