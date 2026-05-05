@@ -5,6 +5,7 @@ import { engagementPlans } from '../data/engagementPlans';
 import { PersonaStory } from './PersonaStory';
 import { PitchView } from './PitchView';
 import { AgendaView } from './AgendaView';
+import { isBackendAvailable, sendRolePlayMessage } from '../services/api';
 
 type Tab = 'conversation' | 'story' | 'pitch' | 'agenda';
 
@@ -87,10 +88,48 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
     const q = chatInput.trim();
     if (!q) return;
     setChatMessages(prev => [...prev, { role: 'you', text: q }]);
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { role: 'persona', text: getRolePlayResponse(q, account, persona) }]);
-    }, 400);
     setChatInput('');
+
+    if (isBackendAvailable()) {
+      // Use real Bedrock-powered role-play
+      const social = account.public_intelligence.executive_social.find(e => e.name === persona.name);
+      const history = chatMessages.map(m => ({
+        role: m.role === 'you' ? 'user' as const : 'assistant' as const,
+        content: m.text,
+      }));
+      sendRolePlayMessage(
+        q,
+        history,
+        { name: persona.name, title: persona.title, persona: persona.persona },
+        {
+          customer_name: account.customer_name,
+          industry: account.industry,
+          aws_spend_current: account.aws_spend.current_year,
+          ppa: account.aws_spend.ppa,
+          account_plan_priority: account.sfdc_data.account_plan_priority,
+          open_opps: account.sfdc_data.open_opps,
+          linkedin_roles: account.public_intelligence.linkedin_job_postings.cloud_ai_roles,
+          linkedin_yoy: account.public_intelligence.linkedin_job_postings.yoy_change,
+          executive_social_theme: social?.post_theme,
+          glassdoor_signals: account.public_intelligence.glassdoor_signals,
+          earnings_signals: account.public_intelligence.earnings_call_signals,
+          tc_state: account.tc_current_state.skill_builder
+            ? `${account.tc_current_state.skill_builder_seats} Skill Builder seats at ${account.tc_current_state.activation_rate}% activation`
+            : `Greenfield — ${account.tc_current_state.certifications} organic certs, no structured program`,
+          industry_context: account.public_intelligence.industry_context,
+        }
+      ).then(result => {
+        setChatMessages(prev => [...prev, { role: 'persona', text: result.response }]);
+      }).catch(() => {
+        // Fallback to mock
+        setChatMessages(prev => [...prev, { role: 'persona', text: getRolePlayResponse(q, account, persona) }]);
+      });
+    } else {
+      // Use mock role-play
+      setTimeout(() => {
+        setChatMessages(prev => [...prev, { role: 'persona', text: getRolePlayResponse(q, account, persona) }]);
+      }, 400);
+    }
   };
 
   const addNote = () => {

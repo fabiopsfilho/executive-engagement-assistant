@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot } from 'lucide-react';
 import type { Account } from '../types';
+import { isBackendAvailable, sendAdvisorMessage } from '../services/api';
 
 function fmt(n: number) {
   return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${(n / 1_000).toFixed(0)}K` : `$${n}`;
@@ -88,10 +89,46 @@ export function AdvisorChat({ account }: { account: Account }) {
     const q = (text || input).trim();
     if (!q) return;
     setMessages(prev => [...prev, { role: 'user', text: q }]);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'advisor', text: getResponse(q, account) }]);
-    }, 300);
     setInput('');
+
+    if (isBackendAvailable()) {
+      // Use real Bedrock-powered advisor
+      const history = messages.map(m => ({
+        role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+        content: m.text,
+      }));
+      const isGreenfield = !account.tc_current_state.skill_builder;
+      sendAdvisorMessage(
+        q,
+        history,
+        {
+          customer_name: account.customer_name,
+          industry: account.industry,
+          segment: account.segment,
+          aws_spend_current: account.aws_spend.current_year,
+          ppa: account.aws_spend.ppa,
+          account_plan_priority: account.sfdc_data.account_plan_priority,
+          open_opps: account.sfdc_data.open_opps,
+          t2k: account.sfdc_data.t2k,
+          smgs_phase: account.sfdc_data.smgs_phase,
+          tc_state: isGreenfield
+            ? `Greenfield — ${account.tc_current_state.certifications} organic certs, no structured program`
+            : `${account.tc_current_state.skill_builder_seats} seats at ${account.tc_current_state.activation_rate}% activation, renewal ${account.tc_current_state.renewal_date}`,
+          signals: account.signals.map(s => ({ label: s.label, severity: s.severity, evidence: s.evidence })),
+          public_intelligence_summary: `${account.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${account.public_intelligence.linkedin_job_postings.yoy_change} YoY). Earnings: ${account.public_intelligence.earnings_call_signals[0] || 'N/A'}. Executive social: ${account.public_intelligence.executive_social.map(e => `${e.name}: "${e.post_theme}"`).join('; ')}. Glassdoor: ${account.public_intelligence.glassdoor_signals[0] || 'N/A'}. Industry: ${account.public_intelligence.industry_context}`,
+        }
+      ).then(result => {
+        setMessages(prev => [...prev, { role: 'advisor', text: result.response }]);
+      }).catch(() => {
+        // Fallback to mock
+        setMessages(prev => [...prev, { role: 'advisor', text: getResponse(q, account) }]);
+      });
+    } else {
+      // Use mock advisor
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'advisor', text: getResponse(q, account) }]);
+      }, 300);
+    }
   };
 
   return (
