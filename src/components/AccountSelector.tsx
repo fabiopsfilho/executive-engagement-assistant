@@ -9,6 +9,43 @@ function fmt(n: number) {
   return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(0)}K` : `${n}`;
 }
 
+function AccountCard({ account, onSelect, isLive }: { account: Account; onSelect: (a: Account) => void; isLive: boolean }) {
+  const nextEbc = account.ebc_data.meeting_dates[0];
+  const daysUntilEbc = nextEbc ? Math.ceil((new Date(nextEbc).getTime() - Date.now()) / 86400000) : null;
+
+  return (
+    <button onClick={() => onSelect(account)}
+      className="w-full text-left p-4 bg-dark-800 border border-dark-600 rounded-xl active:bg-dark-700 transition-colors mb-2.5">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-white truncate">{account.customer_name}</h3>
+          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted">
+            <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{account.industry}</span>
+            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{account.geo}</span>
+            {isLive && <span className="text-[10px] px-1.5 py-0.5 bg-green-500/15 text-green-400 rounded">LIVE</span>}
+          </div>
+        </div>
+        <div className={`w-10 h-10 rounded-xl ${account.tc_opportunity_score >= 8 ? 'bg-green-500' : account.tc_opportunity_score >= 6 ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+          {account.tc_opportunity_score}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {account.signals.slice(0, 3).map(s => (
+          <span key={s.label} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'
+          }`}>{s.label}</span>
+        ))}
+      </div>
+      <div className="flex items-center gap-4 text-[11px] text-muted">
+        {account.aws_spend.current_year > 0 && <span>{fmt(account.aws_spend.current_year)} spend</span>}
+        <span>{account.segment}</span>
+        {daysUntilEbc !== null && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />EBC {daysUntilEbc > 0 ? `in ${daysUntilEbc}d` : 'today'}</span>}
+        {!account.tc_current_state.skill_builder && account.sfdc_data.smgs_phase === 'Greenfield' && <span className="text-orange-400">Greenfield</span>}
+      </div>
+    </button>
+  );
+}
+
 type DataMode = 'demo' | 'live';
 
 export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; onSelect: (a: Account) => void }) {
@@ -160,43 +197,35 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
       )}
 
       <div className="space-y-2.5">
-        {filtered.map((account, idx) => {
-          const nextEbc = account.ebc_data.meeting_dates[0];
-          const daysUntilEbc = nextEbc ? Math.ceil((new Date(nextEbc).getTime() - Date.now()) / 86400000) : null;
-          const isLive = mode === 'live';
+        {(() => {
+          // Group by briefing center when no specific location is selected
+          if (mode === 'live' && csvLoaded && locationFilter === 'all') {
+            const grouped = new Map<string, typeof filtered>();
+            for (const account of filtered) {
+              const loc = account.ebc_data.location || 'Unknown';
+              if (!grouped.has(loc)) grouped.set(loc, []);
+              grouped.get(loc)!.push(account);
+            }
 
-          return (
-            <button key={`${account.customer_name}-${idx}`} onClick={() => onSelect(account)}
-              className="w-full text-left p-4 bg-dark-800 border border-dark-600 rounded-xl active:bg-dark-700 transition-colors">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-white truncate">{account.customer_name}</h3>
-                  <div className="flex items-center gap-3 mt-0.5 text-xs text-muted">
-                    <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{account.industry}</span>
-                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{account.geo}</span>
-                    {isLive && <span className="text-[10px] px-1.5 py-0.5 bg-green-500/15 text-green-400 rounded">LIVE</span>}
-                  </div>
+            return [...grouped.entries()].map(([location, accts]) => (
+              <div key={location}>
+                <div className="flex items-center gap-2 mt-4 mb-2 first:mt-0">
+                  <MapPin className="w-3.5 h-3.5 text-green-400" />
+                  <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wider">{location}</h3>
+                  <span className="text-[10px] text-muted">({accts.length})</span>
                 </div>
-                <div className={`w-10 h-10 rounded-xl ${account.tc_opportunity_score >= 8 ? 'bg-green-500' : account.tc_opportunity_score >= 6 ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
-                  {account.tc_opportunity_score}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {account.signals.slice(0, 3).map(s => (
-                  <span key={s.label} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'
-                  }`}>{s.label}</span>
+                {accts.map((account, idx) => (
+                  <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} isLive={true} />
                 ))}
               </div>
-              <div className="flex items-center gap-4 text-[11px] text-muted">
-                {account.aws_spend.current_year > 0 && <span>{fmt(account.aws_spend.current_year)} spend</span>}
-                <span>{account.segment}</span>
-                {daysUntilEbc !== null && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />EBC {daysUntilEbc > 0 ? `in ${daysUntilEbc}d` : 'today'}</span>}
-                {!account.tc_current_state.skill_builder && account.sfdc_data.smgs_phase === 'Greenfield' && <span className="text-orange-400">Greenfield</span>}
-              </div>
-            </button>
-          );
-        })}
+            ));
+          }
+
+          // Default: flat list
+          return filtered.map((account, idx) => (
+            <AccountCard key={`${account.customer_name}-${idx}`} account={account} onSelect={onSelect} isLive={mode === 'live'} />
+          ));
+        })()}
       </div>
     </div>
   );
