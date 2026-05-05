@@ -116,6 +116,35 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       searchWeb(`${companyName} glassdoor employee reviews training culture`),
     ]);
 
+    // Also try to read T&C opportunity data from S3 for this account
+    let tcContext = '';
+    try {
+      const { S3Client: S3, GetObjectCommand: GetObj } = await import('@aws-sdk/client-s3');
+      const s3Client = new S3({});
+      const xlsxMod = await import('xlsx');
+      const tcResponse = await s3Client.send(new GetObj({ Bucket: process.env.EBC_DATA_BUCKET!, Key: 'tc-opportunities.xlsx' }));
+      const tcBuffer = await tcResponse.Body?.transformToByteArray();
+      if (tcBuffer) {
+        const wb = xlsxMod.read(tcBuffer, { type: 'buffer' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = xlsxMod.utils.sheet_to_json<Record<string, string | number>>(sheet);
+        const accountRows = rows.filter(r => {
+          const name = String(r['Account Name'] || '').toLowerCase();
+          return name.includes(companyName.toLowerCase()) || companyName.toLowerCase().includes(name);
+        });
+        if (accountRows.length > 0) {
+          const products = [...new Set(accountRows.map(r => String(r['Product Name'] || '')).filter(Boolean))];
+          const totalPipeline = accountRows.filter(r => !['Closed Won', 'Closed Lost'].includes(String(r['Stage'] || ''))).reduce((sum, r) => sum + Number(r['Total Opportunity (converted)'] || 0), 0);
+          const closedWon = accountRows.filter(r => String(r['Stage']) === 'Closed Won').reduce((sum, r) => sum + Number(r['Product Net Amount (converted)'] || 0), 0);
+          const students = accountRows.reduce((sum, r) => sum + Number(r['Number of Students'] || 0), 0);
+          const stages = [...new Set(accountRows.map(r => String(r['Stage'] || '')).filter(Boolean))];
+          tcContext = `\n\nEXISTING T&C ENGAGEMENT DATA FOR THIS ACCOUNT:\n- Products: ${products.join(', ')}\n- Open Pipeline: $${totalPipeline.toLocaleString()}\n- Closed Won Revenue: $${closedWon.toLocaleString()}\n- Total Students Trained: ${students}\n- Opportunity Stages: ${stages.join(', ')}\n- Number of Opportunities: ${accountRows.length}\nUse this data to inform your intelligence analysis. Reference specific products and pipeline when generating signals and recommendations.`;
+        }
+      }
+    } catch (tcErr) {
+      console.warn('Could not read T&C data:', tcErr);
+    }
+
     const webContext = [
       newsResults ? `\nWEB SEARCH RESULTS (News & Transformation):\n${newsResults}` : '',
       linkedinResults ? `\nWEB SEARCH RESULTS (Hiring):\n${linkedinResults}` : '',
@@ -129,7 +158,7 @@ COMPANY: ${companyName}
 INDUSTRY: ${industry}
 AWS SPEND: $${(parseInt(awsSpend) / 1_000_000).toFixed(1)}M
 EXECUTIVES TO RESEARCH: ${executives || 'Research the C-suite (CEO, CFO, CTO/CIO, CHRO) — use their REAL names'}
-${webContext}
+${webContext}${tcContext}
 
 Generate intelligence signals based on what you know about this company AND the web search results above. Include:
 1. Earnings call signals — use REAL executive names and realistic quotes about AI, cloud, workforce, skills, transformation

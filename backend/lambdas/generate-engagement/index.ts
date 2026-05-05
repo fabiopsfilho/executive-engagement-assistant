@@ -115,6 +115,8 @@ TARGET PERSONA:
 
 ${userNotes && userNotes.length > 0 ? `ADDITIONAL CONTEXT FROM SELLER:\n${userNotes.join('\n')}` : ''}
 
+IMPORTANT: When generating conversation starters and recommended plays, reference the T&C current state and any existing training engagement. If they have existing products, build on that. If they're greenfield, lead with assessment and pilot approaches.
+
 Generate the engagement plan. Remember: ground everything in the specific data above. Reference ${persona.name}'s own words and public activity. Make the narrative tell THEIR story, not ours.`;
 
     const result = await invokeClaudeJSON<EngagementPlanResponse>(

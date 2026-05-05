@@ -292,3 +292,32 @@ export async function generatePitchDeck(
     userNotes,
   });
 }
+
+
+// ─── T&C Opportunity Data ─────────────────────────────────────────────────────
+
+export interface TCAccountSummary {
+  accountId: string;
+  accountName: string;
+  totalPipeline: number;
+  openOpportunities: number;
+  closedWonRevenue: number;
+  products: string[];
+  subscriptionTypes: string[];
+  totalStudents: number;
+  isT2K: boolean;
+}
+
+export async function getTCData(accountId?: string): Promise<{ summaries?: TCAccountSummary[]; summary?: TCAccountSummary | null }> {
+  if (!API_URL) return { summaries: [] };
+  try {
+    const url = accountId
+      ? `${API_URL}/tc-data?accountId=${encodeURIComponent(accountId)}`
+      : `${API_URL}/tc-data`;
+    const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+    if (!response.ok) return { summaries: [] };
+    return response.json();
+  } catch {
+    return { summaries: [] };
+  }
+}
