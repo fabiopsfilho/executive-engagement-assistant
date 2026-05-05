@@ -150,10 +150,47 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
 
   if (!plan) {
     return (
-      <div className="px-4 py-12 text-center">
-        <p className="text-slate-400 text-sm">
-          Engagement plan for {persona.name} ({persona.persona}) will be generated when connected to Amazon Bedrock.
-        </p>
+      <div>
+        {/* Persona hero */}
+        <div className="px-4 pt-4 pb-3">
+          <div className={`bg-gradient-to-r ${gradient} p-[1px] rounded-xl`}>
+            <div className="bg-navy-800 rounded-xl p-3 flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-sm shrink-0`}>
+                {persona.persona}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">{persona.name}</div>
+                <div className="text-[11px] text-slate-400">{persona.title}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Chat-only mode for live accounts without pre-built plans */}
+        <div className="px-4 py-3">
+          <div ref={chatRef} className="space-y-3 max-h-[55vh] overflow-y-auto mb-3">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'you' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 ${
+                  msg.role === 'you'
+                    ? 'bg-amber-500/15 text-amber-200 rounded-br-md'
+                    : `bg-dark-800 border border-dark-600 text-slate-200 rounded-bl-md`
+                }`}>
+                  <p className="text-xs leading-relaxed whitespace-pre-line">{msg.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendChat()}
+              placeholder={`Talk to ${persona.persona} at ${account.customer_name}...`}
+              className="flex-1 px-3.5 py-2.5 bg-dark-800 border border-dark-600 rounded-full text-sm text-white placeholder-muted focus:outline-none focus:border-purple-400/50" />
+            <button onClick={sendChat}
+              className={`w-10 h-10 rounded-full bg-gradient-to-r ${gradient} flex items-center justify-center active:opacity-80 shrink-0`}>
+              <Send className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
