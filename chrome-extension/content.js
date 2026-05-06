@@ -2,68 +2,45 @@
 // Detects the current account name from the page
 
 function detectAccountName() {
-  // Try multiple selectors for Salesforce Lightning / AWSentral
-  const selectors = [
-    // Account record page header (most common)
-    'h1 .slds-page-header__title span',
-    'h1[data-aura-class="forceActionsText"]',
-    'div.entityNameTitle',
-    'span.uiOutputText[data-aura-rendered-by]',
-    // Record highlights - account name
-    'div.slds-page-header__name-title h1 span',
-    'records-entity-label',
-    // Lightning record page title
-    'lightning-formatted-text[data-output-element-id="output-field"]',
-    '.slds-page-header__title .uiOutputText',
-    // Specific to Account pages
-    'div.primaryField span',
-    'h1.slds-page-header__title',
-    'slot[name="primaryField"] lightning-formatted-text',
-    'records-highlights-details-item:first-child lightning-formatted-text',
-    // Breadcrumb with account name
-    'div.slds-page-header__name-title span',
-    'span.custom-truncate',
-    'force-highlights-details-item:first-child .fieldComponent .uiOutputText',
-  ];
-
-  for (const selector of selectors) {
-    const elements = document.querySelectorAll(selector);
-    for (const el of elements) {
-      const text = el.textContent.trim();
-      // Filter out common non-account text
-      if (text && text.length > 2 && text.length < 100 &&
-          !text.includes('Account') && !text.includes('Home') &&
-          !text.includes('Salesforce') && !text.includes('AWSentral') &&
-          !text.includes('Search') && !text.includes('New') &&
-          !text.match(/^\d+$/) && !text.includes('Show Details')) {
-        return text;
-      }
+  // Method 1: Page title (Salesforce sets it to "Account Name | Salesforce")
+  const title = document.title;
+  if (title && title.includes('|')) {
+    const name = title.split('|')[0].trim();
+    if (name && name.length > 2 && name.length < 100 && name !== 'Home') {
+      return name;
     }
   }
 
-  // Try to get from the page URL (account pages have /Account/ in the URL)
-  const urlMatch = window.location.pathname.match(/\/Account\/([a-zA-Z0-9]+)/);
-  if (urlMatch) {
-    // Try to find the account name in the page title
-    const title = document.title.replace(/\s*\|.*$/, '').replace(/\s*-\s*Salesforce.*$/, '').trim();
-    if (title && title.length > 2 && !title.includes('Salesforce') && !title.includes('Home')) {
-      return title;
+  // Method 2: Look for the account name in the record header
+  // Salesforce Lightning uses this structure for account pages
+  const headerEl = document.querySelector('div.entityNameTitle') ||
+    document.querySelector('h1 span') ||
+    document.querySelector('records-entity-label') ||
+    document.querySelector('.slds-page-header__name-title span') ||
+    document.querySelector('slot[name="primaryField"] lightning-formatted-text');
+
+  if (headerEl) {
+    const text = headerEl.textContent.trim();
+    if (text && text.length > 2 && text.length < 100) {
+      return text;
     }
   }
 
-  // Last resort: look for "Account" label followed by the name
-  const allSpans = document.querySelectorAll('span');
-  let foundAccountLabel = false;
-  for (const span of allSpans) {
-    if (foundAccountLabel) {
-      const text = span.textContent.trim();
-      if (text && text.length > 2 && text.length < 100) {
-        return text;
-      }
+  // Method 3: Look for "Account" type indicator followed by name
+  const recordHeader = document.querySelector('records-lwc-highlights-panel');
+  if (recordHeader) {
+    const nameEl = recordHeader.querySelector('lightning-formatted-text') ||
+      recordHeader.querySelector('span[class*="field"]');
+    if (nameEl) {
+      return nameEl.textContent.trim();
     }
-    if (span.textContent.trim() === 'Account') {
-      foundAccountLabel = true;
-    }
+  }
+
+  // Method 4: URL-based detection for account pages
+  if (window.location.pathname.includes('/Account/')) {
+    // Try title without pipe
+    const cleanTitle = title.replace(/\s*\|.*$/, '').replace(/\s*-\s*Salesforce.*$/, '').trim();
+    if (cleanTitle && cleanTitle.length > 2) return cleanTitle;
   }
 
   return null;
