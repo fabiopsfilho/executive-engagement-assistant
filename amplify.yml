@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci --ignore-scripts
+        - npm ci
     build:
       commands:
         - echo "VITE_API_URL=https://gy5b6oev95.execute-api.us-east-1.amazonaws.com/prod" > .env
