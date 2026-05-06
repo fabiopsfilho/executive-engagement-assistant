@@ -40,7 +40,7 @@ export interface Account {
   public_intelligence: {
     earnings_call_signals: string[];
     linkedin_job_postings: { cloud_ai_roles: number; yoy_change: string };
-    executive_social: { name: string; title: string; post_theme: string }[];
+    executive_social: { name: string; title: string; post_theme: string; url?: string }[];
     glassdoor_signals: string[];
     industry_context: string;
     news_signals: string[];

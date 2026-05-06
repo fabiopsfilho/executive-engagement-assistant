@@ -10,7 +10,7 @@ const ddb = DynamoDBDocumentClient.from(ddbClient);
 interface IntelligenceResponse {
   earnings_call_signals: string[];
   linkedin_job_postings: { cloud_ai_roles: number; yoy_change: string };
-  executive_social: { name: string; title: string; post_theme: string }[];
+  executive_social: { name: string; title: string; post_theme: string; url?: string }[];
   glassdoor_signals: string[];
   industry_context: string;
   news_signals: string[];
@@ -20,7 +20,7 @@ interface IntelligenceResponse {
 
 /**
  * Fetch Google search results for a query.
- * Returns titles and snippets from the search results page.
+ * Returns titles, snippets, and URLs from the search results page.
  */
 async function googleSearch(query: string): Promise<string> {
   try {
@@ -35,9 +35,16 @@ async function googleSearch(query: string): Promise<string> {
     if (!response.ok) return '';
     const html = await response.text();
 
-    // Extract text snippets from Google results (simplified parsing)
     const snippets: string[] = [];
-    // Match content between common Google result patterns
+
+    // Extract URLs and snippets from Google results
+    const urlMatches = html.match(/href="\/url\?q=([^&"]+)/g) || [];
+    const urls = urlMatches.map(m => decodeURIComponent(m.replace('href="/url?q=', ''))).filter(u => u.startsWith('http') && !u.includes('google.com'));
+    if (urls.length > 0) {
+      snippets.push(`URLS FOUND: ${urls.slice(0, 5).join(' | ')}`);
+    }
+
+    // Extract text content from result snippets
     const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
     for (const match of matches.slice(0, 10)) {
       const text = match.replace(/<[^>]+>/g, '').trim();
@@ -46,7 +53,7 @@ async function googleSearch(query: string): Promise<string> {
       }
     }
 
-    // Also try to extract from data-sncf or BNeawe patterns (Google result text)
+    // Also extract from BNeawe patterns
     const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
     for (const match of textMatches.slice(0, 8)) {
       const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
@@ -55,17 +62,17 @@ async function googleSearch(query: string): Promise<string> {
       }
     }
 
-    return snippets.slice(0, 8).join('\n');
+    return snippets.slice(0, 10).join('\n');
   } catch (e) {
     console.warn('Google search failed for:', query, e);
     return '';
   }
 }
 
-const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL Google search results about a company. Extract and structure the factual information into JSON. For executive_social, extract REAL executive names and titles from the LinkedIn results — include what they posted about. Only include information supported by the search results. Return ONLY valid JSON, no markdown.
+const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL Google search results about a company. Extract and structure the factual information into JSON. For executive_social, extract REAL executive names and titles from the LinkedIn results — include what they posted about and include the LinkedIn URL if visible in the search results. Only include information supported by the search results. Return ONLY valid JSON, no markdown.
 
 JSON structure:
-{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Real Name from search","title":"Real Title from search","post_theme":"What they posted about"}],"glassdoor_signals":["real review excerpt"],"industry_context":"context from news","news_signals":["real news"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence from search"}],"tc_opportunity_score":number}`;
+{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Real Name","title":"Real Title","post_theme":"What they posted about","url":"https://linkedin.com/in/... or https://linkedin.com/posts/..."}],"glassdoor_signals":["real review excerpt"],"industry_context":"context from news","news_signals":["real news"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence from search"}],"tc_opportunity_score":number}`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {

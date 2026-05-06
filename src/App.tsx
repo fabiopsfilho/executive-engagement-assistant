@@ -239,7 +239,12 @@ export default function App() {
                     {account.public_intelligence.executive_social.map(e => (
                       <div key={e.name} className="flex items-start gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
-                        <div><span className="text-xs font-medium text-white">{e.name}</span><span className="text-[10px] text-muted ml-1">{e.title}</span><p className="text-xs text-blue-400 italic mt-0.5">"{e.post_theme}"</p></div>
+                        <div>
+                          <span className="text-xs font-medium text-white">{e.name}</span>
+                          <span className="text-[10px] text-muted ml-1">{e.title}</span>
+                          <p className="text-xs text-blue-400 italic mt-0.5">"{e.post_theme}"</p>
+                          {e.url && <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-400 hover:underline mt-0.5 block truncate">🔗 View source</a>}
+                        </div>
                       </div>
                     ))}
                     <div className="pt-3 border-t border-dark-600">
