@@ -240,10 +240,9 @@ export default function App() {
                       <div key={e.name} className="flex items-start gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
                         <div>
-                          <span className="text-xs font-medium text-white">{e.name}</span>
+                          <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{e.name}</a>
                           <span className="text-[10px] text-muted ml-1">{e.title}</span>
-                          <p className="text-xs text-blue-400 italic mt-0.5">"{e.post_theme}"</p>
-                          <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-400 hover:underline mt-0.5 block">🔗 View on LinkedIn</a>
+                          <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 italic mt-0.5 block hover:underline">"{e.post_theme}"</a>
                         </div>
                       </div>
                     ))}
