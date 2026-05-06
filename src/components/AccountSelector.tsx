@@ -59,6 +59,7 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
   const [search, setSearch] = useState('');
   const [allAccounts, setAllAccounts] = useState<Account[]>(accounts);
   const [loading, setLoading] = useState(true);
+  const [noAgendaAccount, setNoAgendaAccount] = useState<string | null>(null);
   const [geoFilter, setGeoFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
@@ -84,10 +85,24 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
             parsed.find(a => a.customer_name.toLowerCase().includes(accountName.toLowerCase()) || accountName.toLowerCase().includes(a.customer_name.toLowerCase()));
           if (found) {
             onSelect(found);
+          } else {
+            setNoAgendaAccount(accountName);
           }
         }
       } else {
-        setAllAccounts(accounts); // Fallback to demo data
+        setAllAccounts(accounts);
+        // Check URL param against demo data
+        const params = new URLSearchParams(window.location.search);
+        const accountName = params.get('account');
+        if (accountName) {
+          const found = accounts.find(a => a.customer_name.toLowerCase() === accountName.toLowerCase()) ||
+            accounts.find(a => a.customer_name.toLowerCase().includes(accountName.toLowerCase()) || accountName.toLowerCase().includes(a.customer_name.toLowerCase()));
+          if (found) {
+            onSelect(found);
+          } else {
+            setNoAgendaAccount(accountName);
+          }
+        }
       }
     }).catch(() => {
       setAllAccounts(accounts);
@@ -168,7 +183,21 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
         </div>
       )}
 
-      {!loading && (
+      {/* No agenda found for URL-specified account */}
+      {noAgendaAccount && !loading && (
+        <div className="text-center py-8 px-4">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-800 border border-dark-600 flex items-center justify-center">
+            <Calendar className="w-7 h-7 text-muted" />
+          </div>
+          <h3 className="text-base font-semibold text-white mb-2">{noAgendaAccount}</h3>
+          <p className="text-sm text-muted">No executive agenda scheduled for this account.</p>
+          <button onClick={() => setNoAgendaAccount(null)} className="mt-4 px-4 py-2 bg-purple-500/20 border border-purple-500/40 rounded-xl text-xs text-purple-400 font-medium">
+            Browse all accounts
+          </button>
+        </div>
+      )}
+
+      {!loading && !noAgendaAccount && (
         <>
           {/* Search */}
           <div className="relative mb-3">
