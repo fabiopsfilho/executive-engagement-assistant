@@ -303,12 +303,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -492,7 +494,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-generate",
@@ -560,12 +564,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -749,7 +755,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-advisor",
@@ -817,12 +825,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -1006,7 +1016,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-roleplay",
@@ -1074,12 +1086,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -1263,7 +1277,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-intelligence",
@@ -1331,12 +1347,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -1502,7 +1520,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "2c9c76ce2c9c3874bdfc4f1a7313ff15ab6c94a0b7f98f1c2c78fdcc5fb974d5.zip"
+     "S3Key": "c39026659bc365e966f444d3b086548d169eff91127e3cf733883a6a5d5b0a08.zip"
     },
     "Environment": {
      "Variables": {
@@ -1520,7 +1538,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-agenda",
@@ -1541,7 +1561,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AgendaFn/Resource",
-    "aws:asset:path": "asset.2c9c76ce2c9c3874bdfc4f1a7313ff15ab6c94a0b7f98f1c2c78fdcc5fb974d5",
+    "aws:asset:path": "asset.c39026659bc365e966f444d3b086548d169eff91127e3cf733883a6a5d5b0a08",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -1588,12 +1608,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -1777,7 +1799,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-pitch",
@@ -1845,12 +1869,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -2034,7 +2060,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-ebc-data",
@@ -2102,12 +2130,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -2291,7 +2321,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-tc-data",
@@ -2359,12 +2391,14 @@
       {
        "Action": [
         "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
        ],
        "Effect": "Allow",
        "Resource": [
         "arn:aws:bedrock:*::foundation-model/*",
-        "arn:aws:bedrock:*:*:inference-profile/*"
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
        ]
       },
       {
@@ -2530,7 +2564,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "5fbef76a8f03f85f9e9f4a0ffb7202b33077c0dd5180424ab4de7c65ad90edc1.zip"
+     "S3Key": "16db769d0c6f78c2f65fad82b7c18f65cab99e3c968758f993370c71441bfc7d.zip"
     },
     "Environment": {
      "Variables": {
@@ -2548,7 +2582,9 @@
       "EBC_DATA_BUCKET": {
        "Ref": "EBCDataBucketA7159746"
       },
-      "EBC_DATA_KEY": "ebc-calendar.csv"
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
      }
     },
     "FunctionName": "engagement-assistant-account-insights",
@@ -2569,7 +2605,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountInsightsFn/Resource",
-    "aws:asset:path": "asset.5fbef76a8f03f85f9e9f4a0ffb7202b33077c0dd5180424ab4de7c65ad90edc1",
+    "aws:asset:path": "asset.16db769d0c6f78c2f65fad82b7c18f65cab99e3c968758f993370c71441bfc7d",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }

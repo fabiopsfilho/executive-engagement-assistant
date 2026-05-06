@@ -83,6 +83,49 @@ function error(statusCode, message) {
   };
 }
 
+// lambdas/shared/knowledge-base.ts
+var import_client_bedrock_agent_runtime = require("@aws-sdk/client-bedrock-agent-runtime");
+var client2 = new import_client_bedrock_agent_runtime.BedrockAgentRuntimeClient({
+  region: process.env.BEDROCK_REGION || "us-east-1"
+});
+var KNOWLEDGE_BASE_ID = process.env.KNOWLEDGE_BASE_ID || "TJHYCVRLXH";
+async function retrieveFromKnowledgeBase(query, maxResults = 5) {
+  try {
+    const command = new import_client_bedrock_agent_runtime.RetrieveCommand({
+      knowledgeBaseId: KNOWLEDGE_BASE_ID,
+      retrievalQuery: { text: query },
+      retrievalConfiguration: {
+        vectorSearchConfiguration: {
+          numberOfResults: maxResults
+        }
+      }
+    });
+    const response = await client2.send(command);
+    const results = response.retrievalResults || [];
+    if (results.length === 0) return "";
+    const chunks = results.filter((r) => r.content?.text).map((r) => r.content.text).join("\n\n---\n\n");
+    return chunks.slice(0, 3e3);
+  } catch (err) {
+    console.warn("Knowledge base retrieval failed:", err);
+    return "";
+  }
+}
+async function getTCStrategyContext(industry, persona, topics = []) {
+  const queries = [
+    `${persona} executive engagement strategy ${industry} training certification`,
+    ...topics.slice(0, 2).map((t) => `${t} workforce development ${industry}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => retrieveFromKnowledgeBase(q, 3).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  if (!combined) return "";
+  return `
+
+T&C KNOWLEDGE BASE CONTEXT:
+${combined.slice(0, 4e3)}`;
+}
+
 // lambdas/generate-agenda/index.ts
 var SYSTEM_PROMPT = `You are an expert at designing executive engagement agendas for AWS Training & Certification. You create agendas grounded in Amazon Leadership Principles that position T&C as a strategic accelerator.
 
@@ -127,6 +170,8 @@ async function handler(event) {
     if (!accountContext || !format) {
       return error(400, "accountContext and format are required");
     }
+    const primaryPersona = accountContext.attendees?.[0]?.persona || "CTO";
+    const kbContext = await getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes);
     const userMessage = `Generate a ${format === "ebc" ? "half-day EBC strategic session" : "1-hour Training Strategy Session"} agenda for:
 
 CUSTOMER: ${accountContext.customer_name} (${accountContext.industry})
@@ -152,7 +197,12 @@ Design an agenda that:
 2. Builds the case for workforce development through data and proof points
 3. Includes interactive elements (Working Backwards workshop, discovery questions)
 4. Closes with specific commitments from both sides
-5. Weaves in the specific signals and intelligence for this account`;
+5. Weaves in the specific signals and intelligence for this account
+${kbContext ? `
+T&C STRATEGY REFERENCE MATERIAL:
+${kbContext}` : ""}
+
+Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
     const result = await invokeClaudeJSON(
       SYSTEM_PROMPT,
       [{ role: "user", content: userMessage }],

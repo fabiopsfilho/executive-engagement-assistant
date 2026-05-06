@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getTCStrategyContext } from '../shared/knowledge-base';
 
 interface AgendaRequest {
   accountContext: {
@@ -88,6 +89,10 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountContext and format are required');
     }
 
+    // Retrieve relevant T&C strategy content from Knowledge Base
+    const primaryPersona = accountContext.attendees?.[0]?.persona || 'CTO';
+    const kbContext = await getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes);
+
     const userMessage = `Generate a ${format === 'ebc' ? 'half-day EBC strategic session' : '1-hour Training Strategy Session'} agenda for:
 
 CUSTOMER: ${accountContext.customer_name} (${accountContext.industry})
@@ -111,7 +116,10 @@ Design an agenda that:
 2. Builds the case for workforce development through data and proof points
 3. Includes interactive elements (Working Backwards workshop, discovery questions)
 4. Closes with specific commitments from both sides
-5. Weaves in the specific signals and intelligence for this account`;
+5. Weaves in the specific signals and intelligence for this account
+${kbContext ? `\nT&C STRATEGY REFERENCE MATERIAL:\n${kbContext}` : ''}
+
+Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
 
     const result = await invokeClaudeJSON<AgendaResponse>(
       SYSTEM_PROMPT,

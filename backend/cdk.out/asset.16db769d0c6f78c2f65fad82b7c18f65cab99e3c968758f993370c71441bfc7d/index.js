@@ -85,6 +85,49 @@ function error(statusCode, message) {
   };
 }
 
+// lambdas/shared/knowledge-base.ts
+var import_client_bedrock_agent_runtime = require("@aws-sdk/client-bedrock-agent-runtime");
+var client2 = new import_client_bedrock_agent_runtime.BedrockAgentRuntimeClient({
+  region: process.env.BEDROCK_REGION || "us-east-1"
+});
+var KNOWLEDGE_BASE_ID = process.env.KNOWLEDGE_BASE_ID || "TJHYCVRLXH";
+async function retrieveFromKnowledgeBase(query, maxResults = 5) {
+  try {
+    const command = new import_client_bedrock_agent_runtime.RetrieveCommand({
+      knowledgeBaseId: KNOWLEDGE_BASE_ID,
+      retrievalQuery: { text: query },
+      retrievalConfiguration: {
+        vectorSearchConfiguration: {
+          numberOfResults: maxResults
+        }
+      }
+    });
+    const response = await client2.send(command);
+    const results = response.retrievalResults || [];
+    if (results.length === 0) return "";
+    const chunks = results.filter((r) => r.content?.text).map((r) => r.content.text).join("\n\n---\n\n");
+    return chunks.slice(0, 3e3);
+  } catch (err) {
+    console.warn("Knowledge base retrieval failed:", err);
+    return "";
+  }
+}
+async function getTCStrategyContext(industry, persona, topics = []) {
+  const queries = [
+    `${persona} executive engagement strategy ${industry} training certification`,
+    ...topics.slice(0, 2).map((t) => `${t} workforce development ${industry}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => retrieveFromKnowledgeBase(q, 3).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  if (!combined) return "";
+  return `
+
+T&C KNOWLEDGE BASE CONTEXT:
+${combined.slice(0, 4e3)}`;
+}
+
 // lambdas/account-insights/index.ts
 var ddbClient = new import_client_dynamodb.DynamoDBClient({});
 var ddb = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
@@ -133,10 +176,15 @@ async function handler(event) {
     } catch {
     }
     const context = buildAccountContext(accountData, tcData);
-    const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC \u2014 reference actual names, numbers, and signals from the data.
+    const persona = accountData.ebc_data?.attendees?.[0]?.persona || "CTO";
+    const industry = accountData.industry || "Technology";
+    const themes = accountData.ebc_data?.themes || [];
+    const kbContext = await getTCStrategyContext(industry, persona, themes);
+    const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC \u2014 reference actual names, numbers, and signals from the data. Use the T&C Knowledge Base context to recommend specific plays, proof points, and approaches that are documented in our strategy materials.
 
 ACCOUNT DATA:
 ${context}
+${kbContext}
 
 Return JSON with exactly these fields:
 {

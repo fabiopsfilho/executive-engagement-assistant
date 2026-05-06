@@ -58,13 +58,15 @@ class EngagementAssistantStack extends cdk.Stack {
       BEDROCK_REGION: 'us-east-1',
       EBC_DATA_BUCKET: ebcDataBucket.bucketName,
       EBC_DATA_KEY: 'ebc-calendar.csv',
+      KNOWLEDGE_BASE_ID: 'TJHYCVRLXH',
+      KB_VERSION: '1',
     };
 
     // ─── Bedrock IAM Policy ─────────────────────────────────────────────
     const bedrockPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
-      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
-      resources: ['arn:aws:bedrock:*::foundation-model/*', 'arn:aws:bedrock:*:*:inference-profile/*'],
+      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream', 'bedrock:Retrieve'],
+      resources: ['arn:aws:bedrock:*::foundation-model/*', 'arn:aws:bedrock:*:*:inference-profile/*', 'arn:aws:bedrock:*:*:knowledge-base/*'],
     });
 
     // ─── Lambda Functions ───────────────────────────────────────────────
