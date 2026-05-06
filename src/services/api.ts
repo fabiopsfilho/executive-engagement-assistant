@@ -321,3 +321,22 @@ export async function getTCData(accountId?: string): Promise<{ summaries?: TCAcc
     return { summaries: [] };
   }
 }
+
+// ─── Account Insights (AI-Generated) ─────────────────────────────────────────
+
+export interface AccountInsightsResponse {
+  who_to_focus: string;
+  what_conversations: string;
+  where_to_start: string;
+  whats_happening: string;
+}
+
+export async function generateAccountInsights(
+  accountData: unknown,
+  tcData?: TCAccountSummary | null
+): Promise<AccountInsightsResponse> {
+  return post<AccountInsightsResponse>('/accounts/default/insights', {
+    accountData,
+    tcData,
+  });
+}

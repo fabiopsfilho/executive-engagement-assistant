@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot } from 'lucide-react';
 import type { Account } from '../types';
-import { isBackendAvailable, sendAdvisorMessage } from '../services/api';
+import { isBackendAvailable, sendAdvisorMessage, type TCAccountSummary } from '../services/api';
 
 function fmt(n: number) {
   return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${(n / 1_000).toFixed(0)}K` : `$${n}`;
@@ -65,7 +65,7 @@ const quickQuestions = [
   "How do I handle objections?",
 ];
 
-export function AdvisorChat({ account }: { account: Account }) {
+export function AdvisorChat({ account, tcData }: { account: Account; tcData?: TCAccountSummary | null }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -111,7 +111,9 @@ export function AdvisorChat({ account }: { account: Account }) {
           open_opps: account.sfdc_data.open_opps,
           t2k: account.sfdc_data.t2k,
           smgs_phase: account.sfdc_data.smgs_phase,
-          tc_state: isGreenfield
+          tc_state: tcData
+            ? `Products: ${tcData.products.join(', ')}. Pipeline: $${tcData.totalPipeline.toLocaleString()}. Closed Won: $${tcData.closedWonRevenue.toLocaleString()}. ${tcData.openOpportunities} open opps. ${tcData.totalStudents} students trained. T2K: ${tcData.isT2K ? 'Yes' : 'No'}`
+            : isGreenfield
             ? `Greenfield — ${account.tc_current_state.certifications} organic certs, no structured program`
             : `${account.tc_current_state.skill_builder_seats} seats at ${account.tc_current_state.activation_rate}% activation, renewal ${account.tc_current_state.renewal_date}`,
           signals: account.signals.map(s => ({ label: s.label, severity: s.severity, evidence: s.evidence })),

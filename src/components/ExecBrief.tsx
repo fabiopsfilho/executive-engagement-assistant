@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { isBackendAvailable, generateEngagementPlan } from '../services/api';
+import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, type TCAccountSummary, type AccountInsightsResponse } from '../services/api';
 
 
 function CopyBtn({ text }: { text: string }) {
@@ -127,11 +127,24 @@ function SayThisSection({ account, bestStarter, allStarters, followUps }: { acco
   );
 }
 
-export function ExecBrief({ account, onEngagePersona }: { account: Account; onEngagePersona: () => void }) {
+export function ExecBrief({ account, onEngagePersona, tcData }: { account: Account; onEngagePersona: () => void; tcData?: TCAccountSummary | null }) {
   const a = account;
   const [showAgenda, setShowAgenda] = useState<'ebc' | 'training' | null>(null);
   const [heroTab, setHeroTab] = useState<'approach' | 'next-steps' | 'key-asks'>('approach');
+  const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
+
+  // Fetch AI-generated insights when account changes
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setInsightsLoading(true);
+    setInsights(null);
+    generateAccountInsights(a, tcData)
+      .then(result => setInsights(result))
+      .catch(err => console.warn('Failed to generate insights:', err))
+      .finally(() => setInsightsLoading(false));
+  }, [a.customer_name]);
 
   const topSignal = a.signals[0];
   const primaryPlay = topSignal?.label.includes('Talent') ? 'AI Talent Gap' : topSignal?.label.includes('Compliance') ? 'Compliance Readiness' : topSignal?.label.includes('Subscription') ? 'Engagement Revival' : 'Workforce Transformation';
@@ -159,6 +172,12 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
     generateEngagementPlan(
       a,
       { name: topPersona.name, title: topPersona.title, persona: topPersona.persona },
+      tcData ? [
+        `EXISTING T&C OPPORTUNITIES: ${tcData.products.join(', ')}`,
+        `Pipeline: $${tcData.totalPipeline.toLocaleString()}, Closed Won: $${tcData.closedWonRevenue.toLocaleString()}`,
+        `${tcData.openOpportunities} open opportunities, ${tcData.totalStudents} students trained`,
+        tcData.isT2K ? 'This is a T2K account' : '',
+      ].filter(Boolean) : undefined,
     ).then(result => {
       if (result.conversation_starters && result.conversation_starters.length > 0) {
         setAiStarters(result.conversation_starters);
@@ -232,12 +251,18 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
         <div className="p-5 pt-3">
           {heroTab === 'approach' && (
             <div className="space-y-4">
+          {insightsLoading && (
+            <div className="flex items-center gap-2 text-xs text-muted py-1">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+              <span>Generating AI insights...</span>
+            </div>
+          )}
           <div className="flex items-start gap-2.5">
             <Users className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
             <div>
               <span className="text-sm font-medium text-white">Who should we focus on?</span>
               <p className="text-xs text-muted mt-0.5">
-                {rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ')} — strongest signals for workforce conversations.
+                {insights?.who_to_focus || (rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ') + ' — strongest signals for workforce conversations.')}
               </p>
               <ConnectionToggle text={`Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}"` : 'Executive signals'}. Agenda: Featured in Welcome & Vision blocks.`} />
             </div>
@@ -247,8 +272,7 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
             <div>
               <span className="text-sm font-medium text-white">What conversations should we drive?</span>
               <p className="text-xs text-muted mt-0.5">
-                {a.signals[0] ? `Start with "${a.signals[0].label}" — ${a.signals[0].evidence.split(';')[0]}. ` : ''}
-                Ask where skills gaps are slowing down {a.sfdc_data.account_plan_priority}.
+                {insights?.what_conversations || `${a.signals[0] ? `Start with "${a.signals[0].label}" — ${a.signals[0].evidence.split(';')[0]}. ` : ''}Ask where skills gaps are slowing down ${a.sfdc_data.account_plan_priority}.`}
               </p>
               <ConnectionToggle text={`Now: ${a.signals[0]?.label || 'Top signal'} is the priority. Buzz: Earnings & Glassdoor support this. Skills Session: Workforce Landscape block.`} />
             </div>
@@ -258,23 +282,24 @@ export function ExecBrief({ account, onEngagePersona }: { account: Account; onEn
             <div>
               <span className="text-sm font-medium text-white">Where should we start?</span>
               <p className="text-xs text-muted mt-0.5">
-                {isGreenfield
-                  ? `No structured training — ${a.tc_current_state.certifications} organic certs. Understand their workforce reality. The assessment is just a tool — the conversation is the value.`
-                  : `Adoption stalled. Glassdoor: "${a.public_intelligence.glassdoor_signals[0]}". Redesign how they develop people.`}
+                {insights?.where_to_start || (tcData && tcData.openOpportunities > 0 ? `${tcData.openOpportunities} open T&C opportunities (${(tcData.totalPipeline / 1000).toFixed(0)}K pipeline). Products: ${tcData.products.slice(0, 3).join(', ')}. Build on existing engagement.` : isGreenfield ? `No structured training. Understand their workforce reality. The assessment is just a tool — the conversation is the value.` : `Adoption stalled. Glassdoor: "${a.public_intelligence.glassdoor_signals[0] || 'feedback pending'}". Redesign how they develop people.`)}
               </p>
-              <ConnectionToggle text={`Summary: ${isGreenfield ? 'Greenfield' : `${a.tc_current_state.activation_rate}% activation`}. Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles. Skills Session: Technical & Non-Technical blocks.`} />
+              <ConnectionToggle text={`${tcData ? `T&C Data: ${tcData.products.join(', ')}. ` : ''}Summary: ${isGreenfield ? 'Greenfield' : 'Existing engagement'}. Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles.`} />
             </div>
           </div>
           <div className="flex items-start gap-2.5">
             <Globe className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
             <div>
               <span className="text-sm font-medium text-white">What's happening in their world?</span>
-              <p className="text-xs text-muted mt-0.5">{a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.</p>
+              <p className="text-xs text-muted mt-0.5">
+                {insights?.whats_happening || `${a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.`}
+              </p>
               <ConnectionToggle text={`Buzz: Industry trends & news. Agenda: Welcome & Intelligence Briefing. Now: Frames urgency.`} />
             </div>
           </div>
         </div>
           )}
+
 
           {heroTab === 'next-steps' && (
             <div className="space-y-2">

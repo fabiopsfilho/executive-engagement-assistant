@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getEngagementKnowledge } from '../shared/mcp';
 
 interface EngagementRequest {
   accountData: {
@@ -79,6 +80,12 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!accountData || !persona) {
       return error(400, 'accountData and persona are required');
     }
+
+    // Fetch relevant AWS T&C documentation from MCP
+    let awsKnowledge = '';
+    try {
+      awsKnowledge = await getEngagementKnowledge(accountData.industry, persona.persona);
+    } catch { /* MCP not available — continue without */ }
 
     const userMessage = `Generate a persona-specific engagement plan for the following:
 

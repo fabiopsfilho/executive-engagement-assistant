@@ -155,10 +155,35 @@ class EngagementAssistantStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       environment: sharedEnv,
+      bundling: {
+        externalModules: ['@aws-sdk/*', 'xlsx'],
+        commandHooks: {
+          beforeBundling(inputDir: string, outputDir: string): string[] {
+            return [];
+          },
+          afterBundling(inputDir: string, outputDir: string): string[] {
+            return [`cp -r ${inputDir}/node_modules/xlsx ${outputDir}/node_modules/xlsx 2>/dev/null || true`];
+          },
+          beforeInstall(): string[] {
+            return [];
+          },
+        },
+      },
+    });
+
+    // 9. Account Insights (AI-generated strategic insights per account)
+    const accountInsightsFn = new NodejsFunction(this, 'AccountInsightsFn', {
+      functionName: 'engagement-assistant-account-insights',
+      entry: path.join(__dirname, '../lambdas/account-insights/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: sharedEnv,
     });
 
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -206,6 +231,10 @@ class EngagementAssistantStack extends cdk.Stack {
     const pitch = account.addResource('pitch');
     pitch.addMethod('POST', new apigateway.LambdaIntegration(pitchFn));
 
+    // POST /accounts/{accountId}/insights
+    const insights = account.addResource('insights');
+    insights.addMethod('POST', new apigateway.LambdaIntegration(accountInsightsFn));
+
     // GET /ebc-data (load EBC calendar from S3)
     const ebcData = api.root.addResource('ebc-data');
     ebcData.addMethod('GET', new apigateway.LambdaIntegration(ebcDataFn));
@@ -230,7 +259,7 @@ class EngagementAssistantStack extends cdk.Stack {
 const app = new cdk.App();
 new EngagementAssistantStack(app, 'EngagementAssistantStack', {
   env: {
-    account: process.env.CDK_DEFAULT_ACCOUNT,
-    region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
+    account: '678278062910',
+    region: 'us-east-1',
   },
 });

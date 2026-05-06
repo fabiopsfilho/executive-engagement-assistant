@@ -1,0 +1,166 @@
+"use strict";
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// lambdas/generate-pitch/index.ts
+var index_exports = {};
+__export(index_exports, {
+  handler: () => handler
+});
+module.exports = __toCommonJS(index_exports);
+
+// lambdas/shared/bedrock.ts
+var import_client_bedrock_runtime = require("@aws-sdk/client-bedrock-runtime");
+var client = new import_client_bedrock_runtime.BedrockRuntimeClient({
+  region: process.env.BEDROCK_REGION || "us-east-1"
+});
+async function invokeClaudeJSON(systemPrompt, messages, options = {}) {
+  const { maxTokens = 4096, temperature = 0.7 } = options;
+  const body = JSON.stringify({
+    anthropic_version: "bedrock-2023-05-31",
+    max_tokens: maxTokens,
+    temperature,
+    system: systemPrompt,
+    messages: messages.map((m) => ({
+      role: m.role,
+      content: m.content
+    }))
+  });
+  const command = new import_client_bedrock_runtime.InvokeModelCommand({
+    modelId: process.env.BEDROCK_MODEL_ID || "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    contentType: "application/json",
+    accept: "application/json",
+    body: new TextEncoder().encode(body)
+  });
+  const response = await client.send(command);
+  const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+  const text = responseBody.content[0].text;
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const jsonStr = jsonMatch ? jsonMatch[1].trim() : text.trim();
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    return { raw: text };
+  }
+}
+
+// lambdas/shared/response.ts
+function success(body) {
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization"
+    },
+    body: JSON.stringify(body)
+  };
+}
+function error(statusCode, message) {
+  return {
+    statusCode,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization"
+    },
+    body: JSON.stringify({ error: message })
+  };
+}
+
+// lambdas/generate-pitch/index.ts
+var SYSTEM_PROMPT = `You are an expert at creating executive pitch decks for AWS Training & Certification engagements. You create narrative-driven presentations that position T&C as a strategic accelerator, not a product pitch.
+
+DECK STRUCTURE (7-8 slides):
+1. TITLE \u2014 Customer \xD7 AWS T&C partnership framing
+2. STORY \u2014 The persona-specific narrative (their challenge, in their words)
+3. DATA \u2014 The intelligence that makes the case (hiring data, signals, industry context)
+4. INSIGHT \u2014 Proof points from peer organizations (matched to persona and industry)
+5. ACTION \u2014 Recommended approach (T&C plays, phased)
+6. INVESTMENT \u2014 Revenue framework with ROI data
+7. CLOSE \u2014 Next steps with specific timeline and commitments
+8. (Optional) ADDITIONAL \u2014 User-added topics
+
+RULES:
+1. Speaker notes must coach the presenter on HOW to deliver, not just WHAT to say
+2. Content should be concise enough for a slide (bullet points, key phrases) not paragraphs
+3. Speaker notes should include: what to watch for in the room, how to handle likely reactions, which proof point to emphasize for this persona
+4. The deck tells a story \u2014 each slide builds on the previous
+5. Ground everything in the specific account data provided
+
+Return JSON:
+{
+  "title": "...",
+  "subtitle": "...",
+  "duration": "20-25 minutes",
+  "audience": "...",
+  "slides": [{"slideNumber": 1, "title": "...", "content": "...", "speakerNotes": "...", "type": "title|story|data|insight|action|close"}]
+}`;
+async function handler(event) {
+  try {
+    if (!event.body) {
+      return error(400, "Request body is required");
+    }
+    const request = JSON.parse(event.body);
+    const { accountContext, persona, engagementPlan, userNotes } = request;
+    if (!accountContext || !persona || !engagementPlan) {
+      return error(400, "accountContext, persona, and engagementPlan are required");
+    }
+    const userMessage = `Generate a pitch deck for:
+
+CUSTOMER: ${accountContext.customer_name} (${accountContext.industry}, ${accountContext.segment})
+AWS SPEND: $${(accountContext.aws_spend_current / 1e6).toFixed(1)}M | PPA: ${accountContext.ppa}
+PRIORITY: ${accountContext.account_plan_priority}
+
+TARGET PERSONA: ${persona.name} (${persona.title}) \u2014 ${persona.persona}
+
+INTELLIGENCE:
+- LinkedIn: ${accountContext.linkedin_roles} cloud/AI roles (${accountContext.linkedin_yoy} YoY)
+- Earnings: ${accountContext.earnings_signals.slice(0, 3).join("; ")}
+- Executive Social: ${accountContext.executive_social.filter((e) => e.name === persona.name).map((e) => `"${e.post_theme}"`).join("; ") || "No direct social signals"}
+- Glassdoor: ${accountContext.glassdoor_signals.slice(0, 2).join("; ")}
+- Industry: ${accountContext.industry_context}
+- News: ${accountContext.news_signals.slice(0, 2).join("; ")}
+- T&C State: ${accountContext.tc_state}
+
+ENGAGEMENT PLAN CONTEXT:
+- Narrative: ${engagementPlan.narrative.slice(0, 500)}
+- Conversation Starters: ${engagementPlan.conversation_starters[0]}
+- Recommended Plays: ${engagementPlan.recommended_plays.map((p) => p.play_name).join(", ")}
+- Pipeline: ${engagementPlan.total_pipeline}
+- Proof Points: ${engagementPlan.proof_points.map((p) => `${p.customer}: ${p.metric}`).join("; ")}
+
+${userNotes && userNotes.length > 0 ? `ADDITIONAL TOPICS:
+${userNotes.join("\n")}` : ""}
+
+Create a 7-slide pitch deck tailored to ${persona.name}'s perspective as a ${persona.persona}. The speaker notes should coach the presenter on delivery, reactions to watch for, and which proof points to emphasize.`;
+    const result = await invokeClaudeJSON(
+      SYSTEM_PROMPT,
+      [{ role: "user", content: userMessage }],
+      { maxTokens: 4096, temperature: 0.7 }
+    );
+    return success(result);
+  } catch (err) {
+    console.error("Error generating pitch:", err);
+    return error(500, "Failed to generate pitch deck");
+  }
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  handler
+});

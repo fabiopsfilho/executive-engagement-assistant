@@ -1,9 +1,10 @@
-import { Lightbulb, TrendingUp, ArrowRight, CheckCircle2, Users, AlertTriangle, MessageSquareText, Target, Globe, Zap, CalendarCheck, BookOpenCheck, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Lightbulb, TrendingUp, ArrowRight, CheckCircle2, Users, AlertTriangle, MessageSquareText, Target, Globe, Zap, CalendarCheck, BookOpenCheck, Search, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import type { Account } from '../types';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import type { UserNote } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
+import { generateAccountInsights, isBackendAvailable, type AccountInsightsResponse, type TCAccountSummary } from '../services/api';
 
 function ConnectionToggle({ text }: { text: string }) {
   const [show, setShow] = useState(false);
@@ -60,13 +61,26 @@ function generateKeyAsks(a: Account, userNotes: UserNote[]): { ask: string; why:
   return asks;
 }
 
-export function AccountStory({ account, notes = [], onEngagePersona }: { account: Account; notes?: UserNote[]; onEngagePersona?: () => void }) {
+export function AccountStory({ account, notes = [], onEngagePersona, tcData }: { account: Account; notes?: UserNote[]; onEngagePersona?: () => void; tcData?: TCAccountSummary | null }) {
   const a = account;
   const [showAgendaType, setShowAgendaType] = useState<'ebc' | 'training' | null>(null);
   const [topTab, setTopTab] = useState<TopTab>('approach');
   const [insightTab, setInsightTab] = useState<'now' | 'buzz' | null>(null);
+  const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
   const spendGrowth = Math.round(((a.aws_spend.current_year - a.aws_spend.prior_year) / a.aws_spend.prior_year) * 100);
+
+  // Fetch AI-generated insights when account changes
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setInsightsLoading(true);
+    setInsights(null);
+    generateAccountInsights(a, tcData)
+      .then(result => setInsights(result))
+      .catch(err => console.warn('Failed to generate insights:', err))
+      .finally(() => setInsightsLoading(false));
+  }, [a.customer_name]);
 
   const ebcAgenda = generateAgenda(a, notes);
   const trainingAgenda = generateTrainingSessionAgenda(a, notes);
@@ -125,13 +139,20 @@ export function AccountStory({ account, notes = [], onEngagePersona }: { account
           <div className="p-4">
             {topTab === 'approach' && (
               <div className="space-y-4">
+                {insightsLoading && (
+                  <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                    <span>Generating AI insights for {a.customer_name}...</span>
+                  </div>
+                )}
                 <div className="flex items-start gap-2.5">
                   <Users className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="text-sm font-medium text-white">Who should we focus on?</span>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {a.ebc_data.attendees.filter(att => a.public_intelligence.executive_social.find(e => e.name === att.name) || att.persona === 'CHRO' || att.persona === 'CEO')
-                        .map(att => att.name + ' (' + att.title + ')').join(', ')} — strongest signals for workforce conversations.
+                      {insights?.who_to_focus
+                        || (a.ebc_data.attendees.filter(att => a.public_intelligence.executive_social.find(e => e.name === att.name) || att.persona === 'CHRO' || att.persona === 'CEO')
+                          .map(att => att.name + ' (' + att.title + ')').join(', ') + ' — strongest signals for workforce conversations.')}
                     </p>
                     <ConnectionToggle text={`Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}"` : 'Executive social signals detected'}. Agenda: These personas are featured in the suggested EBC agenda Welcome & Vision blocks.`} />
                   </div>
@@ -141,9 +162,8 @@ export function AccountStory({ account, notes = [], onEngagePersona }: { account
                   <div>
                     <span className="text-sm font-medium text-white">What conversations should we drive?</span>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {a.signals[0] ? `Start with "${a.signals[0].label}" — ${a.signals[0].evidence}. ` : ''}
-                      Lead with what we know: {a.public_intelligence.earnings_call_signals[0] ? `"${a.public_intelligence.earnings_call_signals[0].split(': ')[1] || a.public_intelligence.earnings_call_signals[0]}". ` : ''}
-                      Ask where skills gaps are slowing down {a.sfdc_data.account_plan_priority}. Let them define the problem.
+                      {insights?.what_conversations
+                        || `${a.signals[0] ? `Start with "${a.signals[0].label}" — ${a.signals[0].evidence}. ` : ''}Lead with what we know: ${a.public_intelligence.earnings_call_signals[0] ? `"${a.public_intelligence.earnings_call_signals[0].split(': ')[1] || a.public_intelligence.earnings_call_signals[0]}". ` : ''}Ask where skills gaps are slowing down ${a.sfdc_data.account_plan_priority}. Let them define the problem.`}
                     </p>
                     <ConnectionToggle text={`Now: ${a.signals[0]?.label || 'Top signal'} is the priority. Buzz: Earnings call signals and Glassdoor data support this angle. Skills Session: The Workforce Landscape block covers this data story.`} />
                   </div>
@@ -153,9 +173,10 @@ export function AccountStory({ account, notes = [], onEngagePersona }: { account
                   <div>
                     <span className="text-sm font-medium text-white">Where should we start?</span>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {isGreenfield
-                        ? `No structured training — ${a.tc_current_state.certifications} organic certs. Understand their workforce reality: who are the ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} roles they can't fill? The assessment is just a tool — the conversation is the value.`
-                        : `Adoption stalled. Glassdoor says "${a.public_intelligence.glassdoor_signals[0]}". The conversation isn't about renewal — it's about redesigning how they develop people.`}
+                      {insights?.where_to_start
+                        || (isGreenfield
+                          ? `No structured training — ${a.tc_current_state.certifications} organic certs. Understand their workforce reality: who are the ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} roles they can't fill? The assessment is just a tool — the conversation is the value.`
+                          : `Adoption stalled. Glassdoor says "${a.public_intelligence.glassdoor_signals[0]}". The conversation isn't about renewal — it's about redesigning how they develop people.`)}
                     </p>
                     <ConnectionToggle text={`Summary: ${isGreenfield ? `${a.tc_current_state.certifications} organic certs, greenfield opportunity` : `Existing engagement at ${a.tc_current_state.activation_rate}% activation`}. Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles (${a.public_intelligence.linkedin_job_postings.yoy_change} YoY). Skills Session: Connects to the Non-Technical & Technical Roles blocks.`} />
                   </div>
@@ -164,7 +185,10 @@ export function AccountStory({ account, notes = [], onEngagePersona }: { account
                   <Globe className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                   <div>
                     <span className="text-sm font-medium text-white">What's happening in their world?</span>
-                    <p className="text-xs text-slate-400 mt-0.5">{a.public_intelligence.industry_context}. {a.public_intelligence.news_signals[0] || ''}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {insights?.whats_happening
+                        || `${a.public_intelligence.industry_context}. ${a.public_intelligence.news_signals[0] || ''}`}
+                    </p>
                     <ConnectionToggle text={`Buzz: Industry trends and news signals. Agenda: Referenced in the Welcome & Workforce Intelligence Briefing blocks. Now: Frames the urgency of the engagement.`} />
                   </div>
                 </div>

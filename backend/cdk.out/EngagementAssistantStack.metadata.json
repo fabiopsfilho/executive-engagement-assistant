@@ -3,7 +3,7 @@
     {
       "type": "aws:cdk:creationStack",
       "data": [
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -32,6 +32,12 @@
       }
     }
   ],
+  "/EngagementAssistantStack/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+    {
+      "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+      "data": true
+    }
+  ],
   "/EngagementAssistantStack/ApiUrl": [
     {
       "type": "aws:cdk:logicalId",
@@ -40,8 +46,22 @@
     {
       "type": "aws:cdk:creationStack",
       "data": [
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:172:5)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:247:5)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataBucketName"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:252:5)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -81,8 +101,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new Table2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:15:27)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:16:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -96,8 +116,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new Table2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:22:31)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:23:31)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -111,8 +131,59 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new Table2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:30:32)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:31:32)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataBucketA7159746"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Bucket2 in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:41:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketAutoDeleteObjects"
+      }
+    }
+  ],
+  "/EngagementAssistantStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Bucket2 in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:41:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Bucket2 in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:41:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -126,8 +197,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:58:34)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:73:34)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -141,8 +212,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:69:27)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:84:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -156,8 +227,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:80:24)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:95:24)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -171,8 +242,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:91:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:106:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -186,8 +257,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:102:22)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:117:22)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -201,8 +272,53 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:113:21)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:128:21)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataFn/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataFn2C01B9AF"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:139:23)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/TCDataFn/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TCDataFn20526C4A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:150:22)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/AccountInsightsFn/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AccountInsightsFn1AB489F8"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:175:31)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -216,8 +332,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -231,8 +347,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -246,8 +362,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -265,6 +381,42 @@
       ]
     }
   ],
+  "/EngagementAssistantStack/EBCDataBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataBucketPolicyE7219CFA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Bucket2 in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:41:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketPolicyStatements"
+      }
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataBucket/AutoDeleteObjectsCustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataBucketAutoDeleteObjectsCustomResource3523F6FD"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Bucket2 in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:41:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
   "/EngagementAssistantStack/GenerateEngagementFn/ServiceRole/Resource": [
     {
       "type": "aws:cdk:logicalId",
@@ -274,8 +426,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:58:34)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:73:34)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -289,8 +441,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:69:27)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:84:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -304,8 +456,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:80:24)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:95:24)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -319,8 +471,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:91:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:106:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -334,8 +486,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:102:22)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:117:22)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -349,8 +501,53 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new NodejsFunction in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:113:21)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:128:21)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataFn/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataFnServiceRoleBCED3447"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:139:23)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/TCDataFn/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TCDataFnServiceRoleCF53025E"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:150:22)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/AccountInsightsFn/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AccountInsightsFnServiceRole715CD327"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new NodejsFunction in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:175:31)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -364,8 +561,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -373,14 +570,14 @@
   "/EngagementAssistantStack/EngagementAssistantApi/Deployment/Resource": [
     {
       "type": "aws:cdk:logicalId",
-      "data": "EngagementAssistantApiDeployment3A0389DAe95a2ec1996e7eef7c0dd6f6adf695a6"
+      "data": "EngagementAssistantApiDeployment3A0389DA346fbee49039ad497fc46ebc8a6da27a"
     },
     {
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -394,8 +591,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -409,8 +606,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -424,8 +621,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -439,8 +636,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -454,8 +651,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -469,8 +666,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -484,8 +681,53 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:126:10)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EBCDataFn/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EBCDataFnServiceRoleDefaultPolicy102F1F39"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/TCDataFn/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TCDataFnServiceRoleDefaultPolicy09AD22AC"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/AccountInsightsFn/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AccountInsightsFnServiceRoleDefaultPolicy13BBEF0B"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...NodejsFunction.addToRolePolicy in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:188:10)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -499,8 +741,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...new RestApi2 in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:133:17)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:196:17)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -514,8 +756,38 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...RootResource.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:144:31)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:207:31)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/ebc-data/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiebcdataDCC304FD"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:239:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/tc-data/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApitcdata4BAC5841"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:243:29)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -529,8 +801,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...RootResource.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:144:31)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:207:31)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -544,8 +816,128 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:145:30)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:208:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/ebc-data/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiebcdataOPTIONSC343C802"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:239:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/ebc-data/GET/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.GET..ebc-data": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiebcdataGETApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630GETebcdata8E6FF2B7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:240:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/ebc-data/GET/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.GET..ebc-data": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiebcdataGETApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630GETebcdataE457FFC9"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:240:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/ebc-data/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiebcdataGET1029FD97"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:240:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/tc-data/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApitcdataOPTIONS56637209"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:243:29)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/tc-data/GET/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.GET..tc-data": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApitcdataGETApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630GETtcdata76077D1E"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:244:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/tc-data/GET/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.GET..tc-data": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApitcdataGETApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630GETtcdataD29CD3CF"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:244:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/tc-data/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApitcdataGET6D9A9237"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:244:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -559,8 +951,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:145:30)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:208:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -574,8 +966,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:148:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:211:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -589,8 +981,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:152:29)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:215:29)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -604,8 +996,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:156:30)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:219:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -619,8 +1011,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:160:34)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:223:34)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -634,8 +1026,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:164:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:227:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -649,8 +1041,23 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:168:27)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:231:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiaccountsaccountIdinsights214C4754"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:235:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -664,8 +1071,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:148:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:211:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -679,8 +1086,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:149:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:212:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -694,8 +1101,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:149:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:212:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -709,8 +1116,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:149:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:212:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -724,8 +1131,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:152:29)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:215:29)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -739,8 +1146,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:153:13)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:216:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -754,8 +1161,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:153:13)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:216:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -769,8 +1176,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:153:13)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:216:13)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -784,8 +1191,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:156:30)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:219:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -799,8 +1206,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:157:14)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:220:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -814,8 +1221,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:157:14)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:220:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -829,8 +1236,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:157:14)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:220:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -844,8 +1251,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:160:34)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:223:34)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -859,8 +1266,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:161:18)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:224:18)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -874,8 +1281,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:161:18)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:224:18)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -889,8 +1296,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:161:18)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:224:18)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -904,8 +1311,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:164:28)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:227:28)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -919,8 +1326,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:165:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:228:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -934,8 +1341,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:165:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:228:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -949,8 +1356,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:165:12)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:228:12)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -964,8 +1371,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addResource in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:168:27)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:231:27)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -979,8 +1386,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:169:11)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:232:11)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -994,8 +1401,8 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:169:11)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:232:11)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
@@ -1009,8 +1416,68 @@
       "type": "aws:cdk:creationStack",
       "data": [
         "...WrappedClass.addMethod in aws-cdk-lib...",
-        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:169:11)",
-        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:180:1)",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:232:11)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/OPTIONS/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiaccountsaccountIdinsightsOPTIONSED6B37C3"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addResource in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:235:30)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/POST/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.insights": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiaccountsaccountIdinsightsPOSTApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdinsightsCA0D3E4E"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:236:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/POST/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.insights": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiaccountsaccountIdinsightsPOSTApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdinsights1AAD11E6"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:236:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
+        "...node internals, ts-node, ts-node, ts-node..."
+      ]
+    }
+  ],
+  "/EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/POST/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EngagementAssistantApiaccountsaccountIdinsightsPOSTA9E9F7EA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new EngagementAssistantStack (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:236:14)",
+        "<anonymous> (/Users/fpfilho/Downloads/executive-engagement-assistant/backend/lib/stack.ts:260:1)",
         "...node internals, ts-node, ts-node, ts-node..."
       ]
     }
