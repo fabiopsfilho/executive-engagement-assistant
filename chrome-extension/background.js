@@ -11,4 +11,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Update the side panel
     chrome.runtime.sendMessage({ type: 'UPDATE_ACCOUNT', accountName: message.accountName });
   }
+  if (message.type === 'OPEN_SIDE_PANEL' && sender.tab) {
+    chrome.sidePanel.open({ tabId: sender.tab.id });
+  }
 });
