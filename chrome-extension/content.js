@@ -64,15 +64,12 @@ function createFloatingButton() {
   const fab = document.createElement('div');
   fab.id = 'tc-advisor-fab';
   fab.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" width="32" height="32">
-      <circle cx="32" cy="32" r="30" fill="#1e1b4b" stroke="url(#bgFab)" stroke-width="2"/>
-      <defs><linearGradient id="bgFab" x1="0" y1="0" x2="64" y2="64"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
-      <path d="M20 28c-2-4 0-10 6-12s10 1 12 5" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-      <path d="M44 28c2-4 0-10-6-12s-10 1-12 5" stroke="#f472b6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-      <path d="M18 34c-1-2 0-6 4-7" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M46 34c1-2 0-6-4-7" stroke="#f472b6" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <line x1="32" y1="21" x2="32" y2="48" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="32" cy="20" r="2.5" fill="#f472b6" opacity="0.9"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+      <path d="M12 4C8 4 6 6.5 6 9c0 1.5.5 2.5 1.5 3.5S9 14 9 15.5V17h6v-1.5c0-1.5.5-2 1.5-3S18 10.5 18 9c0-2.5-2-5-6-5z"/>
+      <path d="M9 17v1a3 3 0 006 0v-1"/>
+      <path d="M12 4v4"/>
+      <path d="M8 8c1 0 2 1 4 1s3-1 4-1"/>
+      <circle cx="12" cy="4" r="1.5" fill="#f97316" stroke="none"/>
     </svg>
   `;
   fab.style.cssText = `
