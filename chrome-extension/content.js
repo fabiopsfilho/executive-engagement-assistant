@@ -2,44 +2,53 @@
 // Detects the current account name from the page
 
 function detectAccountName() {
-  // Try multiple selectors for Salesforce Lightning
-  const selectors = [
-    // Account name in the record header
-    'lightning-formatted-text[data-output-element-id="output-field"]',
-    // Record header title
-    '.slds-page-header__title .uiOutputText',
-    'h1.slds-page-header__title',
-    // Lightning record page
-    'records-entity-label',
-    'span.custom-truncate',
-    // Account name field
-    '[data-field="Name"] lightning-formatted-text',
-    // Page title
-    'h1[data-aura-class="forceActionsText"]',
-    '.entityNameTitle',
-    // Generic record name
-    'records-highlights-details-item:first-child lightning-formatted-text',
-  ];
-
-  for (const selector of selectors) {
-    const el = document.querySelector(selector);
-    if (el && el.textContent.trim()) {
-      return el.textContent.trim();
+  // Method 1: Page title (most reliable — Salesforce sets it to the record name)
+  const title = document.title;
+  if (title && title.length > 2) {
+    // Remove common Salesforce suffixes
+    const cleaned = title
+      .replace(/\s*\|\s*Salesforce.*$/i, '')
+      .replace(/\s*-\s*Salesforce.*$/i, '')
+      .replace(/\s*–\s*Salesforce.*$/i, '')
+      .trim();
+    if (cleaned && cleaned.length > 2 && !cleaned.toLowerCase().includes('home') && !cleaned.toLowerCase().includes('salesforce')) {
+      return cleaned;
     }
   }
 
-  // Try the page title as fallback
-  const title = document.title;
-  if (title && !title.includes('Salesforce') && !title.includes('Home')) {
-    // Remove common suffixes
-    return title.replace(/\s*\|.*$/, '').replace(/\s*-\s*Salesforce.*$/, '').trim();
+  // Method 2: Lightning record page header
+  const headerSelectors = [
+    'records-entity-label',
+    'h1.slds-page-header__title',
+    '.slds-page-header__title .uiOutputText',
+    'span.custom-truncate',
+    'lightning-formatted-text[data-output-element-id="output-field"]',
+    '[data-field="Name"] lightning-formatted-text',
+    'h1[data-aura-class="forceActionsText"]',
+    '.entityNameTitle',
+    'records-highlights-details-item:first-child lightning-formatted-text',
+    // Lightning Experience specific
+    'slot[name="primaryField"] lightning-formatted-text',
+    'h1 slot[name="primaryField"]',
+    '.primaryFieldRow lightning-formatted-text',
+  ];
+
+  for (const selector of headerSelectors) {
+    try {
+      const el = document.querySelector(selector);
+      if (el && el.textContent && el.textContent.trim().length > 2) {
+        return el.textContent.trim();
+      }
+    } catch (e) {
+      // Skip invalid selectors
+    }
   }
 
   return null;
 }
 
-// Detect account on page load and navigation
-function checkForAccount() {
+// Send detected account to background
+function sendAccount() {
   const accountName = detectAccountName();
   if (accountName) {
     chrome.runtime.sendMessage({
@@ -50,15 +59,19 @@ function checkForAccount() {
   }
 }
 
-// Run on load
-setTimeout(checkForAccount, 2000);
+// Run detection after page loads (Salesforce is slow to render)
+setTimeout(sendAccount, 3000);
+setTimeout(sendAccount, 5000);
+setTimeout(sendAccount, 8000);
 
-// Watch for SPA navigation (Salesforce is a single-page app)
+// Watch for SPA navigation
 let lastUrl = window.location.href;
-const observer = new MutationObserver(() => {
-  if (window.location.href !== lastUrl) {
+let lastTitle = document.title;
+
+setInterval(() => {
+  if (window.location.href !== lastUrl || document.title !== lastTitle) {
     lastUrl = window.location.href;
-    setTimeout(checkForAccount, 2000);
+    lastTitle = document.title;
+    setTimeout(sendAccount, 2000);
   }
-});
-observer.observe(document.body, { childList: true, subtree: true });
+}, 1000);
