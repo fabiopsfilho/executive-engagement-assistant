@@ -65,7 +65,7 @@ export default function App() {
               news_signals: intel.news_signals && intel.news_signals.length > 0 ? intel.news_signals : prev.public_intelligence.news_signals,
             },
             signals: intel.signals && intel.signals.length > 0 ? intel.signals : prev.signals,
-            tc_opportunity_score: intel.tc_opportunity_score || prev.tc_opportunity_score,
+            tc_opportunity_score: intel.tc_opportunity_score ? Math.min(10, intel.tc_opportunity_score) : prev.tc_opportunity_score,
             ebc_data: {
               ...prev.ebc_data,
               attendees: intel.executive_social && intel.executive_social.length > 0
