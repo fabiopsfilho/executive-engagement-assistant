@@ -60,6 +60,7 @@
     <div class="no-account">
       <h2>Select an Account</h2>
       <p>Open a customer account in Salesforce (aws-crm.lightning.force.com) and this panel will show T&C engagement insights.</p>
+      <button onclick="requestDetection()" style="margin-top:16px;padding:8px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Detect Current Account</button>
     </div>
   </div>
 
@@ -91,6 +92,18 @@
         loadAccount(data.currentAccount);
       }
     });
+
+    // Request detection from content script
+    function requestDetection() {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'REQUEST_ACCOUNT' });
+        }
+      });
+    }
+
+    // Auto-request detection when panel opens
+    requestDetection();
   </script>
 </body>
 </html>
