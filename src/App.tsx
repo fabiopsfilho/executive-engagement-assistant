@@ -137,7 +137,7 @@ export default function App() {
             <img src="/aws-logo.svg" alt="AWS" className="h-5 shrink-0" />
             <div className="min-w-0 flex-1">
               <h1 className="text-xs font-semibold text-white truncate">{account.customer_name}</h1>
-              <p className="text-[10px] text-muted">{account.industry} · {account.segment}</p>
+              <p className="text-[10px] text-muted">{account.industry} · {account.segment} · {account.geo}</p>
             </div>
             <button onClick={() => setShowScore(true)} className="flex flex-col items-center active:opacity-80">
               <div className={`w-8 h-8 rounded-xl ${account.tc_opportunity_score >= 8 ? 'bg-green-500' : account.tc_opportunity_score >= 6 ? 'bg-orange-500' : 'bg-blue-500'} flex items-center justify-center text-white font-bold text-sm`}>
@@ -147,11 +147,24 @@ export default function App() {
             </button>
           </div>
           {/* EBC info bar */}
-          {account.ebc_data.meeting_dates[0] && (
-            <div className="px-4 py-1.5 flex items-center gap-3 text-[10px] text-muted border-t border-dark-700 flex-wrap">
-              <span className="text-blue-400">📅 {new Date(account.ebc_data.meeting_dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              <span>📍 {account.ebc_data.location}</span>
-              {account.ebc_data.status && <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${account.ebc_data.status === 'InProgress' ? 'bg-blue-500/15 text-blue-400' : 'bg-green-500/15 text-green-400'}`}>{account.ebc_data.status}</span>}
+          {account.ebc_data.meeting_dates[0] && (() => {
+            const ebcDate = new Date(account.ebc_data.meeting_dates[0]);
+            const daysUntil = Math.ceil((ebcDate.getTime() - Date.now()) / 86400000);
+            return (
+              <div className="px-4 py-1.5 flex items-center gap-3 text-[10px] text-muted border-t border-dark-700 flex-wrap">
+                <span className="text-blue-400">📅 {ebcDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span>{daysUntil > 0 ? `in ${daysUntil} days` : daysUntil === 0 ? 'Today' : `${Math.abs(daysUntil)}d ago`}</span>
+                <span>📍 {account.ebc_data.location}</span>
+                {account.ebc_data.status && <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${account.ebc_data.status === 'InProgress' ? 'bg-blue-500/15 text-blue-400' : 'bg-green-500/15 text-green-400'}`}>{account.ebc_data.status}</span>}
+              </div>
+            );
+          })()}
+          {/* Signal badges */}
+          {account.signals.length > 0 && (
+            <div className="px-4 py-1.5 flex flex-wrap gap-1.5 border-t border-dark-700">
+              {account.signals.slice(0, 3).map(s => (
+                <span key={s.label} className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'}`}>{s.label}</span>
+              ))}
             </div>
           )}
           {/* Now & Buzz bar — inside the sticky header */}
