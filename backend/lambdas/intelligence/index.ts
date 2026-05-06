@@ -62,10 +62,10 @@ async function googleSearch(query: string): Promise<string> {
   }
 }
 
-const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL search results from Google about a company. Extract and structure the factual information into JSON. Only include information that is supported by the search results. If data is not available in the search results, use reasonable estimates clearly marked. Return ONLY valid JSON, no markdown.
+const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL Google search results about a company. Extract and structure the factual information into JSON. For executive_social, extract REAL executive names and titles from the LinkedIn results — include what they posted about. Only include information supported by the search results. Return ONLY valid JSON, no markdown.
 
 JSON structure:
-{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Name","title":"Title","post_theme":"theme"}],"glassdoor_signals":["signal1","signal2"],"industry_context":"context","news_signals":["news1"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence"}],"tc_opportunity_score":number}`;
+{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Real Name from search","title":"Real Title from search","post_theme":"What they posted about"}],"glassdoor_signals":["real review excerpt"],"industry_context":"context from news","news_signals":["real news"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence from search"}],"tc_opportunity_score":number}`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
@@ -92,19 +92,21 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
 
     // Fetch REAL data from Google search (parallel requests)
-    const [linkedinResults, glassdoorResults, newsResults, dataBookResults] = await Promise.all([
+    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults] = await Promise.all([
       googleSearch(`${companyName} site:linkedin.com/jobs cloud AI engineer`),
       googleSearch(`${companyName} site:glassdoor.com reviews culture training`),
       googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
       googleSearch(`${companyName} AWS cloud spend revenue technology investment`),
+      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`),
     ]);
 
     // Build context from real search results
     const searchContext = [
-      linkedinResults ? `LINKEDIN SEARCH RESULTS:\n${linkedinResults}` : '',
-      glassdoorResults ? `GLASSDOOR SEARCH RESULTS:\n${glassdoorResults}` : '',
-      newsResults ? `NEWS & TRANSFORMATION RESULTS:\n${newsResults}` : '',
-      dataBookResults ? `COMPANY DATA & INVESTMENT RESULTS:\n${dataBookResults}` : '',
+      linkedinResults ? `LINKEDIN JOB POSTINGS:\n${linkedinResults}` : '',
+      executivePostsResults ? `EXECUTIVE LINKEDIN PROFILES & POSTS:\n${executivePostsResults}` : '',
+      glassdoorResults ? `GLASSDOOR EMPLOYEE REVIEWS:\n${glassdoorResults}` : '',
+      newsResults ? `COMPANY NEWS & TRANSFORMATION:\n${newsResults}` : '',
+      dataBookResults ? `COMPANY DATA, REVENUE & INVESTMENT:\n${dataBookResults}` : '',
     ].filter(Boolean).join('\n\n');
 
     const userMessage = searchContext
