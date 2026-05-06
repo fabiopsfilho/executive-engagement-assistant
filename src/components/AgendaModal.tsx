@@ -1,7 +1,5 @@
 import { X, MapPin, Calendar, Copy, Check, ChevronDown, ChevronUp, Presentation, Download } from 'lucide-react';
 import { useState } from 'react';
-// @ts-ignore - docx types may not be available in all environments
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import type { Agenda, AgendaBlock } from '../data/agendas';
 
 const typeColors: Record<AgendaBlock['type'], string> = {
@@ -95,6 +93,7 @@ ${slideBlocks.map((b, i) => `
 }
 
 async function exportWordDoc(agenda: Agenda) {
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
   const doc = new Document({
     sections: [{
       properties: {},
