@@ -8,7 +8,7 @@ frontend:
     build:
       commands:
         - echo "VITE_API_URL=https://gy5b6oev95.execute-api.us-east-1.amazonaws.com/prod" > .env
-        - npm run build
+        - npx vite build
   artifacts:
     baseDirectory: dist
     files:
