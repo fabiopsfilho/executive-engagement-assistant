@@ -191,9 +191,6 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
           </div>
           <h3 className="text-base font-semibold text-white mb-2">{noAgendaAccount}</h3>
           <p className="text-sm text-muted">No executive agenda scheduled for this account.</p>
-          <button onClick={() => setNoAgendaAccount(null)} className="mt-4 px-4 py-2 bg-purple-500/20 border border-purple-500/40 rounded-xl text-xs text-purple-400 font-medium">
-            Browse all accounts
-          </button>
         </div>
       )}
 
