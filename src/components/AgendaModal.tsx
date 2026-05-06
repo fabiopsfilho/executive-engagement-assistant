@@ -1,5 +1,6 @@
-import { X, MapPin, Calendar, Copy, Check, ChevronDown, ChevronUp, Presentation } from 'lucide-react';
+import { X, MapPin, Calendar, Copy, Check, ChevronDown, ChevronUp, Presentation, Download } from 'lucide-react';
 import { useState } from 'react';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import type { Agenda, AgendaBlock } from '../data/agendas';
 
 const typeColors: Record<AgendaBlock['type'], string> = {
@@ -92,6 +93,40 @@ ${slideBlocks.map((b, i) => `
   URL.revokeObjectURL(url);
 }
 
+async function exportWordDoc(agenda: Agenda) {
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: [
+        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: agenda.title, bold: true })] }),
+        new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: agenda.subtitle, italics: true, size: 22 })] }),
+        new Paragraph({ spacing: { after: 200 }, children: [new TextRun({ text: `${agenda.format} | ${agenda.date} | ${agenda.location}`, size: 20, color: '666666' })] }),
+        new Paragraph({ spacing: { before: 200, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Leadership Principles', bold: true })] }),
+        ...agenda.principles.map(p => new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: p, size: 22 })] })),
+        new Paragraph({ spacing: { before: 300, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Agenda', bold: true })] }),
+        ...agenda.blocks.flatMap(b => [
+          new Paragraph({ spacing: { before: 200 }, children: [
+            new TextRun({ text: `${b.time} (${b.duration})`, bold: true, size: 22 }),
+            new TextRun({ text: ` — ${b.title}`, bold: true, size: 22 }),
+          ]}),
+          new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: b.description, size: 22 })] }),
+          new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: `Owner: ${b.owner}`, size: 20, color: '666666', italics: true })] }),
+        ]),
+        new Paragraph({ spacing: { before: 300, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Preparation Checklist', bold: true })] }),
+        ...agenda.preparation_notes.map((n, i) => new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: `${i + 1}. ${n}`, size: 22 })] })),
+      ],
+    }],
+  });
+
+  const buffer = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(buffer);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${agenda.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () => void }) {
   const [expandedPrep, setExpandedPrep] = useState(false);
 
@@ -136,6 +171,10 @@ export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () =
             <button onClick={() => exportSlides(agenda)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 text-xs text-white font-medium active:opacity-80">
               <Presentation className="w-3.5 h-3.5" />Slides
+            </button>
+            <button onClick={() => exportWordDoc(agenda)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 text-xs text-white font-medium active:opacity-80">
+              <Download className="w-3.5 h-3.5" />Word
             </button>
           </div>
         </div>

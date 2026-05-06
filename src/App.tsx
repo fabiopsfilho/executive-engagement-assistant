@@ -243,7 +243,7 @@ export default function App() {
                           <span className="text-xs font-medium text-white">{e.name}</span>
                           <span className="text-[10px] text-muted ml-1">{e.title}</span>
                           <p className="text-xs text-blue-400 italic mt-0.5">"{e.post_theme}"</p>
-                          {e.url && <a href={e.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-400 hover:underline mt-0.5 block truncate">🔗 View source</a>}
+                          <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-400 hover:underline mt-0.5 block">🔗 View on LinkedIn</a>
                         </div>
                       </div>
                     ))}
