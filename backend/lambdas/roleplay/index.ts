@@ -1,6 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeText, BedrockMessage } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getTCProductKnowledge } from '../shared/mcp';
+import { getTCStrategyContext } from '../shared/knowledge-base';
 
 /**
  * Search Google for a person's public posts and statements
@@ -184,8 +186,22 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     messages.push({ role: 'user', content: message });
 
+    // Fetch AWS T&C context to make roleplay responses more realistic
+    let awsDocsContext = '';
+    try {
+      const [mcpDocs, kbDocs] = await Promise.all([
+        getTCProductKnowledge(accountContext.industry, [persona.persona]).catch(() => ''),
+        getTCStrategyContext(accountContext.industry, persona.persona).catch(() => ''),
+      ]);
+      awsDocsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
+    } catch { /* continue without */ }
+
+    const enrichedSystemPrompt = awsDocsContext
+      ? `${systemPrompt}\n\nAWS T&C KNOWLEDGE (use this to make your responses realistic — reference real AWS offerings when the seller mentions training):\n${awsDocsContext.slice(0, 2000)}`
+      : systemPrompt;
+
     const response = await invokeClaudeText(
-      systemPrompt,
+      enrichedSystemPrompt,
       messages,
       { maxTokens: 1024, temperature: 0.8 }
     );

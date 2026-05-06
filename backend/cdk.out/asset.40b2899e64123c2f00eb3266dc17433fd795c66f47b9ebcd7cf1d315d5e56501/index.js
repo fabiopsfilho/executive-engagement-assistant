@@ -83,6 +83,99 @@ function error(statusCode, message) {
   };
 }
 
+// lambdas/shared/mcp.ts
+var MCP_SERVER_URL = "https://knowledge-mcp.global.api.aws";
+async function callMCPTool(toolName, args) {
+  try {
+    const response = await fetch(`${MCP_SERVER_URL}/mcp/v1/tools/call`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        method: "tools/call",
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      })
+    });
+    if (!response.ok) {
+      console.warn(`MCP tool ${toolName} returned ${response.status}`);
+      return "";
+    }
+    const data = await response.json();
+    if (data.content && data.content.length > 0) {
+      return data.content.map((c) => c.text).join("\n");
+    }
+    return "";
+  } catch (err) {
+    console.warn(`MCP tool ${toolName} failed:`, err);
+    return "";
+  }
+}
+async function searchAWSDocumentation(query) {
+  return callMCPTool("search_documentation", {
+    search_phrase: query,
+    topic: "training-certification"
+  });
+}
+async function getTCProductKnowledge(industry, topics) {
+  const queries = [
+    `AWS Training Certification ${industry} workforce development`,
+    `AWS Skill Builder enterprise subscription features`,
+    ...topics.slice(0, 2).map((t) => `AWS Training ${t}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => searchAWSDocumentation(q).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  return combined.slice(0, 2e3);
+}
+
+// lambdas/shared/knowledge-base.ts
+var import_client_bedrock_agent_runtime = require("@aws-sdk/client-bedrock-agent-runtime");
+var client2 = new import_client_bedrock_agent_runtime.BedrockAgentRuntimeClient({
+  region: process.env.BEDROCK_REGION || "us-east-1"
+});
+var KNOWLEDGE_BASE_ID = process.env.KNOWLEDGE_BASE_ID || "TJHYCVRLXH";
+async function retrieveFromKnowledgeBase(query, maxResults = 5) {
+  try {
+    const command = new import_client_bedrock_agent_runtime.RetrieveCommand({
+      knowledgeBaseId: KNOWLEDGE_BASE_ID,
+      retrievalQuery: { text: query },
+      retrievalConfiguration: {
+        vectorSearchConfiguration: {
+          numberOfResults: maxResults
+        }
+      }
+    });
+    const response = await client2.send(command);
+    const results = response.retrievalResults || [];
+    if (results.length === 0) return "";
+    const chunks = results.filter((r) => r.content?.text).map((r) => r.content.text).join("\n\n---\n\n");
+    return chunks.slice(0, 3e3);
+  } catch (err) {
+    console.warn("Knowledge base retrieval failed:", err);
+    return "";
+  }
+}
+async function getTCStrategyContext(industry, persona, topics = []) {
+  const queries = [
+    `${persona} executive engagement strategy ${industry} training certification`,
+    ...topics.slice(0, 2).map((t) => `${t} workforce development ${industry}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => retrieveFromKnowledgeBase(q, 3).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  if (!combined) return "";
+  return `
+
+T&C KNOWLEDGE BASE CONTEXT:
+${combined.slice(0, 4e3)}`;
+}
+
 // lambdas/generate-pitch/index.ts
 var SYSTEM_PROMPT = `You are an expert at creating executive pitch decks for AWS Training & Certification engagements. You create narrative-driven presentations that position T&C as a strategic accelerator, not a product pitch.
 
@@ -149,9 +242,24 @@ ${userNotes && userNotes.length > 0 ? `ADDITIONAL TOPICS:
 ${userNotes.join("\n")}` : ""}
 
 Create a 7-slide pitch deck tailored to ${persona.name}'s perspective as a ${persona.persona}. The speaker notes should coach the presenter on delivery, reactions to watch for, and which proof points to emphasize.`;
+    let awsDocsContext = "";
+    try {
+      const [mcpDocs, kbDocs] = await Promise.all([
+        getTCProductKnowledge(accountContext.industry, [persona.persona]).catch(() => ""),
+        getTCStrategyContext(accountContext.industry, persona.persona).catch(() => "")
+      ]);
+      awsDocsContext = [mcpDocs, kbDocs].filter(Boolean).join("\n\n");
+    } catch {
+    }
+    const fullMessage = awsDocsContext ? `${userMessage}
+
+AWS T&C REFERENCE MATERIAL:
+${awsDocsContext}
+
+Use the reference material to include specific, real AWS T&C offerings and proof points in the slides.` : userMessage;
     const result = await invokeClaudeJSON(
       SYSTEM_PROMPT,
-      [{ role: "user", content: userMessage }],
+      [{ role: "user", content: fullMessage }],
       { maxTokens: 4096, temperature: 0.7 }
     );
     return success(result);

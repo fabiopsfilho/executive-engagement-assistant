@@ -1,6 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeText, BedrockMessage } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getTCProductKnowledge } from '../shared/mcp';
+import { getTCStrategyContext } from '../shared/knowledge-base';
 
 interface AdvisorRequest {
   message: string;
@@ -87,10 +89,19 @@ ${capability ? `\nACTIVE CAPABILITY: ${capability}` : ''}`;
       }
     }
 
-    // Add current message with context
+    // Add current message with context + AWS documentation
+    let awsDocsContext = '';
+    try {
+      const [mcpDocs, kbDocs] = await Promise.all([
+        getTCProductKnowledge(accountContext.industry, [message.slice(0, 50)]).catch(() => ''),
+        getTCStrategyContext(accountContext.industry, selectedPersona?.persona || 'CTO', [message.slice(0, 50)]).catch(() => ''),
+      ]);
+      awsDocsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
+    } catch { /* continue without */ }
+
     messages.push({
       role: 'user',
-      content: `${contextBlock}\n\nSELLER'S QUESTION: ${message}`,
+      content: `${contextBlock}${awsDocsContext ? `\n\nAWS T&C REFERENCE MATERIAL:\n${awsDocsContext}` : ''}\n\nSELLER'S QUESTION: ${message}`,
     });
 
     const response = await invokeClaudeText(

@@ -340,3 +340,26 @@ export async function generateAccountInsights(
     tcData,
   });
 }
+
+// ─── Account Buzz/Now (AI-Generated) ─────────────────────────────────────────
+
+export interface BuzzNowResponse {
+  buzz_summary: string;
+  buzz_executive_insights: string[];
+  buzz_hiring_analysis: string;
+  buzz_sentiment_analysis: string;
+  now_focus: string;
+  now_initiatives: string[];
+  now_key_asks: string[];
+  now_opening_move: string;
+}
+
+export async function generateBuzzNow(
+  accountData: unknown,
+  tcData?: TCAccountSummary | null
+): Promise<BuzzNowResponse> {
+  return post<BuzzNowResponse>('/accounts/default/buzz', {
+    accountData,
+    tcData,
+  });
+}

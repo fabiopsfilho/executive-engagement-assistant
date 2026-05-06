@@ -4,6 +4,7 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dyn
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { getTCProductKnowledge } from '../shared/mcp';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -69,17 +70,21 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Build rich context from account data
     const context = buildAccountContext(accountData, tcData);
 
-    // Retrieve relevant T&C strategy content from Knowledge Base
+    // Retrieve relevant T&C strategy content from Knowledge Base + AWS Docs MCP
     const persona = accountData.ebc_data?.attendees?.[0]?.persona || 'CTO';
     const industry = accountData.industry || 'Technology';
     const themes = accountData.ebc_data?.themes || [];
-    const kbContext = await getTCStrategyContext(industry, persona, themes);
+    const [kbContext, mcpContext] = await Promise.all([
+      getTCStrategyContext(industry, persona, themes).catch(() => ''),
+      getTCProductKnowledge(industry, themes).catch(() => ''),
+    ]);
+    const allContext = [kbContext, mcpContext].filter(Boolean).join('\n\n');
 
     const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC — reference actual names, numbers, and signals from the data. Use the T&C Knowledge Base context to recommend specific plays, proof points, and approaches that are documented in our strategy materials.
 
 ACCOUNT DATA:
 ${context}
-${kbContext}
+${allContext ? `\nAWS T&C KNOWLEDGE & DOCUMENTATION:\n${allContext}` : ''}
 
 Return JSON with exactly these fields:
 {

@@ -208,8 +208,11 @@ TARGET PERSONA:
 
 ${userNotes && userNotes.length > 0 ? `ADDITIONAL CONTEXT FROM SELLER:
 ${userNotes.join("\n")}` : ""}
+${awsKnowledge ? `
+AWS T&C DOCUMENTATION REFERENCE:
+${awsKnowledge}` : ""}
 
-IMPORTANT: When generating conversation starters and recommended plays, reference the T&C current state and any existing training engagement. If they have existing products, build on that. If they're greenfield, lead with assessment and pilot approaches.
+IMPORTANT: When generating conversation starters and recommended plays, reference the T&C current state and any existing training engagement. If they have existing products, build on that. If they're greenfield, lead with assessment and pilot approaches. Use the AWS T&C documentation reference to recommend specific, real AWS Training & Certification offerings.
 
 Generate the engagement plan. Remember: ground everything in the specific data above. Reference ${persona.name}'s own words and public activity. Make the narrative tell THEIR story, not ours.`;
     const result = await invokeClaudeJSON(

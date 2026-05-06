@@ -126,6 +126,56 @@ T&C KNOWLEDGE BASE CONTEXT:
 ${combined.slice(0, 4e3)}`;
 }
 
+// lambdas/shared/mcp.ts
+var MCP_SERVER_URL = "https://knowledge-mcp.global.api.aws";
+async function callMCPTool(toolName, args) {
+  try {
+    const response = await fetch(`${MCP_SERVER_URL}/mcp/v1/tools/call`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        method: "tools/call",
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      })
+    });
+    if (!response.ok) {
+      console.warn(`MCP tool ${toolName} returned ${response.status}`);
+      return "";
+    }
+    const data = await response.json();
+    if (data.content && data.content.length > 0) {
+      return data.content.map((c) => c.text).join("\n");
+    }
+    return "";
+  } catch (err) {
+    console.warn(`MCP tool ${toolName} failed:`, err);
+    return "";
+  }
+}
+async function searchAWSDocumentation(query) {
+  return callMCPTool("search_documentation", {
+    search_phrase: query,
+    topic: "training-certification"
+  });
+}
+async function getTCProductKnowledge(industry, topics) {
+  const queries = [
+    `AWS Training Certification ${industry} workforce development`,
+    `AWS Skill Builder enterprise subscription features`,
+    ...topics.slice(0, 2).map((t) => `AWS Training ${t}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => searchAWSDocumentation(q).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  return combined.slice(0, 2e3);
+}
+
 // lambdas/generate-agenda/index.ts
 var SYSTEM_PROMPT = `You are an expert at designing executive engagement agendas for AWS Training & Certification. You create agendas grounded in Amazon Leadership Principles that position T&C as a strategic accelerator.
 
@@ -171,7 +221,11 @@ async function handler(event) {
       return error(400, "accountContext and format are required");
     }
     const primaryPersona = accountContext.attendees?.[0]?.persona || "CTO";
-    const kbContext = await getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes);
+    const [kbContext, mcpContext] = await Promise.all([
+      getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes).catch(() => ""),
+      getTCProductKnowledge(accountContext.industry, accountContext.ebc_themes).catch(() => "")
+    ]);
+    const allContext = [kbContext, mcpContext].filter(Boolean).join("\n\n");
     const userMessage = `Generate a ${format === "ebc" ? "half-day EBC strategic session" : "1-hour Training Strategy Session"} agenda for:
 
 CUSTOMER: ${accountContext.customer_name} (${accountContext.industry})
@@ -201,6 +255,9 @@ Design an agenda that:
 ${kbContext ? `
 T&C STRATEGY REFERENCE MATERIAL:
 ${kbContext}` : ""}
+${mcpContext ? `
+AWS DOCUMENTATION:
+${mcpContext}` : ""}
 
 Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
     const result = await invokeClaudeJSON(

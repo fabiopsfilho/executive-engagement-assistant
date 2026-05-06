@@ -1,6 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getTCProductKnowledge } from '../shared/mcp';
+import { getTCStrategyContext } from '../shared/knowledge-base';
 
 interface PitchRequest {
   accountContext: {
@@ -116,9 +118,23 @@ ${userNotes && userNotes.length > 0 ? `ADDITIONAL TOPICS:\n${userNotes.join('\n'
 
 Create a 7-slide pitch deck tailored to ${persona.name}'s perspective as a ${persona.persona}. The speaker notes should coach the presenter on delivery, reactions to watch for, and which proof points to emphasize.`;
 
+    // Fetch AWS T&C documentation and Knowledge Base context
+    let awsDocsContext = '';
+    try {
+      const [mcpDocs, kbDocs] = await Promise.all([
+        getTCProductKnowledge(accountContext.industry, [persona.persona]).catch(() => ''),
+        getTCStrategyContext(accountContext.industry, persona.persona).catch(() => ''),
+      ]);
+      awsDocsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
+    } catch { /* continue without */ }
+
+    const fullMessage = awsDocsContext
+      ? `${userMessage}\n\nAWS T&C REFERENCE MATERIAL:\n${awsDocsContext}\n\nUse the reference material to include specific, real AWS T&C offerings and proof points in the slides.`
+      : userMessage;
+
     const result = await invokeClaudeJSON<PitchResponse>(
       SYSTEM_PROMPT,
-      [{ role: 'user', content: userMessage }],
+      [{ role: 'user', content: fullMessage }],
       { maxTokens: 4096, temperature: 0.7 }
     );
 

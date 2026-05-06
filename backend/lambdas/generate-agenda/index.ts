@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { getTCProductKnowledge } from '../shared/mcp';
 
 interface AgendaRequest {
   accountContext: {
@@ -89,9 +90,13 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountContext and format are required');
     }
 
-    // Retrieve relevant T&C strategy content from Knowledge Base
+    // Retrieve relevant T&C strategy content from Knowledge Base + AWS Docs MCP
     const primaryPersona = accountContext.attendees?.[0]?.persona || 'CTO';
-    const kbContext = await getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes);
+    const [kbContext, mcpContext] = await Promise.all([
+      getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes).catch(() => ''),
+      getTCProductKnowledge(accountContext.industry, accountContext.ebc_themes).catch(() => ''),
+    ]);
+    const allContext = [kbContext, mcpContext].filter(Boolean).join('\n\n');
 
     const userMessage = `Generate a ${format === 'ebc' ? 'half-day EBC strategic session' : '1-hour Training Strategy Session'} agenda for:
 
@@ -118,6 +123,7 @@ Design an agenda that:
 4. Closes with specific commitments from both sides
 5. Weaves in the specific signals and intelligence for this account
 ${kbContext ? `\nT&C STRATEGY REFERENCE MATERIAL:\n${kbContext}` : ''}
+${mcpContext ? `\nAWS DOCUMENTATION:\n${mcpContext}` : ''}
 
 Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
 

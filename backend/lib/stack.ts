@@ -184,8 +184,19 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 10. Account Buzz/Now (AI-generated buzz and now insights)
+    const accountBuzzFn = new NodejsFunction(this, 'AccountBuzzFn', {
+      functionName: 'engagement-assistant-account-buzz',
+      entry: path.join(__dirname, '../lambdas/account-buzz/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -236,6 +247,10 @@ class EngagementAssistantStack extends cdk.Stack {
     // POST /accounts/{accountId}/insights
     const insights = account.addResource('insights');
     insights.addMethod('POST', new apigateway.LambdaIntegration(accountInsightsFn));
+
+    // POST /accounts/{accountId}/buzz
+    const buzz = account.addResource('buzz');
+    buzz.addMethod('POST', new apigateway.LambdaIntegration(accountBuzzFn));
 
     // GET /ebc-data (load EBC calendar from S3)
     const ebcData = api.root.addResource('ebc-data');

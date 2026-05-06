@@ -476,7 +476,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "28a1c5fb278e23798b8c6a0d6a9b3f91f983efb30c509160dea5e999ff147f28.zip"
+     "S3Key": "87906f863fcfdfa49a9cede316d9c19ad2ae7a215240d5a24e58f944069f21dc.zip"
     },
     "Environment": {
      "Variables": {
@@ -517,7 +517,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/GenerateEngagementFn/Resource",
-    "aws:asset:path": "asset.28a1c5fb278e23798b8c6a0d6a9b3f91f983efb30c509160dea5e999ff147f28",
+    "aws:asset:path": "asset.87906f863fcfdfa49a9cede316d9c19ad2ae7a215240d5a24e58f944069f21dc",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -737,7 +737,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "93e6080a671363514ab3f81a621979c87897edd01de3fe02feacd500c7a1d652.zip"
+     "S3Key": "31a4f3e35bbc8e5e8d960a5fa16153c347289fceb8c4629019da3d0df0c68b46.zip"
     },
     "Environment": {
      "Variables": {
@@ -778,7 +778,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AdvisorChatFn/Resource",
-    "aws:asset:path": "asset.93e6080a671363514ab3f81a621979c87897edd01de3fe02feacd500c7a1d652",
+    "aws:asset:path": "asset.31a4f3e35bbc8e5e8d960a5fa16153c347289fceb8c4629019da3d0df0c68b46",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -998,7 +998,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "59f24191e0fe3f61f85d6299dd5a77af00b3a35b056f85cb1708f26937497f3f.zip"
+     "S3Key": "d3e129bb49d47201305b6dede42698b04932c4121f5c61b3b94b724a8cf00b12.zip"
     },
     "Environment": {
      "Variables": {
@@ -1039,7 +1039,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/RolePlayFn/Resource",
-    "aws:asset:path": "asset.59f24191e0fe3f61f85d6299dd5a77af00b3a35b056f85cb1708f26937497f3f",
+    "aws:asset:path": "asset.d3e129bb49d47201305b6dede42698b04932c4121f5c61b3b94b724a8cf00b12",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -1520,7 +1520,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "c39026659bc365e966f444d3b086548d169eff91127e3cf733883a6a5d5b0a08.zip"
+     "S3Key": "bbd2cfc03a4b5923ba0387044cf4ae97c8161e79acdfc5140e574bfc3d4bad0a.zip"
     },
     "Environment": {
      "Variables": {
@@ -1561,7 +1561,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AgendaFn/Resource",
-    "aws:asset:path": "asset.c39026659bc365e966f444d3b086548d169eff91127e3cf733883a6a5d5b0a08",
+    "aws:asset:path": "asset.bbd2cfc03a4b5923ba0387044cf4ae97c8161e79acdfc5140e574bfc3d4bad0a",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -1781,7 +1781,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "4fba3522c544f0d0bb5ef050c35291083bd021d74c721970c0d7f79118b3e0a2.zip"
+     "S3Key": "40b2899e64123c2f00eb3266dc17433fd795c66f47b9ebcd7cf1d315d5e56501.zip"
     },
     "Environment": {
      "Variables": {
@@ -1822,7 +1822,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/PitchFn/Resource",
-    "aws:asset:path": "asset.4fba3522c544f0d0bb5ef050c35291083bd021d74c721970c0d7f79118b3e0a2",
+    "aws:asset:path": "asset.40b2899e64123c2f00eb3266dc17433fd795c66f47b9ebcd7cf1d315d5e56501",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2564,7 +2564,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "16db769d0c6f78c2f65fad82b7c18f65cab99e3c968758f993370c71441bfc7d.zip"
+     "S3Key": "f50de87e02eaafa91ebc4cb54581adcc598b86bbb964b2ed2db4ef12bf6f1a6f.zip"
     },
     "Environment": {
      "Variables": {
@@ -2605,7 +2605,268 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountInsightsFn/Resource",
-    "aws:asset:path": "asset.16db769d0c6f78c2f65fad82b7c18f65cab99e3c968758f993370c71441bfc7d",
+    "aws:asset:path": "asset.f50de87e02eaafa91ebc4cb54581adcc598b86bbb964b2ed2db4ef12bf6f1a6f",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "AccountBuzzFnServiceRoleB81BBD27": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/ServiceRole/Resource"
+   }
+  },
+  "AccountBuzzFnServiceRoleDefaultPolicyE031CA75": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:GetObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EBCDataBucketA7159746",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EBCDataBucketA7159746",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AccountBuzzFnServiceRoleDefaultPolicyE031CA75",
+    "Roles": [
+     {
+      "Ref": "AccountBuzzFnServiceRoleB81BBD27"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "AccountBuzzFnFACD4547": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
+     "S3Key": "9d5960374c55e03198976d7763cbd5806e0c5a25a148b690747e8de5ae1df533.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ACCOUNTS_TABLE": {
+       "Ref": "AccountsTable81C15AE5"
+      },
+      "INTELLIGENCE_CACHE_TABLE": {
+       "Ref": "IntelligenceCache80B886A5"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Ref": "ConversationsTableCD91EB96"
+      },
+      "BEDROCK_MODEL_ID": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "BEDROCK_REGION": "us-east-1",
+      "EBC_DATA_BUCKET": {
+       "Ref": "EBCDataBucketA7159746"
+      },
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "1"
+     }
+    },
+    "FunctionName": "engagement-assistant-account-buzz",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "AccountBuzzFnServiceRoleB81BBD27",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "AccountBuzzFnServiceRoleDefaultPolicyE031CA75",
+    "AccountBuzzFnServiceRoleB81BBD27"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/Resource",
+    "aws:asset:path": "asset.9d5960374c55e03198976d7763cbd5806e0c5a25a148b690747e8de5ae1df533",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2675,7 +2936,7 @@
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Account"
    }
   },
-  "EngagementAssistantApiDeployment3A0389DA346fbee49039ad497fc46ebc8a6da27a": {
+  "EngagementAssistantApiDeployment3A0389DA13c572d5cbc6b550dfe003b33e2bf4e4": {
    "Type": "AWS::ApiGateway::Deployment",
    "Properties": {
     "Description": "Backend API for the Executive Engagement Assistant",
@@ -2690,6 +2951,9 @@
     "EngagementAssistantApiaccountsaccountIdagendaOPTIONS3294537D",
     "EngagementAssistantApiaccountsaccountIdagendaPOSTD04E7E68",
     "EngagementAssistantApiaccountsaccountIdagenda3FA5F296",
+    "EngagementAssistantApiaccountsaccountIdbuzzOPTIONS20154432",
+    "EngagementAssistantApiaccountsaccountIdbuzzPOSTFD5566D5",
+    "EngagementAssistantApiaccountsaccountIdbuzzAB875C66",
     "EngagementAssistantApiaccountsaccountIdengageOPTIONS37D3A7EE",
     "EngagementAssistantApiaccountsaccountIdengagePOSTC8AE5E22",
     "EngagementAssistantApiaccountsaccountIdengageD3752BEF",
@@ -2726,7 +2990,7 @@
    "Type": "AWS::ApiGateway::Stage",
    "Properties": {
     "DeploymentId": {
-     "Ref": "EngagementAssistantApiDeployment3A0389DA346fbee49039ad497fc46ebc8a6da27a"
+     "Ref": "EngagementAssistantApiDeployment3A0389DA13c572d5cbc6b550dfe003b33e2bf4e4"
     },
     "RestApiId": {
      "Ref": "EngagementAssistantApiE38A28D6"
@@ -4058,6 +4322,171 @@
    },
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/insights/POST/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdbuzzAB875C66": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "EngagementAssistantApiaccountsaccountId55ABAF43"
+    },
+    "PathPart": "buzz",
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdbuzzOPTIONS20154432": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdbuzzAB875C66"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/OPTIONS/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdbuzzPOSTApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdbuzz35994593": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "AccountBuzzFnFACD4547",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/",
+       {
+        "Ref": "EngagementAssistantApiDeploymentStageprodF2AE2396"
+       },
+       "/POST/accounts/*/buzz"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/POST/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.buzz"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdbuzzPOSTApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdbuzz6B3079E0": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "AccountBuzzFnFACD4547",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/test-invoke-stage/POST/accounts/*/buzz"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/POST/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.buzz"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdbuzzPOSTFD5566D5": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "AccountBuzzFnFACD4547",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdbuzzAB875C66"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/POST/Resource"
    }
   },
   "EngagementAssistantApiebcdataDCC304FD": {

@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import type { UserNote } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { generateAccountInsights, generateAgenda as generateAgendaAPI, isBackendAvailable, type AccountInsightsResponse, type TCAccountSummary } from '../services/api';
+import { generateAccountInsights, generateAgenda as generateAgendaAPI, generateBuzzNow, isBackendAvailable, type AccountInsightsResponse, type TCAccountSummary, type BuzzNowResponse } from '../services/api';
 
 function ConnectionToggle({ text }: { text: string }) {
   const [show, setShow] = useState(false);
@@ -68,20 +68,28 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
   const [insightTab, setInsightTab] = useState<'now' | 'buzz' | null>(null);
   const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [buzzNow, setBuzzNow] = useState<BuzzNowResponse | null>(null);
+  const [buzzNowLoading, setBuzzNowLoading] = useState(false);
   const [aiAgenda, setAiAgenda] = useState<any | null>(null);
   const [agendaLoading, setAgendaLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
   const spendGrowth = Math.round(((a.aws_spend.current_year - a.aws_spend.prior_year) / a.aws_spend.prior_year) * 100);
 
-  // Fetch AI-generated insights when account changes
+  // Fetch AI-generated insights and buzz/now when account changes
   useEffect(() => {
     if (!isBackendAvailable()) return;
     setInsightsLoading(true);
     setInsights(null);
+    setBuzzNowLoading(true);
+    setBuzzNow(null);
     generateAccountInsights(a, tcData)
       .then(result => setInsights(result))
       .catch(err => console.warn('Failed to generate insights:', err))
       .finally(() => setInsightsLoading(false));
+    generateBuzzNow(a, tcData)
+      .then(result => setBuzzNow(result))
+      .catch(err => console.warn('Failed to generate buzz/now:', err))
+      .finally(() => setBuzzNowLoading(false));
   }, [a.customer_name]);
 
   // Handle agenda generation via Bedrock
@@ -370,120 +378,123 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
             <div className="px-5 pb-5">
               {insightTab === 'now' && (
                 <div className="space-y-4">
-                  {/* Trends */}
+                  {buzzNowLoading && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                      <span>Analyzing signals for {a.customer_name}...</span>
+                    </div>
+                  )}
+                  {/* AI Focus */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-sky-400" />
-                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Trends to leverage</span>
+                      <Zap className="w-4 h-4 text-sky-400" />
+                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">What to focus on now</span>
                     </div>
-                    <div className="space-y-2">
-                      <p className="text-sm text-slate-300 pl-3 border-l-2 border-sky-500">{a.public_intelligence.industry_context}</p>
-                      {a.public_intelligence.news_signals.map((s, i) => (
-                        <p key={i} className="text-sm text-slate-400 pl-3 border-l-2 border-navy-600">{s}</p>
-                      ))}
-                    </div>
+                    <p className="text-sm text-slate-200 pl-3 border-l-2 border-sky-500">
+                      {buzzNow?.now_focus || `${a.sfdc_data.account_plan_priority} — ${a.signals[0]?.evidence || 'Priority engagement'}`}
+                    </p>
                   </div>
-                  {/* Initiatives to focus on */}
+                  {/* AI Initiatives */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Target className="w-4 h-4 text-amber-400" />
-                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Initiatives to focus on</span>
+                      <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Initiatives to drive</span>
                     </div>
                     <div className="space-y-2">
-                      <div className="bg-navy-700/50 rounded-lg p-3">
-                        <span className="text-sm font-medium text-white">{a.sfdc_data.account_plan_priority}</span>
-                        <p className="text-xs text-slate-400 mt-1">{a.sfdc_data.open_opps} open opportunities · {a.sfdc_data.smgs_phase} phase</p>
-                      </div>
-                      {a.signals.filter(s => s.severity === 'HIGH').map(s => (
-                        <div key={s.label} className="flex items-start gap-2">
-                          <span className="mt-1 w-2 h-2 rounded-full bg-rose-400 shrink-0" />
-                          <div>
-                            <span className="text-xs font-medium text-white">{s.label}</span>
-                            <p className="text-[11px] text-slate-400">{s.evidence}</p>
-                          </div>
+                      {(buzzNow?.now_initiatives || [`Focus on ${a.sfdc_data.account_plan_priority}`, ...a.signals.filter(s => s.severity === 'HIGH').map(s => s.label)]).map((initiative, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="mt-1 w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                          <p className="text-sm text-slate-300">{initiative}</p>
                         </div>
                       ))}
                     </div>
                   </div>
-                  {/* Key asks right now */}
+                  {/* AI Key Asks */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                       <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Key asks for this moment</span>
                     </div>
                     <div className="space-y-1.5">
-                      <p className="text-sm text-slate-300">→ Who is the executive sponsor for workforce development?</p>
-                      <p className="text-sm text-slate-300">→ What's the timeline pressure on {a.sfdc_data.account_plan_priority}?</p>
-                      <p className="text-sm text-slate-300">→ {isGreenfield ? 'Which teams are most critical to the transformation?' : 'Why has the current training engagement stalled?'}</p>
-                      <p className="text-sm text-slate-300">→ What does success look like in 90 days?</p>
+                      {(buzzNow?.now_key_asks || [
+                        'Who is the executive sponsor for workforce development?',
+                        `What's the timeline pressure on ${a.sfdc_data.account_plan_priority}?`,
+                        isGreenfield ? 'Which teams are most critical to the transformation?' : 'Why has the current training engagement stalled?',
+                        'What does success look like in 90 days?',
+                      ]).map((ask, i) => (
+                        <p key={i} className="text-sm text-slate-300">→ {ask}</p>
+                      ))}
                     </div>
                   </div>
-                  {/* Opening move */}
-                  {a.public_intelligence.executive_social[0] && (
-                    <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-3">
-                      <span className="text-xs font-semibold text-sky-400">💡 Your opening</span>
-                      <p className="text-sm text-slate-300 mt-1">{a.public_intelligence.executive_social[0].name} posted about "{a.public_intelligence.executive_social[0].post_theme}" — reference this to show you've done your homework.</p>
-                    </div>
-                  )}
+                  {/* AI Opening Move */}
+                  <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-3">
+                    <span className="text-xs font-semibold text-sky-400">💡 Your opening move</span>
+                    <p className="text-sm text-slate-300 mt-1">
+                      {buzzNow?.now_opening_move || (a.public_intelligence.executive_social[0]
+                        ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}" — reference this to show you've done your homework.`
+                        : `Lead with their ${a.sfdc_data.account_plan_priority} priority and ask how workforce readiness fits into their timeline.`)}
+                    </p>
+                  </div>
                 </div>
               )}
               {insightTab === 'buzz' && (
                 <div className="space-y-4">
-                  {/* Executive social */}
+                  {buzzNowLoading && (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <span>Analyzing market signals...</span>
+                    </div>
+                  )}
+                  {/* AI Buzz Summary */}
+                  {buzzNow?.buzz_summary && (
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                      <span className="text-xs font-semibold text-amber-400">📊 Signal Synthesis</span>
+                      <p className="text-sm text-slate-200 mt-1">{buzzNow.buzz_summary}</p>
+                    </div>
+                  )}
+                  {/* AI Executive Insights */}
                   <div>
-                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Executive voices on LinkedIn</span>
+                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Executive voices</span>
                     <div className="space-y-3 mt-2">
-                      {a.public_intelligence.executive_social.map(e => (
-                        <div key={e.name} className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-navy-700 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
-                          <div>
-                            <span className="text-sm font-medium text-white">{e.name}</span>
-                            <span className="text-xs text-slate-500 ml-1.5">{e.title}</span>
-                            <p className="text-sm text-sky-400 italic mt-0.5">"{e.post_theme}"</p>
+                      {buzzNow?.buzz_executive_insights ? (
+                        buzzNow.buzz_executive_insights.map((insight, i) => (
+                          <div key={i} className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-navy-700 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">💡</div>
+                            <p className="text-sm text-slate-300">{insight}</p>
                           </div>
+                        ))
+                      ) : (
+                        a.public_intelligence.executive_social.map(e => (
+                          <div key={e.name} className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-navy-700 flex items-center justify-center text-[10px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
+                            <div>
+                              <span className="text-sm font-medium text-white">{e.name}</span>
+                              <span className="text-xs text-slate-500 ml-1.5">{e.title}</span>
+                              <p className="text-sm text-sky-400 italic mt-0.5">"{e.post_theme}"</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  {/* AI Hiring Analysis */}
+                  <div className="pt-3 border-t border-navy-600">
+                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Hiring & Skills Gap Analysis</span>
+                    <div className="mt-2">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div>
+                          <span className="text-2xl font-bold text-white">{a.public_intelligence.linkedin_job_postings.cloud_ai_roles}</span>
+                          <span className="text-xs text-slate-400 ml-1">cloud/AI roles</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  {/* LinkedIn trends */}
-                  <div className="pt-3 border-t border-navy-600">
-                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">LinkedIn hiring trends</span>
-                    <div className="flex items-center gap-4 mt-2">
-                      <div>
-                        <span className="text-2xl font-bold text-white">{a.public_intelligence.linkedin_job_postings.cloud_ai_roles}</span>
-                        <span className="text-xs text-slate-400 ml-1">cloud/AI roles</span>
+                        <span className="text-sm text-emerald-400 font-semibold">{a.public_intelligence.linkedin_job_postings.yoy_change} YoY</span>
                       </div>
-                      <span className="text-sm text-emerald-400 font-semibold">{a.public_intelligence.linkedin_job_postings.yoy_change} YoY</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1">This signals massive demand for cloud skills — they can't hire fast enough.</p>
-                  </div>
-                  {/* Industry news */}
-                  <div className="pt-3 border-t border-navy-600">
-                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Industry & news trends</span>
-                    <div className="space-y-2 mt-2">
-                      <p className="text-sm text-slate-300 pl-3 border-l-2 border-amber-500/50">{a.public_intelligence.industry_context}</p>
-                      {a.public_intelligence.news_signals.map((s, i) => (
-                        <p key={i} className="text-sm text-slate-400 pl-3 border-l-2 border-navy-600">{s}</p>
-                      ))}
+                      <p className="text-sm text-slate-300">{buzzNow?.buzz_hiring_analysis || 'Signals demand for cloud skills — they can\'t hire fast enough.'}</p>
                     </div>
                   </div>
-                  {/* Glassdoor */}
+                  {/* AI Sentiment Analysis */}
                   <div className="pt-3 border-t border-navy-600">
-                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Employee sentiment (Glassdoor)</span>
-                    <div className="space-y-2 mt-2">
-                      {a.public_intelligence.glassdoor_signals.map((s, i) => (
-                        <p key={i} className="text-sm text-slate-400 pl-3 border-l-2 border-navy-600">"{s}"</p>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Earnings */}
-                  <div className="pt-3 border-t border-navy-600">
-                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Earnings call signals</span>
-                    <div className="space-y-2 mt-2">
-                      {a.public_intelligence.earnings_call_signals.map((s, i) => (
-                        <p key={i} className="text-sm text-slate-400 pl-3 border-l-2 border-navy-600">{s}</p>
-                      ))}
-                    </div>
+                    <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Employee Sentiment & Culture</span>
+                    <p className="text-sm text-slate-300 mt-2">{buzzNow?.buzz_sentiment_analysis || (a.public_intelligence.glassdoor_signals[0] ? `"${a.public_intelligence.glassdoor_signals[0]}"` : 'No sentiment data available')}</p>
                   </div>
                 </div>
               )}

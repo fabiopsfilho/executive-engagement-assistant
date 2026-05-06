@@ -128,6 +128,56 @@ T&C KNOWLEDGE BASE CONTEXT:
 ${combined.slice(0, 4e3)}`;
 }
 
+// lambdas/shared/mcp.ts
+var MCP_SERVER_URL = "https://knowledge-mcp.global.api.aws";
+async function callMCPTool(toolName, args) {
+  try {
+    const response = await fetch(`${MCP_SERVER_URL}/mcp/v1/tools/call`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        method: "tools/call",
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      })
+    });
+    if (!response.ok) {
+      console.warn(`MCP tool ${toolName} returned ${response.status}`);
+      return "";
+    }
+    const data = await response.json();
+    if (data.content && data.content.length > 0) {
+      return data.content.map((c) => c.text).join("\n");
+    }
+    return "";
+  } catch (err) {
+    console.warn(`MCP tool ${toolName} failed:`, err);
+    return "";
+  }
+}
+async function searchAWSDocumentation(query) {
+  return callMCPTool("search_documentation", {
+    search_phrase: query,
+    topic: "training-certification"
+  });
+}
+async function getTCProductKnowledge(industry, topics) {
+  const queries = [
+    `AWS Training Certification ${industry} workforce development`,
+    `AWS Skill Builder enterprise subscription features`,
+    ...topics.slice(0, 2).map((t) => `AWS Training ${t}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => searchAWSDocumentation(q).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  return combined.slice(0, 2e3);
+}
+
 // lambdas/account-insights/index.ts
 var ddbClient = new import_client_dynamodb.DynamoDBClient({});
 var ddb = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
@@ -179,12 +229,18 @@ async function handler(event) {
     const persona = accountData.ebc_data?.attendees?.[0]?.persona || "CTO";
     const industry = accountData.industry || "Technology";
     const themes = accountData.ebc_data?.themes || [];
-    const kbContext = await getTCStrategyContext(industry, persona, themes);
+    const [kbContext, mcpContext] = await Promise.all([
+      getTCStrategyContext(industry, persona, themes).catch(() => ""),
+      getTCProductKnowledge(industry, themes).catch(() => "")
+    ]);
+    const allContext = [kbContext, mcpContext].filter(Boolean).join("\n\n");
     const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC \u2014 reference actual names, numbers, and signals from the data. Use the T&C Knowledge Base context to recommend specific plays, proof points, and approaches that are documented in our strategy materials.
 
 ACCOUNT DATA:
 ${context}
-${kbContext}
+${allContext ? `
+AWS T&C KNOWLEDGE & DOCUMENTATION:
+${allContext}` : ""}
 
 Return JSON with exactly these fields:
 {
