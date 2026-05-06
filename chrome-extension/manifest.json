@@ -8,7 +8,8 @@
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "T&C Engagement Advisor"
+    "default_title": "T&C Engagement Advisor",
+    "default_icon": "icon.svg"
   },
   "content_scripts": [
     {
