@@ -63,15 +63,7 @@ function createFloatingButton() {
 
   const fab = document.createElement('div');
   fab.id = 'tc-advisor-fab';
-  fab.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
-      <path d="M12 4C8 4 6 6.5 6 9c0 1.5.5 2.5 1.5 3.5S9 14 9 15.5V17h6v-1.5c0-1.5.5-2 1.5-3S18 10.5 18 9c0-2.5-2-5-6-5z"/>
-      <path d="M9 17v1a3 3 0 006 0v-1"/>
-      <path d="M12 4v4"/>
-      <path d="M8 8c1 0 2 1 4 1s3-1 4-1"/>
-      <circle cx="12" cy="4" r="1.5" fill="#f97316" stroke="none"/>
-    </svg>
-  `;
+  fab.innerHTML = `<img src="https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com/brain.svg" width="28" height="28" style="border-radius:50%;" />`;
   fab.style.cssText = `
     position: fixed;
     right: 12px;
