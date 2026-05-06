@@ -2,6 +2,42 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeText, BedrockMessage } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 
+/**
+ * Search Google for a person's public posts and statements
+ */
+async function searchPersona(name: string, company: string): Promise<string> {
+  try {
+    const query = `"${name}" "${company}" site:linkedin.com OR interview OR keynote OR conference`;
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+    if (!response.ok) return '';
+    const html = await response.text();
+
+    const snippets: string[] = [];
+    const matches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
+    for (const match of matches.slice(0, 6)) {
+      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
+      if (text.length > 20) snippets.push(text);
+    }
+    const divMatches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
+    for (const match of divMatches.slice(0, 6)) {
+      const text = match.replace(/<[^>]+>/g, '').trim();
+      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in')) {
+        snippets.push(text);
+      }
+    }
+    return snippets.slice(0, 6).join('\n');
+  } catch {
+    return '';
+  }
+}
+
 interface RolePlayRequest {
   message: string;
   conversationHistory: { role: 'user' | 'assistant'; content: string }[];
@@ -124,7 +160,16 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'message, persona, and accountContext are required');
     }
 
-    const systemPrompt = buildPersonaSystemPrompt(persona, accountContext);
+    // Search for the persona's public posts and statements (only on first message)
+    let personaSearchContext = '';
+    if (!conversationHistory || conversationHistory.length === 0) {
+      const searchResults = await searchPersona(persona.name, accountContext.customer_name);
+      if (searchResults) {
+        personaSearchContext = `\n\nREAL PUBLIC INFORMATION ABOUT ${persona.name}:\n${searchResults}\nUse this real information to inform how you respond. Reference their actual public statements and interests.`;
+      }
+    }
+
+    const systemPrompt = buildPersonaSystemPrompt(persona, accountContext) + personaSearchContext;
 
     // Build message history
     const messages: BedrockMessage[] = [];
