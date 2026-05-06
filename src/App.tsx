@@ -146,6 +146,14 @@ export default function App() {
               <span className="text-[8px] text-muted mt-0.5">Score</span>
             </button>
           </div>
+          {/* EBC info bar */}
+          {account.ebc_data.meeting_dates[0] && (
+            <div className="px-4 py-1.5 flex items-center gap-3 text-[10px] text-muted border-t border-dark-700 flex-wrap">
+              <span className="text-blue-400">📅 {new Date(account.ebc_data.meeting_dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>📍 {account.ebc_data.location}</span>
+              {account.ebc_data.status && <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${account.ebc_data.status === 'InProgress' ? 'bg-blue-500/15 text-blue-400' : 'bg-green-500/15 text-green-400'}`}>{account.ebc_data.status}</span>}
+            </div>
+          )}
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
             {loadingIntel && (
