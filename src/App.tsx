@@ -43,7 +43,7 @@ export default function App() {
 
     // Fetch T&C opportunity data
     if (isBackendAvailable()) {
-      const sfdcId = (account as any).sfdcAccountId;
+      const sfdcId = account.sfdcAccountId;
       if (sfdcId) {
         getTCData(sfdcId).then(result => {
           if (result.summary) setTcData(result.summary);

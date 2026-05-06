@@ -9,6 +9,7 @@ export interface Account {
   industry: string;
   segment: string;
   geo: string;
+  sfdcAccountId?: string;
   aws_spend: {
     current_year: number;
     prior_year: number;

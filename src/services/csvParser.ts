@@ -116,6 +116,7 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
       industry: primary.industry || 'Technology',
       segment: primary.segment || 'ENT',
       geo: primary.geo || 'NAMER',
+      sfdcAccountId: primary.sfdcAccountId || '',
       aws_spend: {
         current_year: 0, // Unknown from CSV — Bedrock will estimate
         prior_year: 0,
