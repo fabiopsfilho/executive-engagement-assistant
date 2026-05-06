@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import type { UserNote } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { generateAccountInsights, isBackendAvailable, type AccountInsightsResponse, type TCAccountSummary } from '../services/api';
+import { generateAccountInsights, generateAgenda as generateAgendaAPI, isBackendAvailable, type AccountInsightsResponse, type TCAccountSummary } from '../services/api';
 
 function ConnectionToggle({ text }: { text: string }) {
   const [show, setShow] = useState(false);
@@ -68,6 +68,8 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
   const [insightTab, setInsightTab] = useState<'now' | 'buzz' | null>(null);
   const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [aiAgenda, setAiAgenda] = useState<any | null>(null);
+  const [agendaLoading, setAgendaLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
   const spendGrowth = Math.round(((a.aws_spend.current_year - a.aws_spend.prior_year) / a.aws_spend.prior_year) * 100);
 
@@ -82,6 +84,71 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
       .finally(() => setInsightsLoading(false));
   }, [a.customer_name]);
 
+  // Handle agenda generation via Bedrock
+  const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
+    if (isBackendAvailable()) {
+      setAgendaLoading(true);
+      try {
+        const tcState = a.tc_current_state.skill_builder
+          ? `Existing: ${a.tc_current_state.skill_builder_seats} Skill Builder seats, ${a.tc_current_state.activation_rate}% activation, ${a.tc_current_state.certifications} certs, renewal: ${a.tc_current_state.renewal_date || 'N/A'}`
+          : `Greenfield: ${a.tc_current_state.certifications} organic certs, no structured program`;
+        const signalsSummary = a.signals.map(s => `[${s.severity}] ${s.label}: ${s.evidence}`).join('; ');
+        const piSummary = [
+          a.public_intelligence.earnings_call_signals[0] || '',
+          `LinkedIn: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${a.public_intelligence.linkedin_job_postings.yoy_change} YoY)`,
+          a.public_intelligence.executive_social.map(e => `${e.name}: "${e.post_theme}"`).join(', '),
+          a.public_intelligence.glassdoor_signals[0] || '',
+          a.public_intelligence.industry_context,
+        ].filter(Boolean).join('. ');
+
+        const tcDataNotes = tcData ? [
+          `T&C Pipeline: $${tcData.totalPipeline.toLocaleString()}, ${tcData.openOpportunities} open opps`,
+          `Products: ${tcData.products.join(', ')}`,
+          `${tcData.totalStudents} students trained, Closed Won: $${tcData.closedWonRevenue.toLocaleString()}`,
+        ] : [];
+
+        const result = await generateAgendaAPI(
+          {
+            customer_name: a.customer_name,
+            industry: a.industry,
+            account_plan_priority: a.sfdc_data.account_plan_priority,
+            attendees: a.ebc_data.attendees,
+            ebc_date: a.ebc_data.meeting_dates[0] || 'TBD',
+            ebc_location: a.ebc_data.location || 'TBD',
+            ebc_themes: a.ebc_data.themes,
+            tc_state: tcState,
+            signals_summary: signalsSummary,
+            public_intelligence_summary: piSummary,
+          },
+          format === 'ebc' ? 'ebc' : 'training-session',
+          undefined,
+          [...notes.map(n => n.text), ...tcDataNotes]
+        );
+        // Convert API response to Agenda format for the modal
+        setAiAgenda({
+          title: result.title,
+          subtitle: result.subtitle,
+          format: result.format || (format === 'ebc' ? 'Half-Day EBC' : '1-Hour Training Session'),
+          location: result.location || a.ebc_data.location,
+          date: result.date || a.ebc_data.meeting_dates[0] || 'TBD',
+          principles: result.principles || [],
+          blocks: result.blocks || [],
+          preparation_notes: result.preparation || [],
+        });
+        setShowAgendaType(format);
+      } catch (err) {
+        console.warn('Failed to generate AI agenda, falling back to local:', err);
+        setAiAgenda(null);
+        setShowAgendaType(format);
+      } finally {
+        setAgendaLoading(false);
+      }
+    } else {
+      setAiAgenda(null);
+      setShowAgendaType(format);
+    }
+  };
+
   const ebcAgenda = generateAgenda(a, notes);
   const trainingAgenda = generateTrainingSessionAgenda(a, notes);
   const nextSteps = generateNextSteps(a, notes);
@@ -89,8 +156,8 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">
-      {showAgendaType === 'ebc' && <AgendaModal agenda={ebcAgenda} onClose={() => setShowAgendaType(null)} />}
-      {showAgendaType === 'training' && <AgendaModal agenda={trainingAgenda} onClose={() => setShowAgendaType(null)} />}
+      {showAgendaType === 'ebc' && <AgendaModal agenda={aiAgenda || ebcAgenda} onClose={() => setShowAgendaType(null)} />}
+      {showAgendaType === 'training' && <AgendaModal agenda={aiAgenda || trainingAgenda} onClose={() => setShowAgendaType(null)} />}
 
       {/* ── Approach box with side ribbon tabs ── */}
       <section className="relative mx-8">
@@ -427,11 +494,11 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-2.5">
-        <button onClick={() => setShowAgendaType('ebc')} className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-navy-900 font-semibold text-xs active:opacity-90">
-          <CalendarCheck className="w-4 h-4" />Suggest an Agenda
+        <button onClick={() => handleGenerateAgenda('ebc')} disabled={agendaLoading} className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-navy-900 font-semibold text-xs active:opacity-90 disabled:opacity-60">
+          {agendaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarCheck className="w-4 h-4" />}{agendaLoading ? 'Generating...' : 'Suggest an Agenda'}
         </button>
-        <button onClick={() => setShowAgendaType('training')} className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white font-semibold text-xs active:opacity-90">
-          <BookOpenCheck className="w-4 h-4" />Skills Session
+        <button onClick={() => handleGenerateAgenda('training')} disabled={agendaLoading} className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-500 text-white font-semibold text-xs active:opacity-90 disabled:opacity-60">
+          {agendaLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpenCheck className="w-4 h-4" />}{agendaLoading ? 'Generating...' : 'Skills Session'}
         </button>
       </div>
 

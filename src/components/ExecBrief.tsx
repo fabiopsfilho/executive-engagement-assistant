@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, type TCAccountSummary, type AccountInsightsResponse } from '../services/api';
+import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, generateAgenda as generateAgendaAPI, type TCAccountSummary, type AccountInsightsResponse } from '../services/api';
 
 
 function CopyBtn({ text }: { text: string }) {
@@ -133,6 +133,8 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const [heroTab, setHeroTab] = useState<'approach' | 'next-steps' | 'key-asks'>('approach');
   const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [aiAgenda, setAiAgenda] = useState<any | null>(null);
+  const [agendaLoading, setAgendaLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
 
   // Fetch AI-generated insights when account changes
@@ -145,6 +147,70 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       .catch(err => console.warn('Failed to generate insights:', err))
       .finally(() => setInsightsLoading(false));
   }, [a.customer_name]);
+
+  // Handle agenda generation via Bedrock
+  const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
+    if (isBackendAvailable()) {
+      setAgendaLoading(true);
+      try {
+        const tcState = a.tc_current_state.skill_builder
+          ? `Existing: ${a.tc_current_state.skill_builder_seats} Skill Builder seats, ${a.tc_current_state.activation_rate}% activation, ${a.tc_current_state.certifications} certs, renewal: ${a.tc_current_state.renewal_date || 'N/A'}`
+          : `Greenfield: ${a.tc_current_state.certifications} organic certs, no structured program`;
+        const signalsSummary = a.signals.map(s => `[${s.severity}] ${s.label}: ${s.evidence}`).join('; ');
+        const piSummary = [
+          a.public_intelligence.earnings_call_signals[0] || '',
+          `LinkedIn: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${a.public_intelligence.linkedin_job_postings.yoy_change} YoY)`,
+          a.public_intelligence.executive_social.map(e => `${e.name}: "${e.post_theme}"`).join(', '),
+          a.public_intelligence.glassdoor_signals[0] || '',
+          a.public_intelligence.industry_context,
+        ].filter(Boolean).join('. ');
+
+        const tcDataNotes = tcData ? [
+          `T&C Pipeline: $${tcData.totalPipeline.toLocaleString()}, ${tcData.openOpportunities} open opps`,
+          `Products: ${tcData.products.join(', ')}`,
+          `${tcData.totalStudents} students trained, Closed Won: $${tcData.closedWonRevenue.toLocaleString()}`,
+        ] : [];
+
+        const result = await generateAgendaAPI(
+          {
+            customer_name: a.customer_name,
+            industry: a.industry,
+            account_plan_priority: a.sfdc_data.account_plan_priority,
+            attendees: a.ebc_data.attendees,
+            ebc_date: a.ebc_data.meeting_dates[0] || 'TBD',
+            ebc_location: a.ebc_data.location || 'TBD',
+            ebc_themes: a.ebc_data.themes,
+            tc_state: tcState,
+            signals_summary: signalsSummary,
+            public_intelligence_summary: piSummary,
+          },
+          format === 'ebc' ? 'ebc' : 'training-session',
+          undefined,
+          tcDataNotes
+        );
+        setAiAgenda({
+          title: result.title,
+          subtitle: result.subtitle,
+          format: result.format || (format === 'ebc' ? 'Half-Day EBC' : '1-Hour Training Session'),
+          location: result.location || a.ebc_data.location,
+          date: result.date || a.ebc_data.meeting_dates[0] || 'TBD',
+          principles: result.principles || [],
+          blocks: result.blocks || [],
+          preparation_notes: result.preparation || [],
+        });
+        setShowAgenda(format);
+      } catch (err) {
+        console.warn('Failed to generate AI agenda, falling back to local:', err);
+        setAiAgenda(null);
+        setShowAgenda(format);
+      } finally {
+        setAgendaLoading(false);
+      }
+    } else {
+      setAiAgenda(null);
+      setShowAgenda(format);
+    }
+  };
 
   const topSignal = a.signals[0];
   const primaryPlay = topSignal?.label.includes('Talent') ? 'AI Talent Gap' : topSignal?.label.includes('Compliance') ? 'Compliance Readiness' : topSignal?.label.includes('Subscription') ? 'Engagement Revival' : 'Workforce Transformation';
@@ -205,8 +271,8 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {showAgenda === 'ebc' && <AgendaModal agenda={generateAgenda(a)} onClose={() => setShowAgenda(null)} />}
-      {showAgenda === 'training' && <AgendaModal agenda={generateTrainingSessionAgenda(a)} onClose={() => setShowAgenda(null)} />}
+      {showAgenda === 'ebc' && <AgendaModal agenda={aiAgenda || generateAgenda(a)} onClose={() => setShowAgenda(null)} />}
+      {showAgenda === 'training' && <AgendaModal agenda={aiAgenda || generateTrainingSessionAgenda(a)} onClose={() => setShowAgenda(null)} />}
 
       {/* Hero — Primary Play with tabs */}
       <section className="relative">
@@ -346,20 +412,20 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       <div>
         <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Next Best Move</h3>
         <div className="flex gap-2.5">
-          <button onClick={() => setShowAgenda('ebc')}
-            className="flex-1 bg-gradient-to-br from-purple-500/30 to-purple-500/10 border border-purple-500/40 rounded-2xl p-4 active:opacity-80 text-left">
+          <button onClick={() => handleGenerateAgenda('ebc')} disabled={agendaLoading}
+            className="flex-1 bg-gradient-to-br from-purple-500/30 to-purple-500/10 border border-purple-500/40 rounded-2xl p-4 active:opacity-80 text-left disabled:opacity-60">
             <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center mb-3">
-              <span className="text-lg">📋</span>
+              {agendaLoading ? <Loader2 className="w-5 h-5 text-purple-400 animate-spin" /> : <span className="text-lg">📋</span>}
             </div>
-            <span className="text-xs font-semibold text-white block leading-tight">Suggest an Agenda</span>
+            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading ? 'Generating...' : 'Suggest an Agenda'}</span>
             <ArrowRight className="w-4 h-4 text-purple-400 mt-2" />
           </button>
-          <button onClick={() => setShowAgenda('training')}
-            className="flex-1 bg-gradient-to-br from-blue-500/30 to-blue-500/10 border border-blue-500/40 rounded-2xl p-4 active:opacity-80 text-left">
+          <button onClick={() => handleGenerateAgenda('training')} disabled={agendaLoading}
+            className="flex-1 bg-gradient-to-br from-blue-500/30 to-blue-500/10 border border-blue-500/40 rounded-2xl p-4 active:opacity-80 text-left disabled:opacity-60">
             <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center mb-3">
-              <span className="text-lg">🎓</span>
+              {agendaLoading ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin" /> : <span className="text-lg">🎓</span>}
             </div>
-            <span className="text-xs font-semibold text-white block leading-tight">Skills Session</span>
+            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading ? 'Generating...' : 'Skills Session'}</span>
             <ArrowRight className="w-4 h-4 text-blue-400 mt-2" />
           </button>
         </div>
