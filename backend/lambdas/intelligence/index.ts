@@ -39,48 +39,10 @@ async function searchWeb(query: string): Promise<string> {
   return ''; // Empty means Claude will use its training knowledge
 }
 
-const SYSTEM_PROMPT = `You are an intelligence analyst specializing in workforce transformation signals for enterprise technology companies. Your job is to analyze a company and its executives to identify signals that indicate readiness for AWS Training & Certification engagement.
+const SYSTEM_PROMPT = `You are an intelligence analyst. Given a company name and industry, return a JSON object with workforce transformation signals. Be specific — use real executive names where possible. Return ONLY valid JSON, no markdown.
 
-You MUST generate intelligence that is as realistic and specific as possible. Use your knowledge of the company, its leadership, recent news, and industry context. Be specific with names, dates, and quotes where possible.
-
-For EXECUTIVE SOCIAL: Identify real C-suite executives at this company by name and title. Generate realistic LinkedIn post themes based on what executives at this type of company typically discuss publicly.
-
-For LINKEDIN JOB POSTINGS: Estimate the number of cloud/AI roles based on company size and industry. Provide a realistic YoY growth percentage.
-
-For EARNINGS CALL SIGNALS: Generate realistic quotes that would come from this company's leadership about cloud, AI, workforce, and digital transformation.
-
-For GLASSDOOR SIGNALS: Generate realistic employee sentiment about training, skills development, and culture at this company.
-
-For NEWS SIGNALS: Reference real or highly plausible recent news about this company related to cloud, AI, partnerships, or transformation.
-
-For INDUSTRY CONTEXT: Describe the competitive landscape and transformation pressures in this company's industry.
-
-SIGNAL TYPES TO IDENTIFY:
-1. TALENT WAR — Evidence of aggressive hiring for cloud/AI roles, talent competition, skills gaps
-2. BOARD PRESSURE — Board or investor questions about workforce readiness, transformation execution
-3. GREENFIELD T&C — No structured training engagement despite significant cloud investment
-4. COMPLIANCE TRIGGER — Regulatory requirements that require documented workforce competency
-5. SUBSCRIPTION UNDERPERFORMANCE — Low activation on existing training subscriptions
-6. TRANSFORMATION ACCELERATION — Major cloud migration, AI initiative, or digital transformation underway
-
-SCORING (1-10):
-- Talent Signals (25%): Open cloud/AI roles, hiring velocity, skills gap evidence
-- Business Signals (25%): AWS spend, open opportunities, strategic priority alignment
-- Training State (20%): Greenfield opportunity or renewal risk
-- Engagement Timing (15%): Proximity to decisions, budget cycles, transformation milestones
-- Public Intelligence (15%): Richness of available signals
-
-Return JSON matching this structure:
-{
-  "earnings_call_signals": ["CEO Name: quote about cloud/AI/workforce...", "CFO Name: quote..."],
-  "linkedin_job_postings": {"cloud_ai_roles": number, "yoy_change": "+X%"},
-  "executive_social": [{"name": "Real Executive Name", "title": "Their Real Title", "post_theme": "What they recently posted about on LinkedIn"}],
-  "glassdoor_signals": ["Specific employee sentiment about training/skills/culture"],
-  "industry_context": "Detailed competitive landscape and transformation pressures",
-  "news_signals": ["Specific recent news about this company"],
-  "signals": [{"severity": "HIGH|MEDIUM", "label": "Signal Type", "evidence": "Specific evidence"}],
-  "tc_opportunity_score": number
-}`;
+JSON structure:
+{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Name","title":"Title","post_theme":"theme"}],"glassdoor_signals":["signal1","signal2"],"industry_context":"context","news_signals":["news1"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence"}],"tc_opportunity_score":number}`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
@@ -109,46 +71,16 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Cache miss — continue to generate
     }
 
-    // Search the web for recent information about this company
-    // Note: Web search is disabled until a search API key is configured
-    const newsResults = '';
-    const linkedinResults = '';
-    const glassdoorResults = '';
-
-    // T&C context will be passed by the frontend if available
-    const tcContext = '';
-
-    const webContext = [
-      newsResults ? `\nWEB SEARCH RESULTS (News & Transformation):\n${newsResults}` : '',
-      linkedinResults ? `\nWEB SEARCH RESULTS (Hiring):\n${linkedinResults}` : '',
-      glassdoorResults ? `\nWEB SEARCH RESULTS (Employee Sentiment):\n${glassdoorResults}` : '',
-    ].filter(Boolean).join('\n');
+    // Note: Web search and T&C data integration disabled for speed
+    // These will be handled by separate endpoints
 
     // Generate intelligence via Bedrock
-    const userMessage = `Analyze the following company and generate workforce transformation intelligence. Use SPECIFIC, REAL information about this company. Include real executive names and titles. Be as factual as possible.
-
-COMPANY: ${companyName}
-INDUSTRY: ${industry}
-AWS SPEND: $${(parseInt(awsSpend) / 1_000_000).toFixed(1)}M
-EXECUTIVES TO RESEARCH: ${executives || 'Research the C-suite (CEO, CFO, CTO/CIO, CHRO) — use their REAL names'}
-${webContext}${tcContext}
-
-Generate intelligence signals based on what you know about this company AND the web search results above. Include:
-1. Earnings call signals — use REAL executive names and realistic quotes about AI, cloud, workforce, skills, transformation
-2. LinkedIn hiring data — estimate cloud/AI roles based on company size and what you know about their hiring
-3. Executive social media activity — use REAL executive names and their likely LinkedIn post themes
-4. Glassdoor employee sentiment — realistic reviews about training, skills development, culture
-5. Industry context and competitive landscape — who are their competitors and what are they doing
-6. Recent news signals — real or highly plausible recent news
-7. Severity-rated signals (HIGH/MEDIUM) with specific evidence
-8. An overall T&C opportunity score (1-10)
-
-Be SPECIFIC. Use real names. Reference real initiatives. Make this indistinguishable from manually researched intelligence.`;
+    const userMessage = `Generate workforce intelligence JSON for: ${companyName} (${industry}). Include real executive names, LinkedIn hiring estimates, Glassdoor sentiment, and industry context.`;
 
     const result = await invokeClaudeJSON<IntelligenceResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 4096, temperature: 0.6 }
+      { maxTokens: 2048, temperature: 0.6 }
     );
 
     // Cache the result for 24 hours
