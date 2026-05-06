@@ -18,28 +18,51 @@ interface IntelligenceResponse {
   tc_opportunity_score: number;
 }
 
-async function searchWeb(query: string): Promise<string> {
-  // Use a simple fetch to get search results from a public search API
-  // This uses the Google Custom Search JSON API or falls back to generating from knowledge
-  const searchApiKey = process.env.SEARCH_API_KEY;
-  const searchEngineId = process.env.SEARCH_ENGINE_ID;
-  
-  if (searchApiKey && searchEngineId) {
-    try {
-      const url = `https://www.googleapis.com/customsearch/v1?key=${searchApiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&num=5`;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (data.items) {
-        return data.items.map((item: { title: string; snippet: string }) => `${item.title}: ${item.snippet}`).join('\n');
+/**
+ * Fetch Google search results for a query.
+ * Returns titles and snippets from the search results page.
+ */
+async function googleSearch(query: string): Promise<string> {
+  try {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+    if (!response.ok) return '';
+    const html = await response.text();
+
+    // Extract text snippets from Google results (simplified parsing)
+    const snippets: string[] = [];
+    // Match content between common Google result patterns
+    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
+    for (const match of matches.slice(0, 10)) {
+      const text = match.replace(/<[^>]+>/g, '').trim();
+      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
+        snippets.push(text);
       }
-    } catch (e) {
-      console.warn('Search API failed, falling back to Claude knowledge:', e);
     }
+
+    // Also try to extract from data-sncf or BNeawe patterns (Google result text)
+    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
+    for (const match of textMatches.slice(0, 8)) {
+      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
+      if (text.length > 20) {
+        snippets.push(text);
+      }
+    }
+
+    return snippets.slice(0, 8).join('\n');
+  } catch (e) {
+    console.warn('Google search failed for:', query, e);
+    return '';
   }
-  return ''; // Empty means Claude will use its training knowledge
 }
 
-const SYSTEM_PROMPT = `You are an intelligence analyst. Given a company name and industry, return a JSON object with workforce transformation signals. Be specific — use real executive names where possible. Return ONLY valid JSON, no markdown.
+const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL search results from Google about a company. Extract and structure the factual information into JSON. Only include information that is supported by the search results. If data is not available in the search results, use reasonable estimates clearly marked. Return ONLY valid JSON, no markdown.
 
 JSON structure:
 {"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Name","title":"Title","post_theme":"theme"}],"glassdoor_signals":["signal1","signal2"],"industry_context":"context","news_signals":["news1"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence"}],"tc_opportunity_score":number}`;
@@ -51,11 +74,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountId is required');
     }
 
-    // Parse query parameters for company context
     const companyName = event.queryStringParameters?.company || accountId;
     const industry = event.queryStringParameters?.industry || 'Technology';
-    const awsSpend = event.queryStringParameters?.awsSpend || '0';
-    const executives = event.queryStringParameters?.executives || '';
 
     // Check cache first (24-hour TTL)
     const cacheKey = `intelligence:${companyName.toLowerCase().replace(/\s+/g, '-')}`;
@@ -68,34 +88,48 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         return success(cached.Item.data);
       }
     } catch {
-      // Cache miss — continue to generate
+      // Cache miss — continue
     }
 
-    // Note: Web search and T&C data integration disabled for speed
-    // These will be handled by separate endpoints
+    // Fetch REAL data from Google search (parallel requests)
+    const [linkedinResults, glassdoorResults, newsResults, dataBookResults] = await Promise.all([
+      googleSearch(`${companyName} site:linkedin.com/jobs cloud AI engineer`),
+      googleSearch(`${companyName} site:glassdoor.com reviews culture training`),
+      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
+      googleSearch(`${companyName} AWS cloud spend revenue technology investment`),
+    ]);
 
-    // Generate intelligence via Bedrock
-    const userMessage = `Generate workforce intelligence JSON for: ${companyName} (${industry}). Include real executive names, LinkedIn hiring estimates, Glassdoor sentiment, and industry context.`;
+    // Build context from real search results
+    const searchContext = [
+      linkedinResults ? `LINKEDIN SEARCH RESULTS:\n${linkedinResults}` : '',
+      glassdoorResults ? `GLASSDOOR SEARCH RESULTS:\n${glassdoorResults}` : '',
+      newsResults ? `NEWS & TRANSFORMATION RESULTS:\n${newsResults}` : '',
+      dataBookResults ? `COMPANY DATA & INVESTMENT RESULTS:\n${dataBookResults}` : '',
+    ].filter(Boolean).join('\n\n');
+
+    const userMessage = searchContext
+      ? `Based on these REAL Google search results about ${companyName} (${industry}), extract and structure the intelligence into JSON. Only use facts from the search results:\n\n${searchContext}`
+      : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available — use your training knowledge but mark estimates clearly.`;
 
     const result = await invokeClaudeJSON<IntelligenceResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 2048, temperature: 0.6 }
+      { maxTokens: 2048, temperature: 0.3 }
     );
 
-    // Cache the result for 24 hours
+    // Cache for 24 hours
     try {
       await ddb.send(new PutCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
         Item: {
           cacheKey,
           data: result,
-          ttl: Math.floor(Date.now() / 1000) + 86400, // 24 hours
+          ttl: Math.floor(Date.now() / 1000) + 86400,
           createdAt: new Date().toISOString(),
         },
       }));
     } catch (cacheErr) {
-      console.warn('Failed to cache intelligence:', cacheErr);
+      console.warn('Failed to cache:', cacheErr);
     }
 
     return success(result);
