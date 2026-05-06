@@ -75,6 +75,17 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
         const records = parseEBCCsv(csv);
         const parsed = ebcRecordsToAccounts(records);
         setAllAccounts(parsed);
+
+        // Check if URL has an account param to auto-select
+        const params = new URLSearchParams(window.location.search);
+        const accountName = params.get('account');
+        if (accountName) {
+          const found = parsed.find(a => a.customer_name.toLowerCase() === accountName.toLowerCase()) ||
+            parsed.find(a => a.customer_name.toLowerCase().includes(accountName.toLowerCase()) || accountName.toLowerCase().includes(a.customer_name.toLowerCase()));
+          if (found) {
+            onSelect(found);
+          }
+        }
       } else {
         setAllAccounts(accounts); // Fallback to demo data
       }

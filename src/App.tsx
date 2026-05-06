@@ -27,12 +27,12 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const accountName = params.get('account');
     if (accountName) {
-      // Try to find in demo accounts first
-      const found = accounts.find(a => a.customer_name.toLowerCase() === accountName.toLowerCase());
+      // Try exact match first, then partial match
+      const found = accounts.find(a => a.customer_name.toLowerCase() === accountName.toLowerCase()) ||
+        accounts.find(a => a.customer_name.toLowerCase().includes(accountName.toLowerCase()) || accountName.toLowerCase().includes(a.customer_name.toLowerCase()));
       if (found) {
         setAccount(found);
       }
-      // If not found in demo, the AccountSelector will handle it via S3 data
     }
   }, []);
 
