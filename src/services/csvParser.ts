@@ -142,11 +142,11 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
         status: nextEbc.status || 'InProgress',
       },
       tc_current_state: {
-        skill_builder: primary.palPhase === 'SCALING' || primary.palPhase === 'RAMPING',
-        skill_builder_seats: primary.palPhase === 'SCALING' ? 200 : 0,
-        activation_rate: primary.palPhase === 'SCALING' ? 40 : 0,
-        certifications: primary.palPhase === 'GREENFIELD' ? 0 : 15,
-        prior_engagement: primary.palPhase === 'GREENFIELD' ? 'No structured T&C engagement' : 'Existing engagement — details to be researched',
+        skill_builder: false,
+        skill_builder_seats: 0,
+        activation_rate: 0,
+        certifications: 0,
+        prior_engagement: '',
         renewal_date: '',
       },
       public_intelligence: {
