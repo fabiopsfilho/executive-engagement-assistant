@@ -67,7 +67,7 @@ function createFloatingButton() {
   fab.style.cssText = `
     position: fixed;
     right: 12px;
-    top: 50%;
+    top: 35%;
     transform: translateY(-50%);
     width: 44px;
     height: 44px;
