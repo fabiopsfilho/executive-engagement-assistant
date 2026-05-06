@@ -41,75 +41,26 @@ export default function App() {
   useEffect(() => {
     if (!account) return;
 
-    // Also fetch T&C opportunity data
+    // Fetch T&C opportunity data
     if (isBackendAvailable()) {
-      // Use the SFDC account ID from the EBC data if available
       const sfdcId = (account as any).sfdcAccountId;
-      getTCData(sfdcId || account.customer_name).then(result => {
-        if (result.summary) {
-          setTcData(result.summary);
-          // Update account's tc_current_state with real data
-          if (result.summary.totalPipeline > 0 || result.summary.closedWonRevenue > 0) {
-            setAccount(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                tc_current_state: {
-                  ...prev.tc_current_state,
-                  skill_builder: result.summary!.products.some(p => p.toLowerCase().includes('skill builder')),
-                  skill_builder_seats: result.summary!.totalStudents,
-                  certifications: result.summary!.products.filter(p => p.toLowerCase().includes('cert')).length,
-                  prior_engagement: `${result.summary!.openOpportunities} open opps, $${Math.round(result.summary!.totalPipeline / 1000)}K pipeline, ${result.summary!.products.join(', ')}`,
-                },
-              };
-            });
+      if (sfdcId) {
+        getTCData(sfdcId).then(result => {
+          if (result.summary) setTcData(result.summary);
+        }).catch(() => {});
+      } else {
+        getTCData().then(result => {
+          if (result.summaries) {
+            const match = result.summaries.find(s =>
+              s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
+              account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
+            );
+            if (match) setTcData(match);
           }
-        }
-      }).catch(() => {});
+        }).catch(() => {});
+      }
     }
 
-
-    // Also fetch T&C opportunity data for this account
-    if (isBackendAvailable()) {
-      // Try to match by SFDC account ID or account name
-      getTCData().then(result => {
-        if (result.summaries) {
-          const match = result.summaries.find(s =>
-            s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-            account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-          );
-          if (match) setTcData(match);
-        }
-      }).catch(() => {});
-    }
-
-    // Also fetch T&C opportunity data for this account
-    if (isBackendAvailable()) {
-      // Try to match by SFDC account ID or account name
-      getTCData().then(result => {
-        if (result.summaries) {
-          const match = result.summaries.find(s =>
-            s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-            account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-          );
-          if (match) setTcData(match);
-        }
-      }).catch(() => {});
-    }
-
-    // Fetch T&C opportunity data for this account
-    if (isBackendAvailable()) {
-      // Try to match by SFDC account ID or account name
-      getTCData().then(result => {
-        if (result.summaries) {
-          const match = result.summaries.find(s =>
-            s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-            account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-          );
-          if (match) setTcData(match);
-        }
-      }).catch(() => {});
-    }
     // Check if this account has real intelligence (more than just CSV-derived data)
     const hasRealIntel = account.public_intelligence.executive_social.length > 0 ||
       account.public_intelligence.linkedin_job_postings.cloud_ai_roles > 0 ||
@@ -159,42 +110,6 @@ export default function App() {
       }).finally(() => {
         setLoadingIntel(false);
       });
-
-      // Also fetch T&C opportunity data for this account
-      getTCData().then(result => {
-        if (result.summaries) {
-          const match = result.summaries.find((s: TCAccountSummary) =>
-            s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-            account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-          );
-          if (match) {
-            setTcData(match);
-          }
-        }
-      }).catch(() => {});
-    }
-  }, [account?.customer_name]);
-
-  // Fetch T&C opportunity data for the selected account
-  useEffect(() => {
-    if (!account || !isBackendAvailable()) return;
-    // Use the SFDC account ID from the EBC data if available
-    const sfdcId = (account as any).sfdcAccountId;
-    if (sfdcId) {
-      getTCData(sfdcId).then(result => {
-        if (result.summary) setTcData(result.summary);
-      }).catch(() => {});
-    } else {
-      // Try matching by account name
-      getTCData().then(result => {
-        if (result.summaries) {
-          const match = result.summaries.find(s =>
-            s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-            account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-          );
-          if (match) setTcData(match);
-        }
-      }).catch(() => {});
     }
   }, [account?.customer_name]);
 
