@@ -20,7 +20,7 @@
       background: #111d35;
       border-bottom: 1px solid #1e2d4a;
     }
-    .header img { height: 20px; }
+    .header img { height: 20px; width: 20px; }
     .header span { font-size: 12px; font-weight: 600; color: #fff; }
     .status {
       padding: 8px 16px;
@@ -46,11 +46,22 @@
     }
     .no-account h2 { font-size: 16px; color: #fff; margin-bottom: 8px; }
     .no-account p { font-size: 13px; color: #64748b; line-height: 1.5; }
+    .detect-btn {
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .detect-btn:hover { background: #6d28d9; }
   </style>
 </head>
 <body>
   <div class="header">
-    <img src="icon.svg" style="height:20px;width:20px;" alt="icon">
+    <img src="icon.svg" alt="icon">
     <span>T&C Engagement Advisor</span>
   </div>
   <div class="status" id="status">
@@ -60,50 +71,9 @@
     <div class="no-account">
       <h2>Select an Account</h2>
       <p>Open a customer account in Salesforce (aws-crm.lightning.force.com) and this panel will show T&C engagement insights.</p>
-      <button onclick="requestDetection()" style="margin-top:16px;padding:8px 16px;background:#7c3aed;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;">Detect Current Account</button>
+      <button id="detectBtn" class="detect-btn">Detect Current Account</button>
     </div>
   </div>
-
-  <script>
-    const APP_URL = 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
-    let currentAccount = null;
-
-    function loadAccount(accountName) {
-      if (accountName === currentAccount) return;
-      currentAccount = accountName;
-
-      document.getElementById('status').innerHTML = 
-        `Showing insights for: <span class="account-name">${accountName}</span>`;
-
-      const content = document.getElementById('content');
-      content.innerHTML = `<iframe src="${APP_URL}?account=${encodeURIComponent(accountName)}" allow="clipboard-write"></iframe>`;
-    }
-
-    // Listen for account updates from background script
-    chrome.runtime.onMessage.addListener((message) => {
-      if (message.type === 'UPDATE_ACCOUNT') {
-        loadAccount(message.accountName);
-      }
-    });
-
-    // Check if there's already a stored account
-    chrome.storage.local.get('currentAccount', (data) => {
-      if (data.currentAccount) {
-        loadAccount(data.currentAccount);
-      }
-    });
-
-    // Request detection from content script
-    function requestDetection() {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) {
-          chrome.tabs.sendMessage(tabs[0].id, { type: 'REQUEST_ACCOUNT' });
-        }
-      });
-    }
-
-    // Auto-request detection when panel opens
-    requestDetection();
-  </script>
+  <script src="sidepanel.js"></script>
 </body>
 </html>
