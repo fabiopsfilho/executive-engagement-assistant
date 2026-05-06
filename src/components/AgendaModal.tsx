@@ -93,36 +93,26 @@ ${slideBlocks.map((b, i) => `
 }
 
 async function exportWordDoc(agenda: Agenda) {
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
-  const doc = new Document({
-    sections: [{
-      properties: {},
-      children: [
-        new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: agenda.title, bold: true })] }),
-        new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: agenda.subtitle, italics: true, size: 22 })] }),
-        new Paragraph({ spacing: { after: 200 }, children: [new TextRun({ text: `${agenda.format} | ${agenda.date} | ${agenda.location}`, size: 20, color: '666666' })] }),
-        new Paragraph({ spacing: { before: 200, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Leadership Principles', bold: true })] }),
-        ...agenda.principles.map(p => new Paragraph({ bullet: { level: 0 }, children: [new TextRun({ text: p, size: 22 })] })),
-        new Paragraph({ spacing: { before: 300, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Agenda', bold: true })] }),
-        ...agenda.blocks.flatMap(b => [
-          new Paragraph({ spacing: { before: 200 }, children: [
-            new TextRun({ text: `${b.time} (${b.duration})`, bold: true, size: 22 }),
-            new TextRun({ text: ` — ${b.title}`, bold: true, size: 22 }),
-          ]}),
-          new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: b.description, size: 22 })] }),
-          new Paragraph({ spacing: { after: 100 }, children: [new TextRun({ text: `Owner: ${b.owner}`, size: 20, color: '666666', italics: true })] }),
-        ]),
-        new Paragraph({ spacing: { before: 300, after: 100 }, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'Preparation Checklist', bold: true })] }),
-        ...agenda.preparation_notes.map((n, i) => new Paragraph({ spacing: { after: 60 }, children: [new TextRun({ text: `${i + 1}. ${n}`, size: 22 })] })),
-      ],
-    }],
-  });
+  // Generate a Word-compatible HTML document (opens in Word when saved as .doc)
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>${agenda.title}</title>
+<style>body{font-family:Calibri,sans-serif;margin:2cm}h1{font-size:20pt;color:#232f3e}h2{font-size:14pt;color:#232f3e;margin-top:18pt}h3{font-size:12pt;margin-top:12pt}.meta{color:#666;font-size:10pt;margin-bottom:12pt}.block{margin-bottom:12pt;padding:8pt;border-left:3pt solid #7c3aed;background:#f8f9fa}.block .time{font-family:monospace;color:#7c3aed;font-size:10pt}.block h4{font-size:11pt;margin:4pt 0}.block p{font-size:10pt;color:#333;line-height:1.5}.block .owner{font-size:9pt;color:#666;font-style:italic}ul{margin:6pt 0}li{font-size:10pt;margin-bottom:4pt}</style></head>
+<body>
+<h1>${agenda.title}</h1>
+<p class="meta">${agenda.subtitle}<br>${agenda.format} | ${agenda.date} | ${agenda.location}</p>
+<h2>Leadership Principles</h2>
+<ul>${agenda.principles.map(p => `<li>${p}</li>`).join('')}</ul>
+<h2>Agenda</h2>
+${agenda.blocks.map(b => `<div class="block"><span class="time">${b.time} (${b.duration})</span><h4>${b.title}</h4><p>${b.description}</p><p class="owner">Owner: ${b.owner}</p></div>`).join('')}
+<h2>Preparation Checklist</h2>
+<ul>${agenda.preparation_notes.map((n, i) => `<li>${i + 1}. ${n}</li>`).join('')}</ul>
+</body></html>`;
 
-  const buffer = await Packer.toBlob(doc);
-  const url = URL.createObjectURL(buffer);
+  const blob = new Blob([html], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${agenda.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+  link.download = `${agenda.title.replace(/[^a-zA-Z0-9]/g, '_')}.doc`;
   link.click();
   URL.revokeObjectURL(url);
 }
