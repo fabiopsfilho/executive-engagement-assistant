@@ -282,21 +282,25 @@ export default function App() {
                     <div>
                       <span className="text-xs font-semibold text-muted uppercase">Executive voices</span>
                       <div className="space-y-2 mt-1.5">
-                        {buzzNow?.buzz_executive_insights ? (
+                        {buzzNow?.buzz_executive_insights && (
                           buzzNow.buzz_executive_insights.map((insight, i) => (
                             <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
                           ))
-                        ) : (
-                          account.public_intelligence.executive_social.map(e => (
-                            <div key={e.name} className="flex items-start gap-2.5">
-                              <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
-                              <div>
-                                <span className="text-xs font-medium text-white">{e.name}</span>
-                                <span className="text-[10px] text-muted ml-1">{e.title}</span>
-                                <p className="text-xs text-blue-400 italic mt-0.5">"{e.post_theme}"</p>
+                        )}
+                        {/* Always show clickable LinkedIn links */}
+                        {account.public_intelligence.executive_social.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {account.public_intelligence.executive_social.map(e => (
+                              <div key={e.name} className="flex items-start gap-2.5">
+                                <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
+                                <div>
+                                  <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{e.name}</a>
+                                  <span className="text-[10px] text-muted ml-1">{e.title}</span>
+                                  <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 italic mt-0.5 block hover:underline">"{e.post_theme}"</a>
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
