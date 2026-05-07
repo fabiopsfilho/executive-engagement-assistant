@@ -9,6 +9,40 @@ import { getTCStrategyContext } from '../shared/knowledge-base';
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
 
+/**
+ * Google search for real-time intelligence
+ */
+async function googleSearch(query: string): Promise<string> {
+  try {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+    if (!response.ok) return '';
+    const html = await response.text();
+    const snippets: string[] = [];
+    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
+    for (const match of matches.slice(0, 8)) {
+      const text = match.replace(/<[^>]+>/g, '').trim();
+      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
+        snippets.push(text);
+      }
+    }
+    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
+    for (const match of textMatches.slice(0, 6)) {
+      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
+      if (text.length > 20) snippets.push(text);
+    }
+    return snippets.slice(0, 8).join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export interface BuzzNowResponse {
   buzz_summary: string;
   buzz_executive_insights: string[];
@@ -55,13 +89,24 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
     } catch { /* cache miss */ }
 
-    // Fetch AWS T&C documentation and Knowledge Base context in parallel
+    // Fetch real-time intelligence from Google + AWS docs + Knowledge Base in parallel
     const industry = accountData.industry || 'Technology';
-    const [mcpDocs, kbDocs] = await Promise.all([
+    const companyName = accountData.customer_name || 'Unknown';
+    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults] = await Promise.all([
       getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''),
       getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''),
+      googleSearch(`${companyName} site:linkedin.com cloud AI engineer jobs`).catch(() => ''),
+      googleSearch(`${companyName} site:glassdoor.com reviews culture training development`).catch(() => ''),
+      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`).catch(() => ''),
+      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`).catch(() => ''),
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
+    const onlineSearch = [
+      linkedinResults ? `LINKEDIN SEARCH RESULTS:\n${linkedinResults}` : '',
+      glassdoorResults ? `GLASSDOOR SEARCH RESULTS:\n${glassdoorResults}` : '',
+      newsResults ? `NEWS & TRANSFORMATION SEARCH:\n${newsResults}` : '',
+      executiveResults ? `EXECUTIVE LINKEDIN PROFILES:\n${executiveResults}` : '',
+    ].filter(Boolean).join('\n\n');
 
     // Build the context
     const pi = accountData.public_intelligence || {};
@@ -112,7 +157,8 @@ Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
 
-${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}`;
+${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}
+${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
     const userMessage = `Analyze this account's intelligence and generate both BUZZ and NOW insights. Be highly specific — reference actual names, numbers, and quotes from the data.
 

@@ -2825,7 +2825,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "9d5960374c55e03198976d7763cbd5806e0c5a25a148b690747e8de5ae1df533.zip"
+     "S3Key": "a368e2a27f44438a1a0f30d4b71ae85de14988dd42351baf67f0d75dec31561c.zip"
     },
     "Environment": {
      "Variables": {
@@ -2866,7 +2866,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/Resource",
-    "aws:asset:path": "asset.9d5960374c55e03198976d7763cbd5806e0c5a25a148b690747e8de5ae1df533",
+    "aws:asset:path": "asset.a368e2a27f44438a1a0f30d4b71ae85de14988dd42351baf67f0d75dec31561c",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }

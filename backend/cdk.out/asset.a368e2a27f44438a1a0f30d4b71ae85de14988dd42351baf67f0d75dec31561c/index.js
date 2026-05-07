@@ -181,6 +181,36 @@ ${combined.slice(0, 4e3)}`;
 // lambdas/account-buzz/index.ts
 var ddbClient = new import_client_dynamodb.DynamoDBClient({});
 var ddb = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
+async function googleSearch(query) {
+  try {
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9"
+      }
+    });
+    if (!response.ok) return "";
+    const html = await response.text();
+    const snippets = [];
+    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
+    for (const match of matches.slice(0, 8)) {
+      const text = match.replace(/<[^>]+>/g, "").trim();
+      if (text.length > 40 && !text.includes("Google") && !text.includes("Sign in") && !text.includes("cookie")) {
+        snippets.push(text);
+      }
+    }
+    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
+    for (const match of textMatches.slice(0, 6)) {
+      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, "").trim();
+      if (text.length > 20) snippets.push(text);
+    }
+    return snippets.slice(0, 8).join("\n");
+  } catch {
+    return "";
+  }
+}
 var SYSTEM_PROMPT = `You are a senior AWS Training & Certification strategist analyzing real-time intelligence about a customer account. You synthesize multiple data signals into actionable insights.
 
 Your analysis must be:
@@ -213,11 +243,26 @@ async function handler(event) {
     } catch {
     }
     const industry = accountData.industry || "Technology";
-    const [mcpDocs, kbDocs] = await Promise.all([
+    const companyName = accountData.customer_name || "Unknown";
+    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults] = await Promise.all([
       getTCProductKnowledge(industry, ["workforce transformation", "talent development"]).catch(() => ""),
-      getTCStrategyContext(industry, "CTO", accountData.ebc_data?.themes || []).catch(() => "")
+      getTCStrategyContext(industry, "CTO", accountData.ebc_data?.themes || []).catch(() => ""),
+      googleSearch(`${companyName} site:linkedin.com cloud AI engineer jobs`).catch(() => ""),
+      googleSearch(`${companyName} site:glassdoor.com reviews culture training development`).catch(() => ""),
+      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`).catch(() => ""),
+      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`).catch(() => "")
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join("\n\n");
+    const onlineSearch = [
+      linkedinResults ? `LINKEDIN SEARCH RESULTS:
+${linkedinResults}` : "",
+      glassdoorResults ? `GLASSDOOR SEARCH RESULTS:
+${glassdoorResults}` : "",
+      newsResults ? `NEWS & TRANSFORMATION SEARCH:
+${newsResults}` : "",
+      executiveResults ? `EXECUTIVE LINKEDIN PROFILES:
+${executiveResults}` : ""
+    ].filter(Boolean).join("\n\n");
     const pi = accountData.public_intelligence || {};
     const context = `
 COMPANY: ${accountData.customer_name} (${industry}, ${accountData.segment}, ${accountData.geo})
@@ -267,7 +312,10 @@ Themes: ${(accountData.ebc_data?.themes || []).join(", ")}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a) => `${a.name} (${a.persona})`).join(", ")}
 
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:
-${awsContext.slice(0, 3e3)}` : ""}`;
+${awsContext.slice(0, 3e3)}` : ""}
+${onlineSearch ? `
+REAL-TIME ONLINE SEARCH RESULTS:
+${onlineSearch.slice(0, 3e3)}` : ""}`;
     const userMessage = `Analyze this account's intelligence and generate both BUZZ and NOW insights. Be highly specific \u2014 reference actual names, numbers, and quotes from the data.
 
 ${context}
