@@ -41,8 +41,10 @@ export default function App() {
       const personas = attendeesToPersonas(parsed);
       setUploadedAttendees(personas);
       setAccount(prev => prev ? { ...prev, ebc_data: { ...prev.ebc_data, attendees: personas } } : prev);
-      setAttendeeUploadMsg(`${personas.length} attendees loaded`);
-      setTimeout(() => setAttendeeUploadMsg(null), 3000);
+      setAttendeeUploadMsg(`${personas.length} attendees loaded — regenerating insights...`);
+      // Clear cached analysis and re-trigger with new attendee data
+      setBuzzNow(null);
+      setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
     reader.readAsText(file);
     // Reset input so same file can be re-uploaded

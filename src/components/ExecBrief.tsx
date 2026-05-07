@@ -148,7 +148,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       .then(result => setInsights(result))
       .catch(err => console.warn('Failed to generate insights:', err))
       .finally(() => setInsightsLoading(false));
-  }, [a.customer_name]);
+  }, [a.customer_name, a.ebc_data.attendees.length]);
 
   // Fetch AI-generated next steps and key asks
   useEffect(() => {
@@ -159,7 +159,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       .then(result => setAiNextSteps(result))
       .catch(err => console.warn('Failed to generate next steps:', err))
       .finally(() => setNextStepsLoading(false));
-  }, [a.customer_name]);
+  }, [a.customer_name, a.ebc_data.attendees.length]);
 
   // Handle agenda generation via Bedrock
   const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
@@ -274,7 +274,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
     }).finally(() => {
       setLoadingQuote(false);
     });
-  }, [a.customer_name]);
+  }, [a.customer_name, a.ebc_data.attendees.length]);
 
   const bestStarter = plan0?.conversation_starters[0] || aiStarters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
   const allStarters = plan0?.conversation_starters || (aiStarters.length > 0 ? aiStarters : [bestStarter]);

@@ -98,7 +98,7 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
       .then(result => setAiNextSteps(result))
       .catch(err => console.warn('Failed to generate next steps:', err))
       .finally(() => setNextStepsLoading(false));
-  }, [a.customer_name]);
+  }, [a.customer_name, a.ebc_data.attendees.length]);
 
   // Handle agenda generation via Bedrock
   const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
