@@ -85,6 +85,49 @@ function error(statusCode, message) {
   };
 }
 
+// lambdas/shared/knowledge-base.ts
+var import_client_bedrock_agent_runtime = require("@aws-sdk/client-bedrock-agent-runtime");
+var client2 = new import_client_bedrock_agent_runtime.BedrockAgentRuntimeClient({
+  region: process.env.BEDROCK_REGION || "us-east-1"
+});
+var KNOWLEDGE_BASE_ID = process.env.KNOWLEDGE_BASE_ID || "TJHYCVRLXH";
+async function retrieveFromKnowledgeBase(query, maxResults = 5) {
+  try {
+    const command = new import_client_bedrock_agent_runtime.RetrieveCommand({
+      knowledgeBaseId: KNOWLEDGE_BASE_ID,
+      retrievalQuery: { text: query },
+      retrievalConfiguration: {
+        vectorSearchConfiguration: {
+          numberOfResults: maxResults
+        }
+      }
+    });
+    const response = await client2.send(command);
+    const results = response.retrievalResults || [];
+    if (results.length === 0) return "";
+    const chunks = results.filter((r) => r.content?.text).map((r) => r.content.text).join("\n\n---\n\n");
+    return chunks.slice(0, 3e3);
+  } catch (err) {
+    console.warn("Knowledge base retrieval failed:", err);
+    return "";
+  }
+}
+async function getTCStrategyContext(industry, persona, topics = []) {
+  const queries = [
+    `${persona} executive engagement strategy ${industry} training certification`,
+    ...topics.slice(0, 2).map((t) => `${t} workforce development ${industry}`)
+  ];
+  const results = await Promise.all(
+    queries.map((q) => retrieveFromKnowledgeBase(q, 3).catch(() => ""))
+  );
+  const combined = results.filter(Boolean).join("\n\n");
+  if (!combined) return "";
+  return `
+
+T&C KNOWLEDGE BASE CONTEXT:
+${combined.slice(0, 4e3)}`;
+}
+
 // lambdas/intelligence/index.ts
 var ddbClient = new import_client_dynamodb.DynamoDBClient({});
 var ddb = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
@@ -159,12 +202,13 @@ async function handler(event) {
       }
     } catch {
     }
-    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults] = await Promise.all([
+    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults, kbDocs] = await Promise.all([
       googleSearch(`${companyName} site:linkedin.com/jobs cloud AI engineer`),
       googleSearch(`${companyName} site:glassdoor.com reviews culture training`),
       googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
       googleSearch(`${companyName} AWS cloud spend revenue technology investment`),
-      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`)
+      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`),
+      getTCStrategyContext(industry, "CTO", []).catch(() => "")
     ]);
     const searchContext = [
       linkedinResults ? `LINKEDIN JOB POSTINGS:
@@ -178,9 +222,20 @@ ${newsResults}` : "",
       dataBookResults ? `COMPANY DATA, REVENUE & INVESTMENT:
 ${dataBookResults}` : ""
     ].filter(Boolean).join("\n\n");
-    const userMessage = searchContext ? `Based on these REAL Google search results about ${companyName} (${industry}), extract and structure the intelligence into JSON. Only use facts from the search results:
+    let userMessage;
+    if (searchContext || kbDocs) {
+      const kbSection = kbDocs ? `
 
-${searchContext}` : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available \u2014 use your training knowledge to provide relevant industry context and signals. Do not label anything as an estimate.`;
+T&C KNOWLEDGE BASE (PRIMARY REFERENCE):
+${kbDocs.slice(0, 3e3)}` : "";
+      const searchSection = searchContext ? `
+
+ONLINE SEARCH RESULTS (SUPPLEMENTARY):
+${searchContext}` : "";
+      userMessage = `Based on the available intelligence about ${companyName} (${industry}), extract and structure the intelligence into JSON. Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.${kbSection}${searchSection}`;
+    } else {
+      userMessage = `Generate workforce intelligence JSON for: ${companyName} (${industry}). Focus on the company name, industry, and T&C Knowledge Base context to provide relevant intelligence. Do not label anything as an estimate.`;
+    }
     const result = await invokeClaudeJSON(
       SYSTEM_PROMPT,
       [{ role: "user", content: userMessage }],

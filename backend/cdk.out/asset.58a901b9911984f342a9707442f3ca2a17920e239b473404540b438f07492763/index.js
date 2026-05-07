@@ -340,6 +340,8 @@ REAL-TIME ONLINE SEARCH RESULTS:
 ${onlineSearch.slice(0, 3e3)}` : ""}`;
     const userMessage = `Based on all the intelligence gathered for ${companyName}, generate specific next steps and key asks for the T&C engagement.
 
+Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.
+
 ${context}
 
 Return JSON:
