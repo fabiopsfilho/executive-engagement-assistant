@@ -282,6 +282,16 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const nextSteps = aiNextSteps?.next_steps || generateNextSteps(a).map(s => s.text);
   const keyAsks = aiNextSteps?.key_asks || generateKeyAsks(a).map(k => k.ask);
 
+  // Show full loading state until insights are ready
+  if (insightsLoading && !insights) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 animate-fade-in">
+        <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+        <span className="text-sm text-slate-400">Generating insights...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in">
       {showAgenda === 'ebc' && <AgendaModal agenda={aiAgenda || generateAgenda(a)} onClose={() => setShowAgenda(null)} />}
