@@ -234,12 +234,6 @@ export default function App() {
           )}
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
-            {loadingIntel && (
-              <div className="absolute top-full left-0 right-0 flex items-center justify-center gap-2 py-1.5 bg-blue-500/10 border-b border-blue-500/20 z-10">
-                <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-                <span className="text-[10px] text-blue-400">Researching {account.customer_name}...</span>
-              </div>
-            )}
             <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'now' ? 'text-blue-400' : 'text-muted'}`}>
               <Zap className="w-4 h-4" />
@@ -384,8 +378,8 @@ export default function App() {
         <main className="px-4 py-4">
           {loadingIntel ? (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
-              <span className="text-sm text-slate-400">Researching {account.customer_name}...</span>
+              <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+              <span className="text-sm text-slate-400">Loading...</span>
             </div>
           ) : (
             <>

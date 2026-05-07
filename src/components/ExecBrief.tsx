@@ -333,7 +333,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
           {insightsLoading && (
             <div className="flex items-center gap-2 text-xs text-muted py-1">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-              <span>Generating AI insights...</span>
+              <span>Generating insights...</span>
             </div>
           )}
           <div className="flex items-start gap-2.5">
