@@ -179,7 +179,7 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
       {loading && (
         <div className="flex items-center justify-center gap-2 py-8">
           <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-          <span className="text-xs text-muted">Loading EBC calendar...</span>
+          <span className="text-xs text-muted">Loading...</span>
         </div>
       )}
 
