@@ -59,7 +59,7 @@ class EngagementAssistantStack extends cdk.Stack {
       EBC_DATA_BUCKET: ebcDataBucket.bucketName,
       EBC_DATA_KEY: 'ebc-calendar.csv',
       KNOWLEDGE_BASE_ID: 'TJHYCVRLXH',
-      KB_VERSION: '4',
+      KB_VERSION: '5',
     };
 
     // ─── Bedrock IAM Policy ─────────────────────────────────────────────
