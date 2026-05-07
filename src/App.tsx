@@ -287,10 +287,10 @@ export default function App() {
                             <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
                           ))
                         )}
-                        {/* Always show clickable LinkedIn links */}
-                        {account.public_intelligence.executive_social.length > 0 && (
+                        {/* Always show clickable LinkedIn links — but only for executives with real data */}
+                        {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 && (
                           <div className="mt-2 space-y-2">
-                            {account.public_intelligence.executive_social.map(e => (
+                            {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).map(e => (
                               <div key={e.name} className="flex items-start gap-2.5">
                                 <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
                                 <div>

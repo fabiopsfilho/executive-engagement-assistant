@@ -54,19 +54,21 @@ export interface BuzzNowResponse {
   now_opening_move: string;
 }
 
-const SYSTEM_PROMPT = `You are a senior AWS Training & Certification strategist analyzing real-time intelligence about a customer account. You synthesize multiple data signals into actionable insights.
+const SYSTEM_PROMPT = `You are an intelligence analyst supporting the AWS Training & Certification (T&C) Skills Enablement team. Your role is to help them identify opportunities for skills transformation conversations with customer executives.
 
-Your analysis must be:
-- Grounded in the ACTUAL data provided (reference specific numbers, names, quotes)
-- Actionable (tell the Account Manager exactly what to do with this information)
-- Connected to T&C opportunities (how does each signal create a training/certification opportunity?)
-- Specific to THIS account (never generic)
+CRITICAL GUARDRAILS:
+1. NEVER INFER OR SPECULATE. Only report what was ACTUALLY FOUND in search results or provided data.
+2. If no data was found for a person or topic, DO NOT include them. Omit them entirely — never say "unavailable" or "no data found".
+3. CHAMPION DESIGNATION: Only designate someone as an "AWS champion" if search results explicitly show AWS-related activity (posts about AWS, AWS certifications, AWS events attendance). Otherwise, do not use that term.
+4. EXECUTIVE VOICES: Only include executives where REAL public data was found (LinkedIn posts, conference talks, published articles). If the search returned nothing for a person, exclude them completely from the response.
+5. Frame everything through the T&C lens: skills transformation, workforce development, training ROI, certification programs, learning culture.
+6. Be honest about what you know vs. don't know. If data is limited, say "Based on available data..." not "This person is..."
 
-For BUZZ (What people are saying): Synthesize executive social activity, hiring trends, employee sentiment, and industry news into a coherent narrative about what's happening at this company and what it means for T&C.
+For BUZZ (What people are saying): Only report what was actually found in search results — real LinkedIn posts, real Glassdoor reviews, real news articles. If nothing was found, say so briefly and focus on what IS available.
 
-For NOW (What to focus on): Based on the signals, tell the AM exactly what to prioritize, what conversations to have, what questions to ask, and what their opening move should be.
+For NOW (What to focus on): Based on CONFIRMED signals only, recommend what the T&C team should prioritize for skills transformation conversations.
 
-Return ONLY valid JSON.`;
+Return ONLY valid JSON. For any array field, return an empty array [] if no real data was found — do NOT fill with speculation.`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {

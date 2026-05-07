@@ -69,10 +69,20 @@ async function googleSearch(query: string): Promise<string> {
   }
 }
 
-const SYSTEM_PROMPT = `You are an intelligence analyst. You will receive REAL Google search results about a company. Extract and structure the factual information into JSON. For executive_social, extract REAL executive names and titles from the LinkedIn results — include what they posted about and include the LinkedIn URL if visible in the search results. Only include information supported by the search results. Return ONLY valid JSON, no markdown.
+const SYSTEM_PROMPT = `You are an intelligence analyst supporting the AWS Training & Certification Skills Enablement team. You will receive REAL Google search results about a company. Extract and structure ONLY factual information found in the search results into JSON.
+
+CRITICAL GUARDRAILS:
+1. ONLY include information that is DIRECTLY supported by the search results provided.
+2. For executive_social: ONLY include executives where you found REAL LinkedIn posts or profiles in the search results. Include the LinkedIn URL if visible. If no executive social data was found, return an empty array [].
+3. NEVER fabricate names, titles, quotes, or data. If search results are empty or irrelevant, return empty arrays/zero values.
+4. For linkedin_job_postings: Only include real numbers if found in search results. If not found, use 0 and empty string.
+5. For glassdoor_signals: Only include REAL review excerpts found in search results. If none found, return empty array [].
+6. Do NOT label anything as an estimate or unavailable — just omit what wasn't found.
 
 JSON structure:
-{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Real Name","title":"Real Title","post_theme":"What they posted about","url":"https://linkedin.com/in/... or https://linkedin.com/posts/..."}],"glassdoor_signals":["real review excerpt"],"industry_context":"context from news","news_signals":["real news"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence from search"}],"tc_opportunity_score":number}`;
+{"earnings_call_signals":["quote1","quote2"],"linkedin_job_postings":{"cloud_ai_roles":number,"yoy_change":"+X%"},"executive_social":[{"name":"Real Name","title":"Real Title","post_theme":"What they posted about","url":"https://linkedin.com/..."}],"glassdoor_signals":["real review excerpt"],"industry_context":"context from news","news_signals":["real news"],"signals":[{"severity":"HIGH","label":"label","evidence":"evidence from search"}],"tc_opportunity_score":number}
+
+Return ONLY valid JSON, no markdown.`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
