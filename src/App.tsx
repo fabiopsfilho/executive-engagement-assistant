@@ -159,7 +159,29 @@ export default function App() {
             <p className="text-[11px] text-muted">{persona.title}</p>
           </div>
         </header>
-        <PersonaView account={account} persona={persona} />
+        <PersonaView account={account} persona={persona} onPersonaIntelUpdate={(intel) => {
+          // Update account's executive_social with real persona data so all AI calls include it
+          if (intel && intel.linkedin_summary && intel.linkedin_summary !== 'No LinkedIn data found') {
+            setAccount(prev => {
+              if (!prev) return prev;
+              const existing = prev.public_intelligence.executive_social;
+              const alreadyExists = existing.find(e => e.name === persona.name);
+              if (alreadyExists) return prev;
+              return {
+                ...prev,
+                public_intelligence: {
+                  ...prev.public_intelligence,
+                  executive_social: [
+                    ...existing,
+                    { name: persona.name, title: persona.title, post_theme: intel.recent_activity[0] || intel.interests[0] || intel.linkedin_summary.slice(0, 100) },
+                  ],
+                },
+              };
+            });
+            // Clear buzz cache so next Buzz click includes this persona's data
+            setBuzzNow(null);
+          }
+        }} />
       </div>
     </div>
   );

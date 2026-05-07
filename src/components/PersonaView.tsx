@@ -55,7 +55,7 @@ function getRolePlayResponse(q: string, a: Account, persona: Attendee): string {
   return `"From my perspective as ${persona.title}, I'm most concerned about how this impacts my team's ability to deliver. Can you be specific?"\n\n💡 Ask about their team's specific skills gaps and connect to their functional goals.`;
 }
 
-export function PersonaView({ account, persona }: { account: Account; persona: Attendee }) {
+export function PersonaView({ account, persona, onPersonaIntelUpdate }: { account: Account; persona: Attendee; onPersonaIntelUpdate?: (intel: PersonaIntelResponse) => void }) {
   const [tab, setTab] = useState<Tab>('conversation');
   const [notes, setNotes] = useState<PersonaNote[]>([]);
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -92,7 +92,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
     if (!isBackendAvailable()) return;
     setPersonaIntelLoading(true);
     getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
-      .then(intel => setPersonaIntel(intel))
+      .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
       .catch(() => setPersonaIntel(null))
       .finally(() => setPersonaIntelLoading(false));
   }, [persona.name, account.customer_name]);
@@ -203,7 +203,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
                       if (isBackendAvailable()) {
                         setPersonaIntelLoading(true);
                         getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
-                          .then(intel => setPersonaIntel(intel))
+                          .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                           .catch(() => setPersonaIntel(null))
                           .finally(() => setPersonaIntelLoading(false));
                       }
@@ -343,7 +343,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
                     if (isBackendAvailable()) {
                       setPersonaIntelLoading(true);
                       getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
-                        .then(intel => setPersonaIntel(intel))
+                        .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                         .catch(() => setPersonaIntel(null))
                         .finally(() => setPersonaIntelLoading(false));
                     }
