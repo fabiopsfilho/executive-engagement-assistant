@@ -382,6 +382,7 @@ export default function App() {
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
               <span className="text-sm text-slate-400">Loading...</span>
+              <span className="text-xs text-slate-500">Researching and generating insights</span>
             </div>
           ) : (
             <>

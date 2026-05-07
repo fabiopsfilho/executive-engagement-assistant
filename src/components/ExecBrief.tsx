@@ -329,13 +329,13 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
         {/* Tab content */}
         <div className="p-5 pt-3">
           {heroTab === 'approach' && (
+            insightsLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                <span className="text-xs text-muted">Generating insights...</span>
+              </div>
+            ) : (
             <div className="space-y-4">
-          {insightsLoading && (
-            <div className="flex items-center gap-2 text-xs text-muted py-1">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-              <span>Generating insights...</span>
-            </div>
-          )}
           <div className="flex items-start gap-2.5">
             <Users className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
             <div>
@@ -377,7 +377,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
             </div>
           </div>
         </div>
-          )}
+          ))}
 
 
           {heroTab === 'next-steps' && (
