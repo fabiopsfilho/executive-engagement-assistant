@@ -10,6 +10,7 @@ export interface Account {
   segment: string;
   geo: string;
   sfdcAccountId?: string;
+  accountPlanText?: string;
   aws_spend: {
     current_year: number;
     prior_year: number;

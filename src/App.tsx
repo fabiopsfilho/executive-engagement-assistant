@@ -28,7 +28,10 @@ export default function App() {
   const [uploadedAttendees, setUploadedAttendees] = useState<Attendee[]>([]);
   const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [, setAccountPlanText] = useState<string>('');
+  const [accountPlanName, setAccountPlanName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const accountPlanInputRef = useRef<HTMLInputElement>(null);
 
   // Handle attendee CSV upload
   const handleAttendeeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +53,53 @@ export default function App() {
     };
     reader.readAsText(file);
     // Reset input so same file can be re-uploaded
+    e.target.value = '';
+  };
+
+  // Handle account plan document upload
+  const handleAccountPlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fileName = file.name;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      let text = ev.target?.result as string;
+      if (!text) return;
+
+      // For binary formats (DOCX, PDF), try to extract readable text
+      if (fileName.endsWith('.docx')) {
+        // Extract text between XML tags
+        const matches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
+        text = matches.length > 0
+          ? matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ')
+          : text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+      } else if (!fileName.endsWith('.txt') && !fileName.endsWith('.csv')) {
+        // Generic binary — extract printable characters
+        text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+      }
+
+      if (text.length > 50) {
+        const planText = text.slice(0, 15000);
+        setAccountPlanText(planText);
+        setAccountPlanName(fileName);
+        setAccount(prev => prev ? { ...prev, accountPlanText: planText } : prev);
+        setAttendeeUploadMsg(`Account plan "${fileName}" loaded — regenerating insights...`);
+        setBuzzNow(null);
+        setRefreshKey(k => k + 1);
+        setTimeout(() => setAttendeeUploadMsg(null), 4000);
+      } else {
+        setAttendeeUploadMsg('Could not extract text from document.');
+        setTimeout(() => setAttendeeUploadMsg(null), 3000);
+      }
+    };
+
+    // Read as text for txt/csv, as binary string for others
+    if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsBinaryString(file);
+    }
     e.target.value = '';
   };
 
@@ -146,7 +196,7 @@ export default function App() {
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
       <div className="w-full max-w-[430px] md:max-w-[800px] lg:max-w-[1000px]">
-        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setBuzzNow(null); setUploadedAttendees([]); setAttendeeUploadMsg(null); }} />
+        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setBuzzNow(null); setUploadedAttendees([]); setAttendeeUploadMsg(null); setAccountPlanText(''); setAccountPlanName(''); }} />
       </div>
     </div>
   );
@@ -229,6 +279,17 @@ export default function App() {
               <span className="text-[8px] text-muted mt-0.5">Attendees</span>
               {uploadedAttendees.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[8px] flex items-center justify-center font-bold">{uploadedAttendees.length}</span>
+              )}
+            </button>
+            {/* Upload Account Plan */}
+            <input ref={accountPlanInputRef} type="file" accept=".txt,.csv,.docx,.pdf" onChange={handleAccountPlanUpload} className="hidden" />
+            <button onClick={() => accountPlanInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload Account Plan">
+              <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
+                <FileText className="w-4 h-4 text-slate-400" />
+              </div>
+              <span className="text-[8px] text-muted mt-0.5">Plan</span>
+              {accountPlanName && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-bold">✓</span>
               )}
             </button>
           </div>
