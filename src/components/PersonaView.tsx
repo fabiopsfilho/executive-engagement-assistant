@@ -91,7 +91,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
   useEffect(() => {
     if (!isBackendAvailable()) return;
     setPersonaIntelLoading(true);
-    getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+    getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
       .then(intel => setPersonaIntel(intel))
       .catch(() => setPersonaIntel(null))
       .finally(() => setPersonaIntelLoading(false));
@@ -202,7 +202,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
                       // Re-fetch persona intel with updated URL context
                       if (isBackendAvailable()) {
                         setPersonaIntelLoading(true);
-                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
                           .then(intel => setPersonaIntel(intel))
                           .catch(() => setPersonaIntel(null))
                           .finally(() => setPersonaIntelLoading(false));
@@ -342,7 +342,7 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
                     setEditingUrl(false);
                     if (isBackendAvailable()) {
                       setPersonaIntelLoading(true);
-                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
                         .then(intel => setPersonaIntel(intel))
                         .catch(() => setPersonaIntel(null))
                         .finally(() => setPersonaIntelLoading(false));

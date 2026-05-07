@@ -138,11 +138,12 @@ GUARDRAILS:
 async function handler(event) {
   try {
     const body = JSON.parse(event.body || "{}");
-    const { personaName, personaTitle, company, industry } = body;
+    const { personaName, personaTitle, company, industry, linkedinUrl } = body;
     if (!personaName || !company) {
       return error(400, "personaName and company are required");
     }
-    const cacheKey = `persona-intel:${personaName.toLowerCase().replace(/\s+/g, "-")}:${company.toLowerCase().replace(/\s+/g, "-")}`;
+    const urlHash = linkedinUrl ? linkedinUrl.replace(/[^a-z0-9]/gi, "").slice(-20) : "no-url";
+    const cacheKey = `persona-intel:${personaName.toLowerCase().replace(/\s+/g, "-")}:${company.toLowerCase().replace(/\s+/g, "-")}:${urlHash}`;
     try {
       const cached = await ddb.send(new import_lib_dynamodb.GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE,
@@ -153,18 +154,24 @@ async function handler(event) {
       }
     } catch {
     }
-    const [linkedinResults, cloudAIResults, companyResults] = await Promise.all([
-      googleSearch(`"${personaName}" "${company}" site:linkedin.com`).catch(() => ""),
+    const searches = [
+      linkedinUrl ? googleSearch(`site:linkedin.com "${personaName}" ${linkedinUrl.split("/in/")[1]?.replace("/", "") || ""}`).catch(() => "") : googleSearch(`"${personaName}" "${company}" site:linkedin.com`).catch(() => ""),
       googleSearch(`"${personaName}" "${company}" cloud OR AI OR training OR transformation`).catch(() => ""),
       googleSearch(`"${personaName}" "${company}" ${industry}`).catch(() => "")
-    ]);
+    ];
+    if (linkedinUrl) {
+      searches.push(googleSearch(`"${personaName}" site:linkedin.com posts OR articles`).catch(() => ""));
+    }
+    const [linkedinResults, cloudAIResults, companyResults, postsResults] = await Promise.all(searches);
     const searchContext = [
       linkedinResults ? `LINKEDIN SEARCH:
 ${linkedinResults}` : "",
       cloudAIResults ? `CLOUD/AI ACTIVITY SEARCH:
 ${cloudAIResults}` : "",
       companyResults ? `COMPANY/INDUSTRY SEARCH:
-${companyResults}` : ""
+${companyResults}` : "",
+      postsResults ? `LINKEDIN POSTS & ARTICLES:
+${postsResults}` : ""
     ].filter(Boolean).join("\n\n");
     const userMessage = `Build a persona intelligence profile for this executive:
 
@@ -172,6 +179,7 @@ NAME: ${personaName}
 TITLE: ${personaTitle || "Unknown"}
 COMPANY: ${company}
 INDUSTRY: ${industry || "Technology"}
+${linkedinUrl ? `LINKEDIN URL: ${linkedinUrl}` : ""}
 
 SEARCH RESULTS:
 ${searchContext || "No search results found for this person."}

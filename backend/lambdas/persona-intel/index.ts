@@ -73,14 +73,15 @@ GUARDRAILS:
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     const body = JSON.parse(event.body || '{}');
-    const { personaName, personaTitle, company, industry } = body;
+    const { personaName, personaTitle, company, industry, linkedinUrl } = body;
 
     if (!personaName || !company) {
       return error(400, 'personaName and company are required');
     }
 
-    // Check cache (24-hour TTL for persona intel)
-    const cacheKey = `persona-intel:${personaName.toLowerCase().replace(/\s+/g, '-')}:${company.toLowerCase().replace(/\s+/g, '-')}`;
+    // Cache key includes LinkedIn URL so changing it busts cache
+    const urlHash = linkedinUrl ? linkedinUrl.replace(/[^a-z0-9]/gi, '').slice(-20) : 'no-url';
+    const cacheKey = `persona-intel:${personaName.toLowerCase().replace(/\s+/g, '-')}:${company.toLowerCase().replace(/\s+/g, '-')}:${urlHash}`;
     try {
       const cached = await ddb.send(new GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
@@ -91,17 +92,25 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
     } catch { /* cache miss */ }
 
-    // Run multiple Google searches in parallel
-    const [linkedinResults, cloudAIResults, companyResults] = await Promise.all([
-      googleSearch(`"${personaName}" "${company}" site:linkedin.com`).catch(() => ''),
+    // Run multiple Google searches in parallel — use LinkedIn URL if provided
+    const searches = [
+      linkedinUrl
+        ? googleSearch(`site:linkedin.com "${personaName}" ${linkedinUrl.split('/in/')[1]?.replace('/', '') || ''}`).catch(() => '')
+        : googleSearch(`"${personaName}" "${company}" site:linkedin.com`).catch(() => ''),
       googleSearch(`"${personaName}" "${company}" cloud OR AI OR training OR transformation`).catch(() => ''),
       googleSearch(`"${personaName}" "${company}" ${industry}`).catch(() => ''),
-    ]);
+    ];
+    // If LinkedIn URL provided, also search for their posts specifically
+    if (linkedinUrl) {
+      searches.push(googleSearch(`"${personaName}" site:linkedin.com posts OR articles`).catch(() => ''));
+    }
+    const [linkedinResults, cloudAIResults, companyResults, postsResults] = await Promise.all(searches);
 
     const searchContext = [
       linkedinResults ? `LINKEDIN SEARCH:\n${linkedinResults}` : '',
       cloudAIResults ? `CLOUD/AI ACTIVITY SEARCH:\n${cloudAIResults}` : '',
       companyResults ? `COMPANY/INDUSTRY SEARCH:\n${companyResults}` : '',
+      postsResults ? `LINKEDIN POSTS & ARTICLES:\n${postsResults}` : '',
     ].filter(Boolean).join('\n\n');
 
     const userMessage = `Build a persona intelligence profile for this executive:
@@ -110,6 +119,7 @@ NAME: ${personaName}
 TITLE: ${personaTitle || 'Unknown'}
 COMPANY: ${company}
 INDUSTRY: ${industry || 'Technology'}
+${linkedinUrl ? `LINKEDIN URL: ${linkedinUrl}` : ''}
 
 SEARCH RESULTS:
 ${searchContext || 'No search results found for this person.'}

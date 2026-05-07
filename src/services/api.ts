@@ -399,12 +399,14 @@ export async function getPersonaIntel(
   personaName: string,
   personaTitle: string,
   company: string,
-  industry: string
+  industry: string,
+  linkedinUrl?: string
 ): Promise<PersonaIntelResponse> {
   return post<PersonaIntelResponse>('/accounts/default/persona-intel', {
     personaName,
     personaTitle,
     company,
     industry,
+    linkedinUrl,
   });
 }
