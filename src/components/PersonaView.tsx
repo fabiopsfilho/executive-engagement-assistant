@@ -202,7 +202,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
                       // Re-fetch persona intel with updated URL context
                       if (isBackendAvailable()) {
                         setPersonaIntelLoading(true);
-                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
+                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined)
                           .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                           .catch(() => setPersonaIntel(null))
                           .finally(() => setPersonaIntelLoading(false));
@@ -342,7 +342,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
                     setEditingUrl(false);
                     if (isBackendAvailable()) {
                       setPersonaIntelLoading(true);
-                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
+                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined)
                         .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                         .catch(() => setPersonaIntel(null))
                         .finally(() => setPersonaIntelLoading(false));
