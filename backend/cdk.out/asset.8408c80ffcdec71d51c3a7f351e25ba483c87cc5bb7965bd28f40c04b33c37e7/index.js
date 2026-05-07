@@ -337,6 +337,8 @@ Location: ${accountData.ebc_data?.location || "TBD"}
 Themes: ${(accountData.ebc_data?.themes || []).join(", ")}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a) => `${a.name} (${a.persona})`).join(", ")}
 
+${accountData.accountPlanText ? `ACCOUNT PLAN DOCUMENT (analyze for T&C opportunities and executive engagement angles):
+${accountData.accountPlanText.slice(0, 6e3)}` : ""}
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:
 ${awsContext.slice(0, 3e3)}` : ""}
 ${onlineSearch ? `

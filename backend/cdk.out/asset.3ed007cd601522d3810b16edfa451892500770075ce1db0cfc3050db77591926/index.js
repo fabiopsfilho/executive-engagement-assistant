@@ -357,6 +357,11 @@ PUBLIC INTELLIGENCE:`);
     if (pi.industry_context) lines.push(`Industry Context: ${pi.industry_context}`);
     if (pi.news_signals?.length) lines.push(`News: ${pi.news_signals.join("; ")}`);
   }
+  if (accountData.accountPlanText) {
+    lines.push(`
+ACCOUNT PLAN DOCUMENT (uploaded by user \u2014 this is the customer's strategic plan, analyze it for T&C opportunities):`);
+    lines.push(accountData.accountPlanText.slice(0, 8e3));
+  }
   return lines.join("\n");
 }
 // Annotate the CommonJS export names for ESM import in node:

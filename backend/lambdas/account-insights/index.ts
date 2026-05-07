@@ -214,5 +214,11 @@ function buildAccountContext(accountData: any, tcData: any): string {
     if (pi.news_signals?.length) lines.push(`News: ${pi.news_signals.join('; ')}`);
   }
 
+  // Account Plan (if uploaded by user)
+  if (accountData.accountPlanText) {
+    lines.push(`\nACCOUNT PLAN DOCUMENT (uploaded by user — this is the customer's strategic plan, analyze it for T&C opportunities):`);
+    lines.push(accountData.accountPlanText.slice(0, 8000));
+  }
+
   return lines.join('\n');
 }

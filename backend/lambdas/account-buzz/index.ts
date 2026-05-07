@@ -183,6 +183,7 @@ Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
 
+${accountData.accountPlanText ? `ACCOUNT PLAN DOCUMENT (analyze for T&C opportunities and executive engagement angles):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}
 ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
