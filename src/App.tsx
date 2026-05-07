@@ -27,6 +27,7 @@ export default function App() {
   const [buzzNowLoading, setBuzzNowLoading] = useState(false);
   const [uploadedAttendees, setUploadedAttendees] = useState<Attendee[]>([]);
   const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle attendee CSV upload
@@ -44,6 +45,7 @@ export default function App() {
       setAttendeeUploadMsg(`${personas.length} attendees loaded — regenerating insights...`);
       // Clear cached analysis and re-trigger with new attendee data
       setBuzzNow(null);
+      setRefreshKey(k => k + 1);
       setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
     reader.readAsText(file);
@@ -352,18 +354,21 @@ export default function App() {
                                 <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
                               ))
                             )}
-                            {/* Show uploaded attendees as clickable LinkedIn links */}
+                            {/* Show uploaded attendees — no fake URLs */}
                             {account.ebc_data.attendees.length > 0 && account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE')).length === 0 && (
-                              <div className="mt-2 space-y-2">
-                                {account.ebc_data.attendees.map(att => (
-                                  <div key={att.name} className="flex items-start gap-2.5">
-                                    <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{att.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
-                                    <div>
-                                      <a href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(att.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{att.name}</a>
+                              <div className="mt-2 space-y-1.5">
+                                <span className="text-[10px] text-muted">Confirmed attendees:</span>
+                                {account.ebc_data.attendees.slice(0, 8).map(att => (
+                                  <div key={att.name} className="flex items-center gap-2">
+                                    <div className="w-6 h-6 rounded-full bg-dark-700 flex items-center justify-center text-[8px] text-slate-300 font-bold shrink-0">{att.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+                                    <div className="min-w-0">
+                                      <span className="text-xs text-white">{att.name}</span>
                                       <span className="text-[10px] text-muted ml-1">{att.title}</span>
                                     </div>
                                   </div>
                                 ))}
+                                {account.ebc_data.attendees.length > 8 && <span className="text-[10px] text-muted">+{account.ebc_data.attendees.length - 8} more</span>}
+                                <p className="text-[10px] text-purple-400 mt-1">💡 Add LinkedIn URLs in "Engage a Persona" for deeper research</p>
                               </div>
                             )}
                             {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 && (
@@ -418,11 +423,10 @@ export default function App() {
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
               <span className="text-sm text-slate-400">Loading...</span>
-              <span className="text-xs text-slate-500">Researching and generating insights</span>
             </div>
           ) : (
             <>
-              {tab === 'brief' && <ExecBrief account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
+              {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
               {tab === 'summary' && <SummaryView account={account} />}
               {tab === 'advisor' && <AdvisorChat account={account} tcData={tcData} />}
             </>
