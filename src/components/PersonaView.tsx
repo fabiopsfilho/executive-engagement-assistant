@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap, Loader2 } from 'lucide-react';
+import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap, Loader2, Pencil, ExternalLink } from 'lucide-react';
 import type { Account, Attendee } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { PersonaStory } from './PersonaStory';
@@ -67,12 +67,17 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
   const [showPersonaNow, setShowPersonaNow] = useState(false);
   const [personaIntel, setPersonaIntel] = useState<PersonaIntelResponse | null>(null);
   const [personaIntelLoading, setPersonaIntelLoading] = useState(false);
+  const [linkedinUrl, setLinkedinUrl] = useState<string>('');
+  const [editingUrl, setEditingUrl] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
   const chatRef = useRef<HTMLDivElement>(null);
 
   const key = `${account.customer_name}::${persona.persona}`;
   const plan = engagementPlans[key];
   const gradient = personaGradients[persona.persona] || personaGradients.Other;
   const social = account.public_intelligence.executive_social.find(e => e.name === persona.name);
+  const defaultLinkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(persona.name + ' ' + account.customer_name)}`;
+  const currentLinkedinUrl = linkedinUrl || defaultLinkedinUrl;
 
   // Initial greeting from persona
   useEffect(() => {
@@ -177,6 +182,51 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
             </div>
           </div>
         </div>
+        {/* LinkedIn URL */}
+        <div className="px-4 pb-2">
+          {editingUrl ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                placeholder="Paste LinkedIn URL..."
+                className="flex-1 px-3 py-1.5 bg-dark-800 border border-dark-600 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400/50"
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    const url = urlInput.trim();
+                    if (url && url !== currentLinkedinUrl && url.startsWith('http')) {
+                      setLinkedinUrl(url);
+                      setEditingUrl(false);
+                      // Re-fetch persona intel with updated URL context
+                      if (isBackendAvailable()) {
+                        setPersonaIntelLoading(true);
+                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+                          .then(intel => setPersonaIntel(intel))
+                          .catch(() => setPersonaIntel(null))
+                          .finally(() => setPersonaIntelLoading(false));
+                      }
+                    } else {
+                      setEditingUrl(false);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setEditingUrl(false);
+                  }
+                }}
+              />
+              <button onClick={() => setEditingUrl(false)} className="p-1 text-slate-500 hover:text-slate-300"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
+              <a href={currentLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate">{currentLinkedinUrl}</a>
+              <button onClick={() => { setUrlInput(currentLinkedinUrl); setEditingUrl(true); }} className="p-1 rounded hover:bg-dark-700 shrink-0" title="Edit LinkedIn URL">
+                <Pencil className="w-3 h-3 text-slate-500" />
+              </button>
+            </div>
+          )}
+        </div>
         {/* Chat-only mode for live accounts without pre-built plans */}
         {/* Persona Intelligence Panel */}
         {(personaIntelLoading || personaIntel) && (
@@ -271,6 +321,51 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
             </div>
           </div>
         </div>
+      </div>
+
+      {/* LinkedIn URL */}
+      <div className="px-4 pb-2">
+        {editingUrl ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="url"
+              value={urlInput}
+              onChange={e => setUrlInput(e.target.value)}
+              placeholder="Paste LinkedIn URL..."
+              className="flex-1 px-3 py-1.5 bg-dark-800 border border-dark-600 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400/50"
+              autoFocus
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const url = urlInput.trim();
+                  if (url && url !== currentLinkedinUrl && url.startsWith('http')) {
+                    setLinkedinUrl(url);
+                    setEditingUrl(false);
+                    if (isBackendAvailable()) {
+                      setPersonaIntelLoading(true);
+                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+                        .then(intel => setPersonaIntel(intel))
+                        .catch(() => setPersonaIntel(null))
+                        .finally(() => setPersonaIntelLoading(false));
+                    }
+                  } else {
+                    setEditingUrl(false);
+                  }
+                } else if (e.key === 'Escape') {
+                  setEditingUrl(false);
+                }
+              }}
+            />
+            <button onClick={() => setEditingUrl(false)} className="p-1 text-slate-500 hover:text-slate-300"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
+            <a href={currentLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate">{currentLinkedinUrl}</a>
+            <button onClick={() => { setUrlInput(currentLinkedinUrl); setEditingUrl(true); }} className="p-1 rounded hover:bg-dark-700 shrink-0" title="Edit LinkedIn URL">
+              <Pencil className="w-3 h-3 text-slate-500" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Persona Intelligence Panel */}

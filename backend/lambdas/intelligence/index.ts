@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { getTCStrategyContext } from '../shared/knowledge-base';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -108,13 +109,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Cache miss — continue
     }
 
-    // Fetch REAL data from Google search (parallel requests)
-    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults] = await Promise.all([
+    // Fetch REAL data from Google search (parallel requests) + Knowledge Base
+    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults, kbDocs] = await Promise.all([
       googleSearch(`${companyName} site:linkedin.com/jobs cloud AI engineer`),
       googleSearch(`${companyName} site:glassdoor.com reviews culture training`),
       googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
       googleSearch(`${companyName} AWS cloud spend revenue technology investment`),
       googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`),
+      getTCStrategyContext(industry, 'CTO', []).catch(() => ''),
     ]);
 
     // Build context from real search results
@@ -126,9 +128,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       dataBookResults ? `COMPANY DATA, REVENUE & INVESTMENT:\n${dataBookResults}` : '',
     ].filter(Boolean).join('\n\n');
 
-    const userMessage = searchContext
-      ? `Based on these REAL Google search results about ${companyName} (${industry}), extract and structure the intelligence into JSON. Only use facts from the search results:\n\n${searchContext}`
-      : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available — use your training knowledge to provide relevant industry context and signals. Do not label anything as an estimate.`;
+    let userMessage: string;
+    if (searchContext || kbDocs) {
+      const kbSection = kbDocs ? `\n\nT&C KNOWLEDGE BASE (PRIMARY REFERENCE):\n${kbDocs.slice(0, 3000)}` : '';
+      const searchSection = searchContext ? `\n\nONLINE SEARCH RESULTS (SUPPLEMENTARY):\n${searchContext}` : '';
+      userMessage = `Based on the available intelligence about ${companyName} (${industry}), extract and structure the intelligence into JSON. Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.${kbSection}${searchSection}`;
+    } else {
+      userMessage = `Generate workforce intelligence JSON for: ${companyName} (${industry}). Focus on the company name, industry, and T&C Knowledge Base context to provide relevant intelligence. Do not label anything as an estimate.`;
+    }
 
     const result = await invokeClaudeJSON<IntelligenceResponse>(
       SYSTEM_PROMPT,

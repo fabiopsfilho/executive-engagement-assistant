@@ -187,6 +187,8 @@ ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 30
 
     const userMessage = `Analyze this account's intelligence and generate both BUZZ and NOW insights. Be highly specific — reference actual names, numbers, and quotes from the data.
 
+Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.
+
 ${context}
 
 Return JSON:

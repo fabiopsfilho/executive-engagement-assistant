@@ -263,104 +263,117 @@ export default function App() {
               </div>
               <div className="px-5 pb-5">
                 {insightPopup === 'now' && (
-                  <div className="space-y-3">
-                    {buzzNowLoading && (
-                      <div className="flex items-center gap-2 text-xs text-muted py-2">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
-                        <span>Searching online & analyzing signals...</span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-xs font-semibold text-muted uppercase">Focus</span>
-                      <p className="text-sm text-slate-200 pl-3 border-l-2 border-blue-500/30 mt-1.5">
-                        {buzzNow?.now_focus || account.sfdc_data.account_plan_priority}
-                      </p>
+                  buzzNowLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                      <span className="text-sm text-slate-400">Analyzing...</span>
                     </div>
-                    <div>
-                      <span className="text-xs font-semibold text-muted uppercase">Initiatives to drive</span>
-                      <div className="space-y-1.5 mt-1.5">
-                        {(buzzNow?.now_initiatives || account.signals.filter(s => s.severity === 'HIGH').map(s => `${s.label}: ${s.evidence.split(';')[0]}`)).map((item, i) => (
-                          <div key={i} className="flex items-start gap-2"><span className="mt-1 w-2 h-2 rounded-full bg-blue-400 shrink-0" /><p className="text-xs text-slate-300">{item}</p></div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-muted uppercase">Ask right now</span>
-                      <div className="space-y-1 mt-1.5">
-                        {(buzzNow?.now_key_asks || [
-                          `What's driving the urgency on ${account.sfdc_data.account_plan_priority}?`,
-                          'Who on your leadership team is championing workforce development?',
-                          'Where are the skills gaps slowing down delivery right now?',
-                        ]).map((ask, i) => (
-                          <p key={i} className="text-xs text-slate-300">→ {ask}</p>
-                        ))}
-                      </div>
-                    </div>
-                    {buzzNow?.now_opening_move && (
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                        <span className="text-[10px] font-semibold text-blue-400 uppercase">💡 Your opening move</span>
-                        <p className="text-xs text-slate-300 mt-1">{buzzNow.now_opening_move}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {insightPopup === 'buzz' && (
-                  <div className="space-y-3">
-                    {buzzNowLoading && (
-                      <div className="flex items-center gap-2 text-xs text-muted py-2">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-orange-400" />
-                        <span>Searching LinkedIn, Glassdoor, news & analyzing...</span>
-                      </div>
-                    )}
-                    {/* AI Summary */}
-                    {buzzNow?.buzz_summary && (
-                      <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3.5">
-                        <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Signal Synthesis</span>
-                        <p className="text-xs text-slate-200 mt-1.5">{buzzNow.buzz_summary}</p>
-                      </div>
-                    )}
-                    {/* AI Executive Insights */}
-                    <div>
-                      <span className="text-xs font-semibold text-muted uppercase">Executive voices</span>
-                      <div className="space-y-2 mt-1.5">
-                        {buzzNow?.buzz_executive_insights && (
-                          buzzNow.buzz_executive_insights.map((insight, i) => (
-                            <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
-                          ))
-                        )}
-                        {/* Always show clickable LinkedIn links — but only for executives with real data */}
-                        {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).map(e => (
-                              <div key={e.name} className="flex items-start gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
-                                <div>
-                                  <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{e.name}</a>
-                                  <span className="text-[10px] text-muted ml-1">{e.title}</span>
-                                  <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 italic mt-0.5 block hover:underline">"{e.post_theme}"</a>
-                                </div>
-                              </div>
+                  ) : buzzNow ? (
+                    <div className="space-y-3">
+                      {buzzNow.now_focus && (
+                        <div>
+                          <span className="text-xs font-semibold text-muted uppercase">Focus</span>
+                          <p className="text-sm text-slate-200 pl-3 border-l-2 border-blue-500/30 mt-1.5">
+                            {buzzNow.now_focus}
+                          </p>
+                        </div>
+                      )}
+                      {buzzNow.now_initiatives && buzzNow.now_initiatives.length > 0 && (
+                        <div>
+                          <span className="text-xs font-semibold text-muted uppercase">Initiatives to drive</span>
+                          <div className="space-y-1.5 mt-1.5">
+                            {buzzNow.now_initiatives.map((item, i) => (
+                              <div key={i} className="flex items-start gap-2"><span className="mt-1 w-2 h-2 rounded-full bg-blue-400 shrink-0" /><p className="text-xs text-slate-300">{item}</p></div>
                             ))}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                    {/* AI Hiring Analysis */}
-                    <div className="pt-3 border-t border-dark-600">
-                      <span className="text-xs font-semibold text-muted uppercase">Hiring & Skills Gap</span>
-                      <div className="flex items-center gap-3 mt-1"><span className="text-xl font-bold text-white">{account.public_intelligence.linkedin_job_postings.cloud_ai_roles}</span><span className="text-xs text-muted">cloud/AI roles</span><span className="text-xs text-green-400">{account.public_intelligence.linkedin_job_postings.yoy_change} YoY</span></div>
-                      {buzzNow?.buzz_hiring_analysis && <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_hiring_analysis}</p>}
-                    </div>
-                    {/* AI Sentiment */}
-                    <div className="pt-3 border-t border-dark-600">
-                      <span className="text-xs font-semibold text-muted uppercase">Employee Sentiment</span>
-                      {buzzNow?.buzz_sentiment_analysis ? (
-                        <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_sentiment_analysis}</p>
-                      ) : (
-                        account.public_intelligence.glassdoor_signals.map((s, i) => (<p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-dark-600 mt-1.5">"{s}"</p>))
+                        </div>
+                      )}
+                      {buzzNow.now_key_asks && buzzNow.now_key_asks.length > 0 && (
+                        <div>
+                          <span className="text-xs font-semibold text-muted uppercase">Ask right now</span>
+                          <div className="space-y-1 mt-1.5">
+                            {buzzNow.now_key_asks.map((ask, i) => (
+                              <p key={i} className="text-xs text-slate-300">→ {ask}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {buzzNow.now_opening_move && (
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                          <span className="text-[10px] font-semibold text-blue-400 uppercase">💡 Your opening move</span>
+                          <p className="text-xs text-slate-300 mt-1">{buzzNow.now_opening_move}</p>
+                        </div>
                       )}
                     </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-8">Click to analyze</p>
+                  )
+                )}
+                {insightPopup === 'buzz' && (
+                  buzzNowLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                      <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                      <span className="text-sm text-slate-400">Analyzing...</span>
+                    </div>
+                  ) : buzzNow ? (
+                    <div className="space-y-3">
+                      {/* AI Summary */}
+                      {buzzNow.buzz_summary && (
+                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3.5">
+                          <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Signal Synthesis</span>
+                          <p className="text-xs text-slate-200 mt-1.5">{buzzNow.buzz_summary}</p>
+                        </div>
+                      )}
+                      {/* AI Executive Insights — only show if there's data */}
+                      {((buzzNow.buzz_executive_insights && buzzNow.buzz_executive_insights.length > 0) || account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0) && (
+                        <div>
+                          <span className="text-xs font-semibold text-muted uppercase">Executive voices</span>
+                          <div className="space-y-2 mt-1.5">
+                            {buzzNow.buzz_executive_insights && (
+                              buzzNow.buzz_executive_insights.map((insight, i) => (
+                                <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
+                              ))
+                            )}
+                            {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).map(e => (
+                                  <div key={e.name} className="flex items-start gap-2.5">
+                                    <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
+                                    <div>
+                                      <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{e.name}</a>
+                                      <span className="text-[10px] text-muted ml-1">{e.title}</span>
+                                      <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 italic mt-0.5 block hover:underline">"{e.post_theme}"</a>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* AI Hiring Analysis — only show if there's data */}
+                      {(account.public_intelligence.linkedin_job_postings.cloud_ai_roles > 0 || buzzNow.buzz_hiring_analysis) && (
+                        <div className="pt-3 border-t border-dark-600">
+                          <span className="text-xs font-semibold text-muted uppercase">Hiring & Skills Gap</span>
+                          <div className="flex items-center gap-3 mt-1"><span className="text-xl font-bold text-white">{account.public_intelligence.linkedin_job_postings.cloud_ai_roles}</span><span className="text-xs text-muted">cloud/AI roles</span><span className="text-xs text-green-400">{account.public_intelligence.linkedin_job_postings.yoy_change} YoY</span></div>
+                          {buzzNow.buzz_hiring_analysis && <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_hiring_analysis}</p>}
+                        </div>
+                      )}
+                      {/* AI Sentiment — only show if there's data */}
+                      {(buzzNow.buzz_sentiment_analysis || account.public_intelligence.glassdoor_signals.length > 0) && (
+                        <div className="pt-3 border-t border-dark-600">
+                          <span className="text-xs font-semibold text-muted uppercase">Employee Sentiment</span>
+                          {buzzNow.buzz_sentiment_analysis ? (
+                            <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_sentiment_analysis}</p>
+                          ) : (
+                            account.public_intelligence.glassdoor_signals.map((s, i) => (<p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-dark-600 mt-1.5">"{s}"</p>))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-8">Click to analyze</p>
+                  )
                 )}
               </div>
             </div>
@@ -369,9 +382,18 @@ export default function App() {
 
         {/* Content */}
         <main className="px-4 py-4">
-          {tab === 'brief' && <ExecBrief account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
-          {tab === 'summary' && <SummaryView account={account} />}
-          {tab === 'advisor' && <AdvisorChat account={account} tcData={tcData} />}
+          {loadingIntel ? (
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
+              <span className="text-sm text-slate-400">Researching {account.customer_name}...</span>
+            </div>
+          ) : (
+            <>
+              {tab === 'brief' && <ExecBrief account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
+              {tab === 'summary' && <SummaryView account={account} />}
+              {tab === 'advisor' && <AdvisorChat account={account} tcData={tcData} />}
+            </>
+          )}
         </main>
 
         {/* Bottom Nav */}
