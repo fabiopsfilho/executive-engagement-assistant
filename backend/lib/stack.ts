@@ -59,7 +59,7 @@ class EngagementAssistantStack extends cdk.Stack {
       EBC_DATA_BUCKET: ebcDataBucket.bucketName,
       EBC_DATA_KEY: 'ebc-calendar.csv',
       KNOWLEDGE_BASE_ID: 'TJHYCVRLXH',
-      KB_VERSION: '3',
+      KB_VERSION: '4',
     };
 
     // ─── Bedrock IAM Policy ─────────────────────────────────────────────
@@ -206,8 +206,19 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 12. Persona Intelligence (search online for a specific person)
+    const personaIntelFn = new NodejsFunction(this, 'PersonaIntelFn', {
+      functionName: 'engagement-assistant-persona-intel',
+      entry: path.join(__dirname, '../lambdas/persona-intel/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn, personaIntelFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -266,6 +277,10 @@ class EngagementAssistantStack extends cdk.Stack {
     // POST /accounts/{accountId}/next-steps
     const nextSteps = account.addResource('next-steps');
     nextSteps.addMethod('POST', new apigateway.LambdaIntegration(accountNextStepsFn));
+
+    // POST /accounts/{accountId}/persona-intel
+    const personaIntel = account.addResource('persona-intel');
+    personaIntel.addMethod('POST', new apigateway.LambdaIntegration(personaIntelFn));
 
     // GET /ebc-data (load EBC calendar from S3)
     const ebcData = api.root.addResource('ebc-data');

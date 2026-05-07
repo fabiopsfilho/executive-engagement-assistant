@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, BookOpen, Bot, Zap, Megaphone, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, FileText, BookOpen, Bot, Zap, Megaphone, Loader2, Upload } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
 import { AccountSelector } from './components/AccountSelector';
@@ -10,6 +10,7 @@ import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
 import { isBackendAvailable, getIntelligence, getTCData, generateBuzzNow, type TCAccountSummary, type BuzzNowResponse } from './services/api';
+import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
 
 type MainTab = 'brief' | 'summary' | 'advisor';
 
@@ -24,6 +25,29 @@ export default function App() {
   const [tcData, setTcData] = useState<TCAccountSummary | null>(null);
   const [buzzNow, setBuzzNow] = useState<BuzzNowResponse | null>(null);
   const [buzzNowLoading, setBuzzNowLoading] = useState(false);
+  const [uploadedAttendees, setUploadedAttendees] = useState<Attendee[]>([]);
+  const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle attendee CSV upload
+  const handleAttendeeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const csvText = ev.target?.result as string;
+      if (!csvText) return;
+      const parsed = parseAttendeeCSV(csvText);
+      const personas = attendeesToPersonas(parsed);
+      setUploadedAttendees(personas);
+      setAccount(prev => prev ? { ...prev, ebc_data: { ...prev.ebc_data, attendees: personas } } : prev);
+      setAttendeeUploadMsg(`${personas.length} attendees loaded`);
+      setTimeout(() => setAttendeeUploadMsg(null), 3000);
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-uploaded
+    e.target.value = '';
+  };
 
   // Check URL params for direct account selection (used by Chrome extension)
   useEffect(() => {
@@ -118,7 +142,7 @@ export default function App() {
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
       <div className="w-full max-w-[430px] md:max-w-[800px] lg:max-w-[1000px]">
-        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setBuzzNow(null); }} />
+        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setBuzzNow(null); setUploadedAttendees([]); setAttendeeUploadMsg(null); }} />
       </div>
     </div>
   );
@@ -169,6 +193,17 @@ export default function App() {
               </div>
               <span className="text-[8px] text-muted mt-0.5">Score</span>
             </button>
+            {/* Upload Attendees */}
+            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleAttendeeUpload} className="hidden" />
+            <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload Attendees CSV">
+              <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
+                <Upload className="w-4 h-4 text-slate-400" />
+              </div>
+              <span className="text-[8px] text-muted mt-0.5">Attendees</span>
+              {uploadedAttendees.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[8px] flex items-center justify-center font-bold">{uploadedAttendees.length}</span>
+              )}
+            </button>
           </div>
           {/* EBC info bar */}
           {account.ebc_data.meeting_dates[0] && (() => {
@@ -189,6 +224,12 @@ export default function App() {
               {account.signals.slice(0, 3).map(s => (
                 <span key={s.label} className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'}`}>{s.label}</span>
               ))}
+            </div>
+          )}
+          {/* Attendee upload confirmation */}
+          {attendeeUploadMsg && (
+            <div className="px-4 py-1.5 flex items-center gap-2 border-t border-dark-700 bg-green-500/10">
+              <span className="text-[10px] text-green-400 font-medium">✓ {attendeeUploadMsg}</span>
             </div>
           )}
           {/* Now & Buzz bar — inside the sticky header */}

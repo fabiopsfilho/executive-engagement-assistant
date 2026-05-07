@@ -380,3 +380,31 @@ export async function generateNextStepsAndAsks(
     tcData,
   });
 }
+
+
+// ─── Persona Intelligence ─────────────────────────────────────────────────────
+
+export interface PersonaIntelResponse {
+  name: string;
+  title: string;
+  company: string;
+  linkedin_summary: string;
+  recent_activity: string[];
+  interests: string[];
+  engagement_angle: string;
+  is_aws_champion: boolean;
+}
+
+export async function getPersonaIntel(
+  personaName: string,
+  personaTitle: string,
+  company: string,
+  industry: string
+): Promise<PersonaIntelResponse> {
+  return post<PersonaIntelResponse>('/accounts/default/persona-intel', {
+    personaName,
+    personaTitle,
+    company,
+    industry,
+  });
+}

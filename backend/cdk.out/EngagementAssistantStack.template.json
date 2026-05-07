@@ -476,7 +476,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "87906f863fcfdfa49a9cede316d9c19ad2ae7a215240d5a24e58f944069f21dc.zip"
+     "S3Key": "43faeb9fe4706c8793f125fab8d40a173de8137cc06cf37ce40eb8ecde5da809.zip"
     },
     "Environment": {
      "Variables": {
@@ -496,7 +496,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-generate",
@@ -517,7 +517,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/GenerateEngagementFn/Resource",
-    "aws:asset:path": "asset.87906f863fcfdfa49a9cede316d9c19ad2ae7a215240d5a24e58f944069f21dc",
+    "aws:asset:path": "asset.43faeb9fe4706c8793f125fab8d40a173de8137cc06cf37ce40eb8ecde5da809",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -737,7 +737,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "31a4f3e35bbc8e5e8d960a5fa16153c347289fceb8c4629019da3d0df0c68b46.zip"
+     "S3Key": "21908de18942aa0ac2c3583f61e7af53abddc65f9cb6c18f7c54a517d1812103.zip"
     },
     "Environment": {
      "Variables": {
@@ -757,7 +757,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-advisor",
@@ -778,7 +778,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AdvisorChatFn/Resource",
-    "aws:asset:path": "asset.31a4f3e35bbc8e5e8d960a5fa16153c347289fceb8c4629019da3d0df0c68b46",
+    "aws:asset:path": "asset.21908de18942aa0ac2c3583f61e7af53abddc65f9cb6c18f7c54a517d1812103",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -998,7 +998,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "d3e129bb49d47201305b6dede42698b04932c4121f5c61b3b94b724a8cf00b12.zip"
+     "S3Key": "38738c3fa1d8a786e563d93009385bc85a8ca2ecac30cf8f7f81834b7968ecda.zip"
     },
     "Environment": {
      "Variables": {
@@ -1018,7 +1018,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-roleplay",
@@ -1039,7 +1039,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/RolePlayFn/Resource",
-    "aws:asset:path": "asset.d3e129bb49d47201305b6dede42698b04932c4121f5c61b3b94b724a8cf00b12",
+    "aws:asset:path": "asset.38738c3fa1d8a786e563d93009385bc85a8ca2ecac30cf8f7f81834b7968ecda",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -1279,7 +1279,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-intelligence",
@@ -1520,7 +1520,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "bbd2cfc03a4b5923ba0387044cf4ae97c8161e79acdfc5140e574bfc3d4bad0a.zip"
+     "S3Key": "fa0c75e222c1142cc724582f786c4abe2b8fceb3213583dd62fc02e7e96620c4.zip"
     },
     "Environment": {
      "Variables": {
@@ -1540,7 +1540,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-agenda",
@@ -1561,7 +1561,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AgendaFn/Resource",
-    "aws:asset:path": "asset.bbd2cfc03a4b5923ba0387044cf4ae97c8161e79acdfc5140e574bfc3d4bad0a",
+    "aws:asset:path": "asset.fa0c75e222c1142cc724582f786c4abe2b8fceb3213583dd62fc02e7e96620c4",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -1781,7 +1781,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "40b2899e64123c2f00eb3266dc17433fd795c66f47b9ebcd7cf1d315d5e56501.zip"
+     "S3Key": "a8a676647772b0e2368cba46d3307f7963f9268f70100e14a729e73c88db0061.zip"
     },
     "Environment": {
      "Variables": {
@@ -1801,7 +1801,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-pitch",
@@ -1822,7 +1822,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/PitchFn/Resource",
-    "aws:asset:path": "asset.40b2899e64123c2f00eb3266dc17433fd795c66f47b9ebcd7cf1d315d5e56501",
+    "aws:asset:path": "asset.a8a676647772b0e2368cba46d3307f7963f9268f70100e14a729e73c88db0061",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2062,7 +2062,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-ebc-data",
@@ -2323,7 +2323,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-tc-data",
@@ -2564,7 +2564,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "8a7c3d703b4ccb8085a0ee982f1d1b5c2cd9eef34f7d37d858b4c249ee2944a8.zip"
+     "S3Key": "a86f0cdf04a71be8ab8ec4b564e1bfaa88a038e094267b80738d49bdb5995504.zip"
     },
     "Environment": {
      "Variables": {
@@ -2584,7 +2584,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-account-insights",
@@ -2605,7 +2605,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountInsightsFn/Resource",
-    "aws:asset:path": "asset.8a7c3d703b4ccb8085a0ee982f1d1b5c2cd9eef34f7d37d858b4c249ee2944a8",
+    "aws:asset:path": "asset.a86f0cdf04a71be8ab8ec4b564e1bfaa88a038e094267b80738d49bdb5995504",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2825,7 +2825,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "b97439d61a6a97e36198d4f29af6765461e29e57bead96550870fd6744487b08.zip"
+     "S3Key": "cc66fa4196ef5edc67ed47c7a33b40c53365638488a774b2c1ddb517466707b3.zip"
     },
     "Environment": {
      "Variables": {
@@ -2845,7 +2845,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-account-buzz",
@@ -2866,7 +2866,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/Resource",
-    "aws:asset:path": "asset.b97439d61a6a97e36198d4f29af6765461e29e57bead96550870fd6744487b08",
+    "aws:asset:path": "asset.cc66fa4196ef5edc67ed47c7a33b40c53365638488a774b2c1ddb517466707b3",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -3086,7 +3086,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "9eaf1a017180ca0693a1eefa453e171e8aa1195339cd4afa1dce6062456e4206.zip"
+     "S3Key": "fb8db8260f7f0183e8480840e73f4b8fbee86cd68a598a351ca85abba19719bf.zip"
     },
     "Environment": {
      "Variables": {
@@ -3106,7 +3106,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "3"
+      "KB_VERSION": "4"
      }
     },
     "FunctionName": "engagement-assistant-account-next-steps",
@@ -3127,7 +3127,268 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountNextStepsFn/Resource",
-    "aws:asset:path": "asset.9eaf1a017180ca0693a1eefa453e171e8aa1195339cd4afa1dce6062456e4206",
+    "aws:asset:path": "asset.fb8db8260f7f0183e8480840e73f4b8fbee86cd68a598a351ca85abba19719bf",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "PersonaIntelFnServiceRoleD5A2941F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/PersonaIntelFn/ServiceRole/Resource"
+   }
+  },
+  "PersonaIntelFnServiceRoleDefaultPolicy5253D309": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:GetObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EBCDataBucketA7159746",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EBCDataBucketA7159746",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "PersonaIntelFnServiceRoleDefaultPolicy5253D309",
+    "Roles": [
+     {
+      "Ref": "PersonaIntelFnServiceRoleD5A2941F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/PersonaIntelFn/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "PersonaIntelFnB8CCE8FA": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
+     "S3Key": "b5daf0379674873b83dbed8a127ae2150ed8da5d5b251de300b10135cccc3af6.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ACCOUNTS_TABLE": {
+       "Ref": "AccountsTable81C15AE5"
+      },
+      "INTELLIGENCE_CACHE_TABLE": {
+       "Ref": "IntelligenceCache80B886A5"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Ref": "ConversationsTableCD91EB96"
+      },
+      "BEDROCK_MODEL_ID": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "BEDROCK_REGION": "us-east-1",
+      "EBC_DATA_BUCKET": {
+       "Ref": "EBCDataBucketA7159746"
+      },
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "4"
+     }
+    },
+    "FunctionName": "engagement-assistant-persona-intel",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "PersonaIntelFnServiceRoleD5A2941F",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "PersonaIntelFnServiceRoleDefaultPolicy5253D309",
+    "PersonaIntelFnServiceRoleD5A2941F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/PersonaIntelFn/Resource",
+    "aws:asset:path": "asset.b5daf0379674873b83dbed8a127ae2150ed8da5d5b251de300b10135cccc3af6",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -3197,7 +3458,7 @@
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Account"
    }
   },
-  "EngagementAssistantApiDeployment3A0389DA98fa5409d12bdf03b2dd2ea6cdf135b4": {
+  "EngagementAssistantApiDeployment3A0389DAf9a9d24a0260b3b6745bf27439c9e5ea": {
    "Type": "AWS::ApiGateway::Deployment",
    "Properties": {
     "Description": "Backend API for the Executive Engagement Assistant",
@@ -3228,6 +3489,9 @@
     "EngagementAssistantApiaccountsaccountIdnextstepsPOST1C5E2206",
     "EngagementAssistantApiaccountsaccountIdnextsteps0312934F",
     "EngagementAssistantApiaccountsaccountIdOPTIONS242367D9",
+    "EngagementAssistantApiaccountsaccountIdpersonaintelOPTIONSA2D1EF5D",
+    "EngagementAssistantApiaccountsaccountIdpersonaintelPOST6568E5DC",
+    "EngagementAssistantApiaccountsaccountIdpersonaintel88E20773",
     "EngagementAssistantApiaccountsaccountIdpitchOPTIONSE7F0A93D",
     "EngagementAssistantApiaccountsaccountIdpitchPOST40C408B7",
     "EngagementAssistantApiaccountsaccountIdpitchC58DAC04",
@@ -3254,7 +3518,7 @@
    "Type": "AWS::ApiGateway::Stage",
    "Properties": {
     "DeploymentId": {
-     "Ref": "EngagementAssistantApiDeployment3A0389DA98fa5409d12bdf03b2dd2ea6cdf135b4"
+     "Ref": "EngagementAssistantApiDeployment3A0389DAf9a9d24a0260b3b6745bf27439c9e5ea"
     },
     "RestApiId": {
      "Ref": "EngagementAssistantApiE38A28D6"
@@ -4916,6 +5180,171 @@
    },
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/POST/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdpersonaintel88E20773": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "EngagementAssistantApiaccountsaccountId55ABAF43"
+    },
+    "PathPart": "persona-intel",
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/persona-intel/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdpersonaintelOPTIONSA2D1EF5D": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdpersonaintel88E20773"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/persona-intel/OPTIONS/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdpersonaintelPOSTApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdpersonaintel9F610912": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PersonaIntelFnB8CCE8FA",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/",
+       {
+        "Ref": "EngagementAssistantApiDeploymentStageprodF2AE2396"
+       },
+       "/POST/accounts/*/persona-intel"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/persona-intel/POST/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.persona-intel"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdpersonaintelPOSTApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdpersonaintelD50D50B1": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "PersonaIntelFnB8CCE8FA",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/test-invoke-stage/POST/accounts/*/persona-intel"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/persona-intel/POST/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.persona-intel"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdpersonaintelPOST6568E5DC": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "PersonaIntelFnB8CCE8FA",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdpersonaintel88E20773"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/persona-intel/POST/Resource"
    }
   },
   "EngagementAssistantApiebcdataDCC304FD": {

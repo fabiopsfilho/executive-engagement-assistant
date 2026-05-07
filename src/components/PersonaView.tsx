@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap } from 'lucide-react';
+import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap, Loader2 } from 'lucide-react';
 import type { Account, Attendee } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { PersonaStory } from './PersonaStory';
 import { PitchView } from './PitchView';
 import { AgendaView } from './AgendaView';
-import { isBackendAvailable, sendRolePlayMessage } from '../services/api';
+import { isBackendAvailable, sendRolePlayMessage, getPersonaIntel, type PersonaIntelResponse } from '../services/api';
 
 type Tab = 'conversation' | 'story' | 'pitch' | 'agenda';
 
@@ -65,6 +65,8 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [showPersonaNow, setShowPersonaNow] = useState(false);
+  const [personaIntel, setPersonaIntel] = useState<PersonaIntelResponse | null>(null);
+  const [personaIntelLoading, setPersonaIntelLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
 
   const key = `${account.customer_name}::${persona.persona}`;
@@ -79,6 +81,16 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
       text: `[${persona.name}]: "Thanks for making time. ${social ? `As you may have seen, I've been thinking a lot about '${social.post_theme}'. ` : ''}I'm curious what AWS has in mind for ${account.customer_name}. What's on your agenda today?"\n\n💡 Start with their priorities, not yours. Reference something specific about them.`
     }]);
   }, [persona.name]);
+
+  // Fetch persona intelligence when persona is selected
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setPersonaIntelLoading(true);
+    getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry)
+      .then(intel => setPersonaIntel(intel))
+      .catch(() => setPersonaIntel(null))
+      .finally(() => setPersonaIntelLoading(false));
+  }, [persona.name, account.customer_name]);
 
   useEffect(() => {
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' });
@@ -166,6 +178,54 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
           </div>
         </div>
         {/* Chat-only mode for live accounts without pre-built plans */}
+        {/* Persona Intelligence Panel */}
+        {(personaIntelLoading || personaIntel) && (
+          <div className="px-4 py-3">
+            <div className="bg-dark-800 border border-dark-600 rounded-xl p-3.5 space-y-2.5">
+              {personaIntelLoading ? (
+                <div className="flex items-center gap-2 text-xs text-muted py-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                  <span>Researching {persona.name} online...</span>
+                </div>
+              ) : personaIntel && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Intel</span>
+                    {personaIntel.is_aws_champion && (
+                      <span className="text-[9px] px-1.5 py-0.5 bg-orange-500/15 text-orange-400 rounded-full font-medium">AWS Champion</span>
+                    )}
+                  </div>
+                  {personaIntel.linkedin_summary && personaIntel.linkedin_summary !== 'No LinkedIn data found' && (
+                    <p className="text-xs text-slate-300">{personaIntel.linkedin_summary}</p>
+                  )}
+                  {personaIntel.interests.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {personaIntel.interests.slice(0, 5).map((interest, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">{interest}</span>
+                      ))}
+                    </div>
+                  )}
+                  {personaIntel.recent_activity.length > 0 && (
+                    <div>
+                      <span className="text-[10px] text-muted uppercase">Recent activity</span>
+                      <div className="space-y-1 mt-1">
+                        {personaIntel.recent_activity.slice(0, 3).map((activity, i) => (
+                          <p key={i} className="text-[11px] text-slate-400 pl-2 border-l-2 border-purple-500/20">{activity}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {personaIntel.engagement_angle && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5">
+                      <span className="text-[10px] font-semibold text-blue-400 uppercase">💡 Engagement angle</span>
+                      <p className="text-xs text-slate-300 mt-1">{personaIntel.engagement_angle}</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
         <div className="px-4 py-3">
           <div ref={chatRef} className="space-y-3 max-h-[55vh] overflow-y-auto mb-3">
             {chatMessages.map((msg, i) => (
@@ -212,6 +272,55 @@ export function PersonaView({ account, persona }: { account: Account; persona: A
           </div>
         </div>
       </div>
+
+      {/* Persona Intelligence Panel */}
+      {(personaIntelLoading || personaIntel) && (
+        <div className="px-4 pb-3">
+          <div className="bg-dark-800 border border-dark-600 rounded-xl p-3.5 space-y-2.5">
+            {personaIntelLoading ? (
+              <div className="flex items-center gap-2 text-xs text-muted py-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                <span>Researching {persona.name} online...</span>
+              </div>
+            ) : personaIntel && (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Intel</span>
+                  {personaIntel.is_aws_champion && (
+                    <span className="text-[9px] px-1.5 py-0.5 bg-orange-500/15 text-orange-400 rounded-full font-medium">AWS Champion</span>
+                  )}
+                </div>
+                {personaIntel.linkedin_summary && personaIntel.linkedin_summary !== 'No LinkedIn data found' && (
+                  <p className="text-xs text-slate-300">{personaIntel.linkedin_summary}</p>
+                )}
+                {personaIntel.interests.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {personaIntel.interests.slice(0, 5).map((interest, i) => (
+                      <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">{interest}</span>
+                    ))}
+                  </div>
+                )}
+                {personaIntel.recent_activity.length > 0 && (
+                  <div>
+                    <span className="text-[10px] text-muted uppercase">Recent activity</span>
+                    <div className="space-y-1 mt-1">
+                      {personaIntel.recent_activity.slice(0, 3).map((activity, i) => (
+                        <p key={i} className="text-[11px] text-slate-400 pl-2 border-l-2 border-purple-500/20">{activity}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {personaIntel.engagement_angle && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5">
+                    <span className="text-[10px] font-semibold text-blue-400 uppercase">💡 Engagement angle</span>
+                    <p className="text-xs text-slate-300 mt-1">{personaIntel.engagement_angle}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tab Bar */}
       <div className="sticky top-[53px] z-40 bg-navy-900 border-b border-navy-700">
