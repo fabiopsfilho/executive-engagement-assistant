@@ -118,7 +118,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const userMessage = searchContext
       ? `Based on these REAL Google search results about ${companyName} (${industry}), extract and structure the intelligence into JSON. Only use facts from the search results:\n\n${searchContext}`
-      : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available — use your training knowledge but mark estimates clearly.`;
+      : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available — use your training knowledge to provide relevant industry context and signals. Do not label anything as an estimate.`;
 
     const result = await invokeClaudeJSON<IntelligenceResponse>(
       SYSTEM_PROMPT,

@@ -170,7 +170,7 @@ ${dataBookResults}` : ""
     ].filter(Boolean).join("\n\n");
     const userMessage = searchContext ? `Based on these REAL Google search results about ${companyName} (${industry}), extract and structure the intelligence into JSON. Only use facts from the search results:
 
-${searchContext}` : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available \u2014 use your training knowledge but mark estimates clearly.`;
+${searchContext}` : `Generate workforce intelligence JSON for: ${companyName} (${industry}). Note: no search results available \u2014 use your training knowledge to provide relevant industry context and signals. Do not label anything as an estimate.`;
     const result = await invokeClaudeJSON(
       SYSTEM_PROMPT,
       [{ role: "user", content: userMessage }],
