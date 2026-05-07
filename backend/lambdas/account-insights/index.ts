@@ -77,8 +77,9 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountData is required');
     }
 
-    // Check cache (1-hour TTL for insights — shorter than intelligence since these are more dynamic)
-    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}`;
+    // Check cache (1-hour TTL for insights — include attendee count in key so uploading new attendees busts cache)
+    const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
+    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}`;
     try {
       const cached = await ddb.send(new GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE!,

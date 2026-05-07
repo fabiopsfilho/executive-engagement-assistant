@@ -321,14 +321,28 @@ export default function App() {
                         </div>
                       )}
                       {/* AI Executive Insights — only show if there's data */}
-                      {((buzzNow.buzz_executive_insights && buzzNow.buzz_executive_insights.length > 0) || account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0) && (
+                      {((buzzNow.buzz_executive_insights && buzzNow.buzz_executive_insights.length > 0) || account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 || account.ebc_data.attendees.length > 0) && (
                         <div>
                           <span className="text-xs font-semibold text-muted uppercase">Executive voices</span>
                           <div className="space-y-2 mt-1.5">
-                            {buzzNow.buzz_executive_insights && (
+                            {buzzNow.buzz_executive_insights && buzzNow.buzz_executive_insights.length > 0 && (
                               buzzNow.buzz_executive_insights.map((insight, i) => (
                                 <p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-purple-500/30">{insight}</p>
                               ))
+                            )}
+                            {/* Show uploaded attendees as clickable LinkedIn links */}
+                            {account.ebc_data.attendees.length > 0 && account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE')).length === 0 && (
+                              <div className="mt-2 space-y-2">
+                                {account.ebc_data.attendees.map(att => (
+                                  <div key={att.name} className="flex items-start gap-2.5">
+                                    <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{att.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+                                    <div>
+                                      <a href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(att.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{att.name}</a>
+                                      <span className="text-[10px] text-muted ml-1">{att.title}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                             {account.public_intelligence.executive_social.filter(e => e.name && !e.name.includes('UNAVAILABLE') && e.post_theme && !e.post_theme.includes('No executive social data')).length > 0 && (
                               <div className="mt-2 space-y-2">

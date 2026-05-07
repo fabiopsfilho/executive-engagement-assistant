@@ -254,7 +254,8 @@ async function handler(event) {
     const body = JSON.parse(event.body || "{}");
     const { accountData, tcData } = body;
     if (!accountData) return error(400, "accountData is required");
-    const cacheKey = `next-steps:${accountData.customer_name?.toLowerCase().replace(/\s+/g, "-")}`;
+    const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
+    const cacheKey = `next-steps:${accountData.customer_name?.toLowerCase().replace(/\s+/g, "-")}:${attendeeCount}`;
     try {
       const cached = await ddb.send(new import_lib_dynamodb.GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE,
