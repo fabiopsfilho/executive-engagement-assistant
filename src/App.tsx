@@ -182,6 +182,7 @@ export default function App() {
             // Clear buzz cache and force re-render so all analysis includes this persona's data
             setBuzzNow(null);
             setRefreshKey(k => k + 1);
+            setInsightPopup(null);
           }
         }} />
       </div>
