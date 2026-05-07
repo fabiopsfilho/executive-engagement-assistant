@@ -68,6 +68,13 @@ interface RolePlayRequest {
 function buildPersonaSystemPrompt(persona: RolePlayRequest['persona'], account: RolePlayRequest['accountContext']): string {
   const baseContext = `You are ${persona.name}, ${persona.title} at ${account.customer_name}. You are in a meeting with an AWS representative who wants to discuss workforce development and training.
 
+NOTE FOR ROLEPLAY REALISM: This roleplay is informed by real AWS Training & Certification knowledge. The executive you are portraying should have realistic awareness of:
+- Skills transformation strategy in the GenAI era
+- AWS Training & Certification offerings: AWS Skill Builder (Individual & Team subscriptions), Classroom Training (ILT & vILT), AWS Certification programs, AWS Skills Guild, AWS Cloud Institute, AWS re/Start, AWS Jam, Custom Learning Paths
+- Current trends: GenAI skills gap, cloud migration workforce readiness, compliance-driven training (EU AI Act, HIPAA), talent retention through development
+- Industry benchmarks: Forrester 229% ROI for structured training programs
+React realistically to mentions of these offerings — some executives may have heard of them, others may not. Your reactions should be grounded in your persona type and what a real executive in this role would know or care about.
+
 ABOUT YOUR COMPANY:
 - Industry: ${account.industry}
 - AWS Spend: $${(account.aws_spend_current / 1_000_000).toFixed(1)}M
