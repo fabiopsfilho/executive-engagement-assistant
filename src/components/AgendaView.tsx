@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Clock, MapPin, Calendar, BookOpen, Copy, Check, Download, ChevronDown, ChevronUp, StickyNote, Link2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, MapPin, Calendar, BookOpen, Copy, Check, Download, ChevronDown, ChevronUp, StickyNote, Link2, Loader2 } from 'lucide-react';
 import type { Account, Attendee, EngagementPlan } from '../types';
 import type { AgendaBlock } from '../data/agendas';
 import type { PersonaNote } from './PersonaView';
+import { isBackendAvailable, generateAgenda as generateAgendaAPI } from '../services/api';
 
 const typeColors: Record<AgendaBlock['type'], string> = {
   welcome: 'border-l-amber-500',
@@ -146,9 +147,72 @@ ${agenda.blocks.map(b => `<div class="block"><span class="time">${b.time}</span>
 }
 
 export function AgendaView({ account, persona, plan, notes = [] }: { account: Account; persona: Attendee; plan: EngagementPlan; notes?: PersonaNote[] }) {
-  const agenda = generatePersonaAgenda(account, persona, plan, notes);
+  const localAgenda = generatePersonaAgenda(account, persona, plan, notes);
+  const [agenda, setAgenda] = useState(localAgenda);
+  const [loading, setLoading] = useState(false);
   const [showPrep, setShowPrep] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Fetch AI-generated agenda from backend
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setLoading(true);
+    const a = account;
+    const isGreenfield = !a.tc_current_state.skill_builder;
+    const tcState = isGreenfield
+      ? `Greenfield: ${a.tc_current_state.certifications} organic certs, no structured program`
+      : `Existing: ${a.tc_current_state.skill_builder_seats} Skill Builder seats, ${a.tc_current_state.activation_rate}% activation, renewal: ${a.tc_current_state.renewal_date || 'N/A'}`;
+    const signalsSummary = a.signals.map(s => `[${s.severity}] ${s.label}: ${s.evidence}`).join('; ');
+    const piSummary = [
+      a.public_intelligence.earnings_call_signals[0] || '',
+      `LinkedIn: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${a.public_intelligence.linkedin_job_postings.yoy_change} YoY)`,
+      a.public_intelligence.executive_social.map(e => `${e.name}: "${e.post_theme}"`).join(', '),
+      a.public_intelligence.glassdoor_signals[0] || '',
+      a.public_intelligence.industry_context,
+    ].filter(Boolean).join('. ');
+
+    generateAgendaAPI(
+      {
+        customer_name: a.customer_name,
+        industry: a.industry,
+        account_plan_priority: a.sfdc_data.account_plan_priority,
+        attendees: a.ebc_data.attendees,
+        ebc_date: a.ebc_data.meeting_dates[0] || 'TBD',
+        ebc_location: a.ebc_data.location || 'TBD',
+        ebc_themes: a.ebc_data.themes,
+        tc_state: tcState,
+        signals_summary: signalsSummary,
+        public_intelligence_summary: piSummary,
+      },
+      'ebc',
+      { name: persona.name, title: persona.title, persona: persona.persona },
+      notes.map(n => n.text)
+    ).then(result => {
+      if (result.blocks && result.blocks.length > 0) {
+        setAgenda({
+          title: result.title || localAgenda.title,
+          subtitle: result.subtitle || localAgenda.subtitle,
+          date: result.date || localAgenda.date,
+          location: result.location || localAgenda.location,
+          duration: result.duration || localAgenda.duration,
+          blocks: result.blocks.map(b => ({
+            time: b.time,
+            duration: b.duration,
+            title: b.title,
+            description: b.description,
+            owner: b.owner,
+            type: b.type as AgendaBlock['type'],
+          })),
+          principles: result.principles || localAgenda.principles,
+          preparation: result.preparation || localAgenda.preparation,
+        });
+      }
+    }).catch(err => {
+      console.warn('Failed to generate AI agenda, using local:', err);
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, [account.customer_name, persona.name]);
 
   const fullText = [
     agenda.title, agenda.subtitle,
@@ -157,6 +221,16 @@ export function AgendaView({ account, persona, plan, notes = [] }: { account: Ac
     ...agenda.blocks.map(b => `${b.time} (${b.duration}) — ${b.title}\n${b.description}\nOwner: ${b.owner}`),
     '', 'PREPARATION:', ...agenda.preparation.map(p => `• ${p}`)
   ].join('\n');
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto animate-fade-in flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-sm text-slate-400">Generating AI-powered agenda...</span>
+        <span className="text-xs text-slate-500">Grounding in real data from LinkedIn, Glassdoor, news & AWS Knowledge Base</span>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">

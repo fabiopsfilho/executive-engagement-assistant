@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, generateAgenda as generateAgendaAPI, type TCAccountSummary, type AccountInsightsResponse } from '../services/api';
+import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, generateAgenda as generateAgendaAPI, generateNextStepsAndAsks, type TCAccountSummary, type AccountInsightsResponse, type NextStepsResponse } from '../services/api';
 
 
 function CopyBtn({ text }: { text: string }) {
@@ -135,6 +135,8 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [aiAgenda, setAiAgenda] = useState<any | null>(null);
   const [agendaLoading, setAgendaLoading] = useState(false);
+  const [aiNextSteps, setAiNextSteps] = useState<NextStepsResponse | null>(null);
+  const [nextStepsLoading, setNextStepsLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
 
   // Fetch AI-generated insights when account changes
@@ -146,6 +148,17 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       .then(result => setInsights(result))
       .catch(err => console.warn('Failed to generate insights:', err))
       .finally(() => setInsightsLoading(false));
+  }, [a.customer_name]);
+
+  // Fetch AI-generated next steps and key asks
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setNextStepsLoading(true);
+    setAiNextSteps(null);
+    generateNextStepsAndAsks(a, tcData)
+      .then(result => setAiNextSteps(result))
+      .catch(err => console.warn('Failed to generate next steps:', err))
+      .finally(() => setNextStepsLoading(false));
   }, [a.customer_name]);
 
   // Handle agenda generation via Bedrock
@@ -266,8 +279,8 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const bestStarter = plan0?.conversation_starters[0] || aiStarters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
   const allStarters = plan0?.conversation_starters || (aiStarters.length > 0 ? aiStarters : [bestStarter]);
 
-  const nextSteps = generateNextSteps(a);
-  const keyAsks = generateKeyAsks(a);
+  const nextSteps = aiNextSteps?.next_steps || generateNextSteps(a).map(s => s.text);
+  const keyAsks = aiNextSteps?.key_asks || generateKeyAsks(a).map(k => k.ask);
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -369,13 +382,16 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
 
           {heroTab === 'next-steps' && (
             <div className="space-y-2">
+              {nextStepsLoading && (
+                <div className="flex items-center gap-2 text-xs text-muted py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                  <span>Generating AI next steps...</span>
+                </div>
+              )}
               {nextSteps.map((s, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <ArrowRight className="w-3 h-3 text-purple-400 shrink-0 mt-1" />
-                  <div>
-                    <span className="text-xs text-slate-300">{s.text}</span>
-                    <ConnectionToggle text={s.connection} />
-                  </div>
+                  <span className="text-xs text-slate-300">{s}</span>
                 </div>
               ))}
             </div>
@@ -383,13 +399,16 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
 
           {heroTab === 'key-asks' && (
             <div className="space-y-2">
+              {nextStepsLoading && (
+                <div className="flex items-center gap-2 text-xs text-muted py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                  <span>Generating AI key asks...</span>
+                </div>
+              )}
               {keyAsks.map((k, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <CheckCircle2 className="w-3 h-3 text-green-400 shrink-0 mt-1" />
-                  <div>
-                    <span className="text-xs text-slate-300">{k.ask}</span>
-                    <ConnectionToggle text={k.connection} />
-                  </div>
+                  <span className="text-xs text-slate-300">{k}</span>
                 </div>
               ))}
             </div>

@@ -496,7 +496,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-generate",
@@ -757,7 +757,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-advisor",
@@ -1018,7 +1018,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-roleplay",
@@ -1279,7 +1279,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-intelligence",
@@ -1540,7 +1540,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-agenda",
@@ -1801,7 +1801,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-pitch",
@@ -2062,7 +2062,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-ebc-data",
@@ -2323,7 +2323,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-tc-data",
@@ -2584,7 +2584,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-account-insights",
@@ -2845,7 +2845,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "2"
+      "KB_VERSION": "3"
      }
     },
     "FunctionName": "engagement-assistant-account-buzz",
@@ -2867,6 +2867,267 @@
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/Resource",
     "aws:asset:path": "asset.a368e2a27f44438a1a0f30d4b71ae85de14988dd42351baf67f0d75dec31561c",
+    "aws:asset:is-bundled": true,
+    "aws:asset:property": "Code"
+   }
+  },
+  "AccountNextStepsFnServiceRoleB23CF7B2": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountNextStepsFn/ServiceRole/Resource"
+   }
+  },
+  "AccountNextStepsFnServiceRoleDefaultPolicy38CED0B7": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:Retrieve"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        "arn:aws:bedrock:*::foundation-model/*",
+        "arn:aws:bedrock:*:*:inference-profile/*",
+        "arn:aws:bedrock:*:*:knowledge-base/*"
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AccountsTable81C15AE5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "IntelligenceCache80B886A5",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ConversationsTableCD91EB96",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:GetObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "EBCDataBucketA7159746",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "EBCDataBucketA7159746",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AccountNextStepsFnServiceRoleDefaultPolicy38CED0B7",
+    "Roles": [
+     {
+      "Ref": "AccountNextStepsFnServiceRoleB23CF7B2"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountNextStepsFn/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "AccountNextStepsFn299DB161": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
+     "S3Key": "9eaf1a017180ca0693a1eefa453e171e8aa1195339cd4afa1dce6062456e4206.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ACCOUNTS_TABLE": {
+       "Ref": "AccountsTable81C15AE5"
+      },
+      "INTELLIGENCE_CACHE_TABLE": {
+       "Ref": "IntelligenceCache80B886A5"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Ref": "ConversationsTableCD91EB96"
+      },
+      "BEDROCK_MODEL_ID": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "BEDROCK_REGION": "us-east-1",
+      "EBC_DATA_BUCKET": {
+       "Ref": "EBCDataBucketA7159746"
+      },
+      "EBC_DATA_KEY": "ebc-calendar.csv",
+      "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
+      "KB_VERSION": "3"
+     }
+    },
+    "FunctionName": "engagement-assistant-account-next-steps",
+    "Handler": "index.handler",
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "AccountNextStepsFnServiceRoleB23CF7B2",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs20.x",
+    "Timeout": 60
+   },
+   "DependsOn": [
+    "AccountNextStepsFnServiceRoleDefaultPolicy38CED0B7",
+    "AccountNextStepsFnServiceRoleB23CF7B2"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/AccountNextStepsFn/Resource",
+    "aws:asset:path": "asset.9eaf1a017180ca0693a1eefa453e171e8aa1195339cd4afa1dce6062456e4206",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2936,7 +3197,7 @@
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Account"
    }
   },
-  "EngagementAssistantApiDeployment3A0389DA13c572d5cbc6b550dfe003b33e2bf4e4": {
+  "EngagementAssistantApiDeployment3A0389DA98fa5409d12bdf03b2dd2ea6cdf135b4": {
    "Type": "AWS::ApiGateway::Deployment",
    "Properties": {
     "Description": "Backend API for the Executive Engagement Assistant",
@@ -2963,6 +3224,9 @@
     "EngagementAssistantApiaccountsaccountIdintelligenceGETB85B891D",
     "EngagementAssistantApiaccountsaccountIdintelligenceOPTIONS2C79CFC9",
     "EngagementAssistantApiaccountsaccountIdintelligence2422F0C7",
+    "EngagementAssistantApiaccountsaccountIdnextstepsOPTIONS0E0A7650",
+    "EngagementAssistantApiaccountsaccountIdnextstepsPOST1C5E2206",
+    "EngagementAssistantApiaccountsaccountIdnextsteps0312934F",
     "EngagementAssistantApiaccountsaccountIdOPTIONS242367D9",
     "EngagementAssistantApiaccountsaccountIdpitchOPTIONSE7F0A93D",
     "EngagementAssistantApiaccountsaccountIdpitchPOST40C408B7",
@@ -2990,7 +3254,7 @@
    "Type": "AWS::ApiGateway::Stage",
    "Properties": {
     "DeploymentId": {
-     "Ref": "EngagementAssistantApiDeployment3A0389DA13c572d5cbc6b550dfe003b33e2bf4e4"
+     "Ref": "EngagementAssistantApiDeployment3A0389DA98fa5409d12bdf03b2dd2ea6cdf135b4"
     },
     "RestApiId": {
      "Ref": "EngagementAssistantApiE38A28D6"
@@ -4487,6 +4751,171 @@
    },
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/buzz/POST/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdnextsteps0312934F": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Ref": "EngagementAssistantApiaccountsaccountId55ABAF43"
+    },
+    "PathPart": "next-steps",
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdnextstepsOPTIONS0E0A7650": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "ApiKeyRequired": false,
+    "AuthorizationType": "NONE",
+    "HttpMethod": "OPTIONS",
+    "Integration": {
+     "IntegrationResponses": [
+      {
+       "ResponseParameters": {
+        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'",
+        "method.response.header.Access-Control-Allow-Origin": "'*'",
+        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET,PUT,POST,DELETE,PATCH,HEAD'"
+       },
+       "StatusCode": "204"
+      }
+     ],
+     "RequestTemplates": {
+      "application/json": "{ statusCode: 200 }"
+     },
+     "Type": "MOCK"
+    },
+    "MethodResponses": [
+     {
+      "ResponseParameters": {
+       "method.response.header.Access-Control-Allow-Headers": true,
+       "method.response.header.Access-Control-Allow-Origin": true,
+       "method.response.header.Access-Control-Allow-Methods": true
+      },
+      "StatusCode": "204"
+     }
+    ],
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdnextsteps0312934F"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/OPTIONS/Resource"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdnextstepsPOSTApiPermissionEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdnextsteps7BA451D5": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "AccountNextStepsFn299DB161",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/",
+       {
+        "Ref": "EngagementAssistantApiDeploymentStageprodF2AE2396"
+       },
+       "/POST/accounts/*/next-steps"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/POST/ApiPermission.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.next-steps"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdnextstepsPOSTApiPermissionTestEngagementAssistantStackEngagementAssistantApi1AD99630POSTaccountsaccountIdnextsteps6BAB07D7": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "AccountNextStepsFn299DB161",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":execute-api:us-east-1:678278062910:",
+       {
+        "Ref": "EngagementAssistantApiE38A28D6"
+       },
+       "/test-invoke-stage/POST/accounts/*/next-steps"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/POST/ApiPermission.Test.EngagementAssistantStackEngagementAssistantApi1AD99630.POST..accounts.{accountId}.next-steps"
+   }
+  },
+  "EngagementAssistantApiaccountsaccountIdnextstepsPOST1C5E2206": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "AccountNextStepsFn299DB161",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "EngagementAssistantApiaccountsaccountIdnextsteps0312934F"
+    },
+    "RestApiId": {
+     "Ref": "EngagementAssistantApiE38A28D6"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "EngagementAssistantStack/EngagementAssistantApi/Default/accounts/{accountId}/next-steps/POST/Resource"
    }
   },
   "EngagementAssistantApiebcdataDCC304FD": {

@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Check, Download, StickyNote, Link2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Copy, Check, Download, StickyNote, Link2, Loader2 } from 'lucide-react';
 import type { Account, Attendee, EngagementPlan } from '../types';
 import { generatePitch } from '../data/pitches';
 import type { PitchSlide } from '../data/pitches';
 import type { PersonaNote } from './PersonaView';
+import { isBackendAvailable, generatePitchDeck } from '../services/api';
 
 const slideColors: Record<PitchSlide['type'], string> = {
   title: 'from-amber-500 to-orange-500',
@@ -55,16 +56,88 @@ ${pitch.slides.map(s => `
 }
 
 export function PitchView({ account, persona, plan, notes = [] }: { account: Account; persona: Attendee; plan: EngagementPlan; notes?: PersonaNote[] }) {
-  const pitch = generatePitch(account, persona, plan, notes);
+  const localPitch = generatePitch(account, persona, plan, notes);
+  const [pitch, setPitch] = useState(localPitch);
+  const [loading, setLoading] = useState(false);
   const [current, setCurrent] = useState(0);
   const [showNotes, setShowNotes] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  // Fetch AI-generated pitch from backend
+  useEffect(() => {
+    if (!isBackendAvailable()) return;
+    setLoading(true);
+    const a = account;
+    const pi = a.public_intelligence;
+    const isGreenfield = !a.tc_current_state.skill_builder;
+    generatePitchDeck(
+      {
+        customer_name: a.customer_name,
+        industry: a.industry,
+        segment: a.segment,
+        aws_spend_current: a.aws_spend.current_year,
+        ppa: a.aws_spend.ppa || '',
+        account_plan_priority: a.sfdc_data.account_plan_priority,
+        linkedin_roles: pi.linkedin_job_postings.cloud_ai_roles,
+        linkedin_yoy: pi.linkedin_job_postings.yoy_change,
+        tc_state: isGreenfield
+          ? `Greenfield: ${a.tc_current_state.certifications} organic certs, no structured program`
+          : `Existing: ${a.tc_current_state.skill_builder_seats} seats, ${a.tc_current_state.activation_rate}% activation`,
+        earnings_signals: pi.earnings_call_signals,
+        executive_social: pi.executive_social,
+        glassdoor_signals: pi.glassdoor_signals,
+        industry_context: pi.industry_context,
+        news_signals: pi.news_signals,
+      },
+      { name: persona.name, title: persona.title, persona: persona.persona },
+      {
+        narrative: plan.narrative,
+        conversation_starters: plan.conversation_starters,
+        recommended_plays: plan.recommended_plays,
+        revenue_estimate: plan.revenue_estimate,
+        total_pipeline: plan.total_pipeline,
+        proof_points: plan.proof_points,
+      },
+      notes.map(n => n.text)
+    ).then(result => {
+      if (result.slides && result.slides.length > 0) {
+        setPitch({
+          title: result.title,
+          subtitle: result.subtitle || `${persona.name} · ${account.customer_name}`,
+          duration: result.duration || localPitch.duration,
+          audience: result.audience || localPitch.audience,
+          slides: result.slides.map(s => ({
+            slideNumber: s.slideNumber,
+            title: s.title,
+            content: s.content,
+            speakerNotes: s.speakerNotes,
+            type: s.type as PitchSlide['type'],
+          })),
+        });
+      }
+    }).catch(err => {
+      console.warn('Failed to generate AI pitch, using local:', err);
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, [account.customer_name, persona.name]);
+
   const slide = pitch.slides[current];
-  const gradient = slideColors[slide.type];
+  const gradient = slideColors[slide?.type || 'title'];
 
   const fullText = pitch.slides.map(s =>
     `--- SLIDE ${s.slideNumber}: ${s.title} ---\n${s.content}\n\nSPEAKER NOTES: ${s.speakerNotes}`
   ).join('\n\n');
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto animate-fade-in flex flex-col items-center justify-center py-16 gap-3">
+        <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+        <span className="text-sm text-slate-400">Generating AI-powered pitch deck...</span>
+        <span className="text-xs text-slate-500">Grounding in real data from LinkedIn, Glassdoor, news & AWS Knowledge Base</span>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">

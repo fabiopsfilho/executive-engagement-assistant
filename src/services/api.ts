@@ -363,3 +363,20 @@ export async function generateBuzzNow(
     tcData,
   });
 }
+
+// ─── Account Next Steps & Key Asks (AI-Generated) ────────────────────────────
+
+export interface NextStepsResponse {
+  next_steps: string[];
+  key_asks: string[];
+}
+
+export async function generateNextStepsAndAsks(
+  accountData: unknown,
+  tcData?: TCAccountSummary | null
+): Promise<NextStepsResponse> {
+  return post<NextStepsResponse>('/accounts/default/next-steps', {
+    accountData,
+    tcData,
+  });
+}
