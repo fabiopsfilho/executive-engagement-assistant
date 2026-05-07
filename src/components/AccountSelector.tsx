@@ -33,15 +33,11 @@ function AccountCard({ account, onSelect }: { account: Account; onSelect: (a: Ac
           <span className="flex items-center gap-1 text-blue-400"><Calendar className="w-3 h-3" />{ebcDate}</span>
           {daysUntilEbc !== null && <span className="text-muted">{daysUntilEbc > 0 ? `in ${daysUntilEbc} days` : daysUntilEbc === 0 ? 'Today' : `${Math.abs(daysUntilEbc)}d ago`}</span>}
           <span className="flex items-center gap-1 text-muted"><MapPin className="w-3 h-3" />{account.ebc_data.location}</span>
-          {account.ebc_data.status && (
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-              account.ebc_data.status === 'InProgress' ? 'bg-blue-500/15 text-blue-400' :
-              account.ebc_data.status === 'Completed' ? 'bg-green-500/15 text-green-400' :
-              account.ebc_data.status === 'Cancelled' ? 'bg-red-500/15 text-red-400' :
-              'bg-orange-500/15 text-orange-400'
-            }`}>{account.ebc_data.status}</span>
-          )}
         </div>
+      )}
+      {/* EBC Title */}
+      {account.ebc_data.themes[0] && (
+        <p className="text-[11px] text-purple-400 font-medium mb-2 truncate">{account.ebc_data.themes[0]}</p>
       )}
       <div className="flex flex-wrap gap-1.5">
         {account.signals.slice(0, 3).map(s => (
