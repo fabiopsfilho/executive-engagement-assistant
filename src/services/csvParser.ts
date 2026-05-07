@@ -87,19 +87,15 @@ function parseCSVLine(line: string): string[] {
  */
 export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
   // Group by account name
-  const grouped = new Map<string, EBCRecord[]>();
-  for (const r of records) {
-    const key = r.account;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(r);
-  }
-
+  // Group by unique EBC (account + briefing ID) — each EBC is a separate entry
+  const seen = new Set<string>();
   const accounts: Account[] = [];
-  for (const [name, recs] of grouped) {
-    const primary = recs[0];
-    // Sort EBCs by date, take the nearest upcoming one
-    const sorted = [...recs].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-    const nextEbc = sorted[0];
+
+  for (const rec of records) {
+    // Deduplicate by EBC ID (same EBC can appear multiple times with different BPMs)
+    const ebcKey = `${rec.account}::${rec.id}::${rec.briefingTitle}`;
+    if (seen.has(ebcKey)) continue;
+    seen.add(ebcKey);
 
     const palPhaseToSmgs: Record<string, string> = {
       'GREENFIELD': 'Greenfield',
@@ -112,35 +108,30 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
     };
 
     accounts.push({
-      customer_name: name,
-      industry: primary.industry || 'Technology',
-      segment: primary.segment || 'ENT',
-      geo: primary.geo || 'NAMER',
-      sfdcAccountId: primary.sfdcAccountId || '',
+      customer_name: rec.account,
+      industry: rec.industry || 'Technology',
+      segment: rec.segment || 'ENT',
+      geo: rec.geo || 'NAMER',
+      sfdcAccountId: rec.sfdcAccountId || '',
       aws_spend: {
-        current_year: 0, // Unknown from CSV — Bedrock will estimate
+        current_year: 0,
         prior_year: 0,
         ppa: '',
       },
       sfdc_data: {
         open_opps: 0,
-        t2k: primary.isT2K,
-        account_plan_priority: nextEbc.briefingTitle || `${primary.industry} Transformation`,
-        smgs_phase: palPhaseToSmgs[primary.palPhase] || primary.palPhase || 'Unknown',
+        t2k: rec.isT2K,
+        account_plan_priority: rec.briefingTitle || `${rec.industry} Transformation`,
+        smgs_phase: palPhaseToSmgs[rec.palPhase] || rec.palPhase || 'Unknown',
       },
       ebc_data: {
-        ebc_id: `EBC-${nextEbc.id}`,
-        meeting_dates: [nextEbc.startDate.split(' ')[0]],
-        themes: recs.map(r => r.briefingTitle).filter((v, i, a) => a.indexOf(v) === i),
-        attendees: [
-          { name: `CEO — ${name}`, title: 'Chief Executive Officer', persona: 'CEO' as const },
-          { name: `CFO — ${name}`, title: 'Chief Financial Officer', persona: 'CFO' as const },
-          { name: `CTO — ${name}`, title: 'Chief Technology Officer', persona: 'CTO' as const },
-          { name: `CHRO — ${name}`, title: 'Chief Human Resources Officer', persona: 'CHRO' as const },
-        ],
-        location: nextEbc.briefingCenter,
-        requestor: `${primary.geo} ${primary.industry} Team`,
-        status: nextEbc.status || 'InProgress',
+        ebc_id: `EBC-${rec.id}`,
+        meeting_dates: [rec.startDate.split(' ')[0]],
+        themes: [rec.briefingTitle],
+        attendees: [], // No fake attendees — we don't have this data
+        location: rec.briefingCenter,
+        requestor: `${rec.geo} ${rec.industry} Team`,
+        status: rec.status || 'InProgress',
       },
       tc_current_state: {
         skill_builder: false,
@@ -151,18 +142,18 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
         renewal_date: '',
       },
       public_intelligence: {
-        earnings_call_signals: [`${name} is focused on ${nextEbc.briefingTitle || primary.industry + ' transformation'}`],
+        earnings_call_signals: [],
         linkedin_job_postings: { cloud_ai_roles: 0, yoy_change: '' },
         executive_social: [],
         glassdoor_signals: [],
-        industry_context: `${primary.industry} sector undergoing cloud and AI transformation`,
+        industry_context: `${rec.industry} sector undergoing cloud and AI transformation`,
         news_signals: [],
       },
-      tc_opportunity_score: primary.isT2K ? 8 : (primary.palPhase === 'GREENFIELD' ? 8 : primary.palPhase === 'SCALING' ? 6 : 5),
+      tc_opportunity_score: rec.isT2K ? 8 : (rec.palPhase === 'GREENFIELD' ? 8 : rec.palPhase === 'SCALING' ? 6 : 5),
       signals: [
-        ...(primary.palPhase === 'GREENFIELD' ? [{ severity: 'HIGH' as const, label: 'Greenfield T&C', evidence: 'No structured T&C engagement' }] : []),
-        ...(primary.isT2K ? [{ severity: 'HIGH' as const, label: 'T2K Account', evidence: `T2K Cohort: ${primary.t2kCohort || 'Priority'}` }] : []),
-        { severity: 'MEDIUM' as const, label: 'EBC Scheduled', evidence: `${nextEbc.briefingTitle} on ${nextEbc.startDate.split(' ')[0]} at ${nextEbc.briefingCenter}` },
+        ...(rec.palPhase === 'GREENFIELD' ? [{ severity: 'HIGH' as const, label: 'Greenfield T&C', evidence: 'No structured T&C engagement' }] : []),
+        ...(rec.isT2K ? [{ severity: 'HIGH' as const, label: 'T2K Account', evidence: `T2K Cohort: ${rec.t2kCohort || 'Priority'}` }] : []),
+        { severity: 'MEDIUM' as const, label: 'EBC Scheduled', evidence: `${rec.briefingTitle} on ${rec.startDate.split(' ')[0]} at ${rec.briefingCenter}` },
       ],
     });
   }
