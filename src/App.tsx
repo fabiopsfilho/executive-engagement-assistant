@@ -168,20 +168,20 @@ export default function App() {
               if (!prev) return prev;
               const existing = prev.public_intelligence.executive_social;
               const alreadyExists = existing.find(e => e.name === persona.name);
-              if (alreadyExists) return prev;
+              const updatedSocial = alreadyExists
+                ? existing.map(e => e.name === persona.name ? { ...e, post_theme: intel.recent_activity[0] || intel.interests[0] || intel.linkedin_summary.slice(0, 100) } : e)
+                : [...existing, { name: persona.name, title: persona.title, post_theme: intel.recent_activity[0] || intel.interests[0] || intel.linkedin_summary.slice(0, 100) }];
               return {
                 ...prev,
                 public_intelligence: {
                   ...prev.public_intelligence,
-                  executive_social: [
-                    ...existing,
-                    { name: persona.name, title: persona.title, post_theme: intel.recent_activity[0] || intel.interests[0] || intel.linkedin_summary.slice(0, 100) },
-                  ],
+                  executive_social: updatedSocial,
                 },
               };
             });
-            // Clear buzz cache so next Buzz click includes this persona's data
+            // Clear buzz cache and force re-render so all analysis includes this persona's data
             setBuzzNow(null);
+            setRefreshKey(k => k + 1);
           }
         }} />
       </div>
@@ -377,9 +377,9 @@ export default function App() {
                                   <div key={e.name} className="flex items-start gap-2.5">
                                     <div className="w-7 h-7 rounded-full bg-dark-700 flex items-center justify-center text-[9px] text-slate-300 font-bold shrink-0">{e.name.split(' ').map(w => w[0]).join('')}</div>
                                     <div>
-                                      <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-white hover:text-purple-400 hover:underline">{e.name}</a>
+                                      <span className="text-xs font-medium text-white">{e.name}</span>
                                       <span className="text-[10px] text-muted ml-1">{e.title}</span>
-                                      <a href={e.url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(e.name + ' ' + account.customer_name)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 italic mt-0.5 block hover:underline">"{e.post_theme}"</a>
+                                      <p className="text-xs text-slate-400 italic mt-0.5">"{e.post_theme}"</p>
                                     </div>
                                   </div>
                                 ))}
