@@ -48,7 +48,8 @@ export default function App() {
       setAttendeeUploadMsg(`${personas.length} attendees loaded — regenerating insights...`);
       // Clear cached analysis and re-trigger with new attendee data
       setBuzzNow(null);
-      setRefreshKey(k => k + 1);
+      // Delay refreshKey to ensure account state has updated
+      setTimeout(() => setRefreshKey(k => k + 1), 100);
       setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
     reader.readAsText(file);
@@ -86,7 +87,8 @@ export default function App() {
         setAccount(prev => prev ? { ...prev, accountPlanText: planText } : prev);
         setAttendeeUploadMsg(`Account plan "${fileName}" loaded — regenerating insights...`);
         setBuzzNow(null);
-        setRefreshKey(k => k + 1);
+        // Delay refreshKey to ensure account state has updated
+        setTimeout(() => setRefreshKey(k => k + 1), 100);
         setTimeout(() => setAttendeeUploadMsg(null), 4000);
       } else {
         setAttendeeUploadMsg('Could not extract text from document.');

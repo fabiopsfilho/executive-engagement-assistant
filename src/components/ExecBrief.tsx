@@ -71,12 +71,10 @@ function SayThisSection({ bestStarter, allStarters, followUps }: { account: Acco
         <div className="mx-4 mb-4 p-3.5 border border-dark-600 rounded-xl">
           <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Follow-ups</span>
           <ul className="mt-2 space-y-1.5">
-            {followUps && followUps.length > 0 ? (
+            {followUps && followUps.length > 0 && (
               followUps.map((f, i) => (
                 <li key={i} className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>{f}</li>
               ))
-            ) : (
-              <li className="text-sm text-muted flex items-start gap-2"><span className="text-muted">•</span>Generating follow-ups...</li>
             )}
           </ul>
         </div>
