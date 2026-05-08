@@ -1,18 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, FileText, BookOpen, Bot, Zap, Megaphone, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, FileText, BookOpen, Zap, Megaphone, Loader2, Upload, Database } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
 import { AccountSelector } from './components/AccountSelector';
 import { ExecBrief } from './components/ExecBrief';
 import { SummaryView } from './components/SummaryView';
-import { AdvisorChat } from './components/AdvisorChat';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
 import { isBackendAvailable, getIntelligence, getTCData, generateBuzzNow, type TCAccountSummary, type BuzzNowResponse } from './services/api';
 import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
 
-type MainTab = 'brief' | 'summary' | 'advisor';
+type MainTab = 'brief' | 'summary' | 'demo';
 
 export default function App() {
   const [account, setAccount] = useState<Account | null>(null);
@@ -281,7 +280,7 @@ export default function App() {
   const tabs: { id: MainTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'brief', label: 'Brief', icon: FileText },
     { id: 'summary', label: 'Summary', icon: BookOpen },
-    { id: 'advisor', label: 'Advisor', icon: Bot },
+    { id: 'demo', label: 'Demo', icon: Database },
   ];
 
   return (
@@ -529,7 +528,23 @@ export default function App() {
             <>
               {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
               {tab === 'summary' && <SummaryView account={account} />}
-              {tab === 'advisor' && <AdvisorChat account={account} tcData={tcData} />}
+              {tab === 'demo' && (
+                <div className="space-y-4 py-4">
+                  <h3 className="text-sm font-semibold text-white">Demo Data</h3>
+                  <p className="text-xs text-muted">Showing raw account data for demonstration purposes.</p>
+                  <pre className="text-[10px] text-slate-400 bg-dark-800 border border-dark-600 rounded-xl p-4 overflow-auto max-h-[60vh] whitespace-pre-wrap">
+                    {JSON.stringify({ ...account, accountPlanText: account.accountPlanText ? `[${account.accountPlanText.length} chars]` : undefined }, null, 2)}
+                  </pre>
+                  {tcData && (
+                    <>
+                      <h4 className="text-xs font-semibold text-purple-400 mt-4">T&C Opportunity Data</h4>
+                      <pre className="text-[10px] text-slate-400 bg-dark-800 border border-dark-600 rounded-xl p-4 overflow-auto max-h-[40vh] whitespace-pre-wrap">
+                        {JSON.stringify(tcData, null, 2)}
+                      </pre>
+                    </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </main>

@@ -27,9 +27,9 @@ export function PersonaPickerSheet({ account, onSelect, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/50 backdrop-blur-sm pt-16" onClick={onClose}>
       <div
-        className="bg-navy-800 border-b border-navy-600 rounded-b-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto animate-fade-in"
+        className="bg-navy-800 border-b border-navy-600 rounded-b-2xl w-full max-w-[430px] max-h-[75vh] overflow-y-auto animate-fade-in"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
