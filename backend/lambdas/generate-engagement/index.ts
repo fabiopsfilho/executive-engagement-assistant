@@ -104,11 +104,13 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountData and persona are required');
     }
 
-    // Fetch relevant AWS T&C documentation from MCP
+    // Fetch relevant AWS T&C documentation from MCP (with 5s timeout)
     let awsKnowledge = '';
     try {
-      awsKnowledge = await getEngagementKnowledge(accountData.industry, persona.persona);
-    } catch { /* MCP not available — continue without */ }
+      const mcpPromise = getEngagementKnowledge(accountData.industry, persona.persona);
+      const timeoutPromise = new Promise<string>((_, reject) => setTimeout(() => reject('timeout'), 5000));
+      awsKnowledge = await Promise.race([mcpPromise, timeoutPromise]);
+    } catch { /* MCP not available or timed out — continue without */ }
 
     const userMessage = `Generate a persona-specific engagement plan for the following:
 

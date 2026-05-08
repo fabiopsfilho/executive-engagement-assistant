@@ -193,7 +193,9 @@ async function handler(event) {
     }
     let awsKnowledge = "";
     try {
-      awsKnowledge = await getEngagementKnowledge(accountData.industry, persona.persona);
+      const mcpPromise = getEngagementKnowledge(accountData.industry, persona.persona);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject("timeout"), 5e3));
+      awsKnowledge = await Promise.race([mcpPromise, timeoutPromise]);
     } catch {
     }
     const userMessage = `Generate a persona-specific engagement plan for the following:
