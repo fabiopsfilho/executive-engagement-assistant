@@ -103,7 +103,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [aiAgenda, setAiAgenda] = useState<any | null>(null);
-  const [agendaLoading, setAgendaLoading] = useState(false);
+  const [agendaLoading, setAgendaLoading] = useState<'ebc' | 'training' | false>(false);
   const [aiNextSteps, setAiNextSteps] = useState<NextStepsResponse | null>(null);
   const [nextStepsLoading, setNextStepsLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
@@ -133,7 +133,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   // Handle agenda generation via Bedrock
   const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
     if (isBackendAvailable()) {
-      setAgendaLoading(true);
+      setAgendaLoading(format);
       try {
         const tcState = a.tc_current_state.skill_builder
           ? `Existing: ${a.tc_current_state.skill_builder_seats} Skill Builder seats, ${a.tc_current_state.activation_rate}% activation, ${a.tc_current_state.certifications} certs, renewal: ${a.tc_current_state.renewal_date || 'N/A'}`
@@ -413,20 +413,20 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       <div>
         <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Next Best Move</h3>
         <div className="flex gap-2.5">
-          <button onClick={() => handleGenerateAgenda('ebc')} disabled={agendaLoading}
+          <button onClick={() => handleGenerateAgenda('ebc')} disabled={!!agendaLoading}
             className="flex-1 bg-gradient-to-br from-purple-500/30 to-purple-500/10 border border-purple-500/40 rounded-2xl p-4 active:opacity-80 text-left disabled:opacity-60">
             <div className="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center mb-3">
-              {agendaLoading ? <Loader2 className="w-5 h-5 text-purple-400 animate-spin" /> : <span className="text-lg">📋</span>}
+              {agendaLoading === 'ebc' ? <Loader2 className="w-5 h-5 text-purple-400 animate-spin" /> : <span className="text-lg">📋</span>}
             </div>
-            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading ? 'Generating...' : 'Suggest an Agenda'}</span>
+            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading === 'ebc' ? 'Generating...' : 'Suggest an Agenda'}</span>
             <ArrowRight className="w-4 h-4 text-purple-400 mt-2" />
           </button>
-          <button onClick={() => handleGenerateAgenda('training')} disabled={agendaLoading}
+          <button onClick={() => handleGenerateAgenda('training')} disabled={!!agendaLoading}
             className="flex-1 bg-gradient-to-br from-blue-500/30 to-blue-500/10 border border-blue-500/40 rounded-2xl p-4 active:opacity-80 text-left disabled:opacity-60">
             <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center mb-3">
-              {agendaLoading ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin" /> : <span className="text-lg">🎓</span>}
+              {agendaLoading === 'training' ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin" /> : <span className="text-lg">🎓</span>}
             </div>
-            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading ? 'Generating...' : 'Skills Session'}</span>
+            <span className="text-xs font-semibold text-white block leading-tight">{agendaLoading === 'training' ? 'Generating...' : 'Skills Session'}</span>
             <ArrowRight className="w-4 h-4 text-blue-400 mt-2" />
           </button>
         </div>
