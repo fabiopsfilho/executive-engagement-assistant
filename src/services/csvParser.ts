@@ -114,8 +114,8 @@ export function ebcRecordsToAccounts(records: EBCRecord[]): Account[] {
       geo: rec.geo || 'NAMER',
       sfdcAccountId: rec.sfdcAccountId || '',
       aws_spend: {
-        current_year: 0,
-        prior_year: 0,
+        current_year: -1, // Unknown from CSV — NOT zero
+        prior_year: -1,
         ppa: '',
       },
       sfdc_data: {

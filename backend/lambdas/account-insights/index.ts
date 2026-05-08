@@ -79,7 +79,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Check cache (1-hour TTL for insights — include attendee count in key so uploading new attendees busts cache)
     const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}`;
+    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}:${accountData.accountPlanText ? 'plan' : 'noplan'}`;
     try {
       const cached = await ddb.send(new GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
@@ -152,7 +152,12 @@ function buildAccountContext(accountData: any, tcData: any): string {
 
   lines.push(`Company: ${accountData.customer_name}`);
   lines.push(`Industry: ${accountData.industry} | Segment: ${accountData.segment} | Geo: ${accountData.geo}`);
-  lines.push(`AWS Spend: $${(accountData.aws_spend?.current_year || 0).toLocaleString()} (prior year: $${(accountData.aws_spend?.prior_year || 0).toLocaleString()})`);
+  const spend = accountData.aws_spend?.current_year;
+  if (spend && spend > 0) {
+    lines.push(`AWS Spend: $${spend.toLocaleString()} (prior year: $${(accountData.aws_spend?.prior_year || 0).toLocaleString()})`);
+  } else {
+    lines.push(`AWS Spend: Data not available (do NOT assume zero — spend data is simply not in the source system)`);
+  }
   lines.push(`PPA: ${accountData.aws_spend?.ppa || 'None'}`);
 
   // Salesforce data

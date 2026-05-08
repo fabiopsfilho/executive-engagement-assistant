@@ -496,7 +496,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-generate",
@@ -757,7 +757,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-advisor",
@@ -1018,7 +1018,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-roleplay",
@@ -1279,7 +1279,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-intelligence",
@@ -1540,7 +1540,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-agenda",
@@ -1801,7 +1801,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-pitch",
@@ -2062,7 +2062,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-ebc-data",
@@ -2323,7 +2323,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-tc-data",
@@ -2564,7 +2564,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "3ed007cd601522d3810b16edfa451892500770075ce1db0cfc3050db77591926.zip"
+     "S3Key": "e646ad12b664e8fd8c8e73388ac67dc13386610e1d82f43cc3ca9db8d7256afb.zip"
     },
     "Environment": {
      "Variables": {
@@ -2584,7 +2584,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-account-insights",
@@ -2605,7 +2605,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountInsightsFn/Resource",
-    "aws:asset:path": "asset.3ed007cd601522d3810b16edfa451892500770075ce1db0cfc3050db77591926",
+    "aws:asset:path": "asset.e646ad12b664e8fd8c8e73388ac67dc13386610e1d82f43cc3ca9db8d7256afb",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -2825,7 +2825,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "8408c80ffcdec71d51c3a7f351e25ba483c87cc5bb7965bd28f40c04b33c37e7.zip"
+     "S3Key": "961f373cad1eb1f1ac4d5764381ae1c118d81b94ed582f5817e5179c5738fdec.zip"
     },
     "Environment": {
      "Variables": {
@@ -2845,7 +2845,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-account-buzz",
@@ -2866,7 +2866,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountBuzzFn/Resource",
-    "aws:asset:path": "asset.8408c80ffcdec71d51c3a7f351e25ba483c87cc5bb7965bd28f40c04b33c37e7",
+    "aws:asset:path": "asset.961f373cad1eb1f1ac4d5764381ae1c118d81b94ed582f5817e5179c5738fdec",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -3086,7 +3086,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-678278062910-us-east-1",
-     "S3Key": "3f5054c27116e237931356e392a95eed58d999686ce85a61c90e2bfb13b0a02a.zip"
+     "S3Key": "cf8990ffe9732a44d325b8549953db9a17ae842ccd0c406f6892800011b4bcac.zip"
     },
     "Environment": {
      "Variables": {
@@ -3106,7 +3106,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-account-next-steps",
@@ -3127,7 +3127,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "EngagementAssistantStack/AccountNextStepsFn/Resource",
-    "aws:asset:path": "asset.3f5054c27116e237931356e392a95eed58d999686ce85a61c90e2bfb13b0a02a",
+    "aws:asset:path": "asset.cf8990ffe9732a44d325b8549953db9a17ae842ccd0c406f6892800011b4bcac",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
@@ -3367,7 +3367,7 @@
       },
       "EBC_DATA_KEY": "ebc-calendar.csv",
       "KNOWLEDGE_BASE_ID": "TJHYCVRLXH",
-      "KB_VERSION": "9"
+      "KB_VERSION": "10"
      }
     },
     "FunctionName": "engagement-assistant-persona-intel",

@@ -96,7 +96,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Check cache (1-hour TTL — include attendee count so uploading new attendees busts cache)
     const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `next-steps:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}`;
+    const cacheKey = `next-steps:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}:${accountData.accountPlanText ? 'plan' : 'noplan'}`;
     try {
       const cached = await ddb.send(new GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
@@ -131,7 +131,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const isGreenfield = !accountData.tc_current_state?.skill_builder;
     const context = `
 COMPANY: ${companyName} (${industry}, ${accountData.segment}, ${accountData.geo})
-AWS SPEND: ${(accountData.aws_spend?.current_year || 0).toLocaleString()} (prior: ${(accountData.aws_spend?.prior_year || 0).toLocaleString()})
+AWS SPEND: ${(accountData.aws_spend?.current_year && accountData.aws_spend.current_year > 0) ? '$' + accountData.aws_spend.current_year.toLocaleString() : 'Data not available (do NOT assume zero)'}
 STRATEGIC PRIORITY: ${accountData.sfdc_data?.account_plan_priority || 'Unknown'}
 SMGS PHASE: ${accountData.sfdc_data?.smgs_phase || 'Unknown'}
 T2K: ${accountData.sfdc_data?.t2k ? 'Yes' : 'No'}

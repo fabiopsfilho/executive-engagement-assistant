@@ -17,7 +17,7 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// lambdas/account-buzz/index.ts
+// lambdas/account-next-steps/index.ts
 var index_exports = {};
 __export(index_exports, {
   handler: () => handler
@@ -178,7 +178,7 @@ T&C KNOWLEDGE BASE CONTEXT:
 ${combined.slice(0, 4e3)}`;
 }
 
-// lambdas/account-buzz/index.ts
+// lambdas/account-next-steps/index.ts
 var ddbClient = new import_client_dynamodb.DynamoDBClient({});
 var ddb = import_lib_dynamodb.DynamoDBDocumentClient.from(ddbClient);
 async function googleSearch(query) {
@@ -233,22 +233,20 @@ GUARDRAILS:
 6. Reference specific AWS T&C offerings when recommending approaches (Skill Builder, Skills Guild, Classroom Training, etc.)
 7. Apply Amazon/AWS methodology: Working Backwards from the customer's workforce vision, Day 1 mindset, mechanisms over good intentions.
 
-SPECIFIC FUNCTION \u2014 INTELLIGENCE ANALYSIS:
-Your role here is to help the T&C Skills Enablement team identify opportunities for skills transformation conversations with customer executives.
+SPECIFIC FUNCTION \u2014 NEXT STEPS & KEY ASKS:
+You are a senior AWS Training & Certification strategist generating specific, actionable next steps and key asks for an account engagement.
 
-ADDITIONAL GUARDRAILS:
-1. NEVER INFER OR SPECULATE. Only report what was ACTUALLY FOUND in search results or provided data.
-2. If no data was found for a person or topic, DO NOT include them. Omit them entirely \u2014 never say "unavailable" or "no data found".
-3. CHAMPION DESIGNATION: Only designate someone as an "AWS champion" if search results explicitly show AWS-related activity (posts about AWS, AWS certifications, AWS events attendance). Otherwise, do not use that term.
-4. EXECUTIVE VOICES: Only include executives where REAL public data was found (LinkedIn posts, conference talks, published articles). If the search returned nothing for a person, exclude them completely from the response.
-5. Frame everything through the T&C lens: skills transformation, workforce development, training ROI, certification programs, learning culture.
-6. Be honest about what you know vs. don't know. If data is limited, say "Based on available data..." not "This person is..."
+Your output must be:
+- Grounded in the ACTUAL data provided (reference specific numbers, names, quotes)
+- Actionable (tell the Account Manager exactly what to do)
+- Connected to T&C opportunities (how does each step create a training/certification opportunity?)
+- Specific to THIS account (never generic)
 
-For BUZZ (What people are saying): Only report what was actually found in search results \u2014 real LinkedIn posts, real Glassdoor reviews, real news articles. If nothing was found, say so briefly and focus on what IS available.
+For NEXT STEPS: Generate 5 specific, actionable next steps that the AM should take. Each should reference real data from the account (hiring numbers, executive names, Glassdoor feedback, financial data, etc.)
 
-For NOW (What to focus on): Based on CONFIRMED signals only, recommend what the T&C team should prioritize for skills transformation conversations.
+For KEY ASKS: Generate 5 specific questions or commitments to secure from the customer. Each should be grounded in the account's actual situation and data signals.
 
-Return ONLY valid JSON. For any array field, return an empty array [] if no real data was found \u2014 do NOT fill with speculation.`;
+Return ONLY valid JSON.`;
 async function handler(event) {
   try {
     const accountId = event.pathParameters?.accountId;
@@ -257,7 +255,7 @@ async function handler(event) {
     const { accountData, tcData } = body;
     if (!accountData) return error(400, "accountData is required");
     const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `buzz:${accountData.customer_name?.toLowerCase().replace(/\s+/g, "-")}:${attendeeCount}`;
+    const cacheKey = `next-steps:${accountData.customer_name?.toLowerCase().replace(/\s+/g, "-")}:${attendeeCount}:${accountData.accountPlanText ? "plan" : "noplan"}`;
     try {
       const cached = await ddb.send(new import_lib_dynamodb.GetCommand({
         TableName: process.env.INTELLIGENCE_CACHE_TABLE,
@@ -270,13 +268,13 @@ async function handler(event) {
     }
     const industry = accountData.industry || "Technology";
     const companyName = accountData.customer_name || "Unknown";
-    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults] = await Promise.all([
+    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, databookResults] = await Promise.all([
       getTCProductKnowledge(industry, ["workforce transformation", "talent development"]).catch(() => ""),
       getTCStrategyContext(industry, "CTO", accountData.ebc_data?.themes || []).catch(() => ""),
       googleSearch(`${companyName} site:linkedin.com cloud AI engineer jobs`).catch(() => ""),
       googleSearch(`${companyName} site:glassdoor.com reviews culture training development`).catch(() => ""),
       googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`).catch(() => ""),
-      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`).catch(() => "")
+      googleSearch(`${companyName} revenue earnings financial results 2025`).catch(() => "")
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join("\n\n");
     const onlineSearch = [
@@ -286,27 +284,26 @@ ${linkedinResults}` : "",
 ${glassdoorResults}` : "",
       newsResults ? `NEWS & TRANSFORMATION SEARCH:
 ${newsResults}` : "",
-      executiveResults ? `EXECUTIVE LINKEDIN PROFILES:
-${executiveResults}` : ""
+      databookResults ? `FINANCIAL/DATABOOK SEARCH:
+${databookResults}` : ""
     ].filter(Boolean).join("\n\n");
     const pi = accountData.public_intelligence || {};
+    const isGreenfield = !accountData.tc_current_state?.skill_builder;
     const context = `
-COMPANY: ${accountData.customer_name} (${industry}, ${accountData.segment}, ${accountData.geo})
-AWS SPEND: $${(accountData.aws_spend?.current_year || 0).toLocaleString()} (prior: $${(accountData.aws_spend?.prior_year || 0).toLocaleString()})
+COMPANY: ${companyName} (${industry}, ${accountData.segment}, ${accountData.geo})
+AWS SPEND: ${accountData.aws_spend?.current_year && accountData.aws_spend.current_year > 0 ? "$" + accountData.aws_spend.current_year.toLocaleString() : "Data not available (do NOT assume zero)"}
 STRATEGIC PRIORITY: ${accountData.sfdc_data?.account_plan_priority || "Unknown"}
 SMGS PHASE: ${accountData.sfdc_data?.smgs_phase || "Unknown"}
 T2K: ${accountData.sfdc_data?.t2k ? "Yes" : "No"}
 
 T&C STATE:
-${accountData.tc_current_state?.skill_builder ? `Skill Builder: ${accountData.tc_current_state.skill_builder_seats} seats, ${accountData.tc_current_state.activation_rate}% activation` : "No Skill Builder (Greenfield)"}
-Certifications: ${accountData.tc_current_state?.certifications || 0}
+${isGreenfield ? `Greenfield \u2014 ${accountData.tc_current_state?.certifications || 0} organic certifications, no structured program` : `Existing \u2014 ${accountData.tc_current_state?.skill_builder_seats || 0} Skill Builder seats, ${accountData.tc_current_state?.activation_rate || 0}% activation, renewal: ${accountData.tc_current_state?.renewal_date || "N/A"}`}
 Prior Engagement: ${accountData.tc_current_state?.prior_engagement || "None"}
-Renewal: ${accountData.tc_current_state?.renewal_date || "N/A"}
 
 ${tcData ? `T&C PIPELINE DATA:
-Pipeline: $${(tcData.totalPipeline || 0).toLocaleString()}
+Pipeline: ${(tcData.totalPipeline || 0).toLocaleString()}
 Open Opportunities: ${tcData.openOpportunities || 0}
-Closed Won: $${(tcData.closedWonRevenue || 0).toLocaleString()}
+Closed Won: ${(tcData.closedWonRevenue || 0).toLocaleString()}
 Products: ${(tcData.products || []).join(", ")}
 Students: ${tcData.totalStudents || 0}` : "No T&C pipeline data available"}
 
@@ -344,7 +341,7 @@ ${awsContext.slice(0, 3e3)}` : ""}
 ${onlineSearch ? `
 REAL-TIME ONLINE SEARCH RESULTS:
 ${onlineSearch.slice(0, 3e3)}` : ""}`;
-    const userMessage = `Analyze this account's intelligence and generate both BUZZ and NOW insights. Be highly specific \u2014 reference actual names, numbers, and quotes from the data.
+    const userMessage = `Based on all the intelligence gathered for ${companyName}, generate specific next steps and key asks for the T&C engagement.
 
 Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.
 
@@ -352,14 +349,12 @@ ${context}
 
 Return JSON:
 {
-  "buzz_summary": "2-3 sentence synthesis of what's happening at this company based on all signals",
-  "buzz_executive_insights": ["Insight about each executive's activity and what it means for T&C \u2014 1 per executive"],
-  "buzz_hiring_analysis": "What the hiring data tells us about their skills gap and T&C opportunity",
-  "buzz_sentiment_analysis": "What employees are saying and what it means for training programs",
-  "now_focus": "The single most important thing to focus on right now and why",
-  "now_initiatives": ["Top 3 specific initiatives to drive, each connected to a signal"],
-  "now_key_asks": ["4 specific questions to ask in the next conversation, grounded in the data"],
-  "now_opening_move": "The exact opening move \u2014 what to say, who to say it to, and why it works"
+  "next_steps": [
+    "5 specific, actionable next steps \u2014 each referencing real data (names, numbers, quotes). Example: 'Conduct a Learning Needs Assessment targeting the 45 open cloud/AI roles identified on LinkedIn...' NOT generic like 'Schedule a meeting'"
+  ],
+  "key_asks": [
+    "5 specific questions or commitments to secure \u2014 each grounded in account data. Example: 'Secure Maria Santos (CHRO) as executive sponsor \u2014 she posted about talent development last week' NOT generic like 'Get executive buy-in'"
+  ]
 }`;
     const result = await invokeClaudeJSON(
       SYSTEM_PROMPT,
@@ -380,8 +375,8 @@ Return JSON:
     }
     return success(result);
   } catch (err) {
-    console.error("Error generating buzz/now insights:", err);
-    return error(500, "Failed to generate buzz/now insights");
+    console.error("Error generating next steps:", err);
+    return error(500, "Failed to generate next steps and key asks");
   }
 }
 // Annotate the CommonJS export names for ESM import in node:
