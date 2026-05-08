@@ -142,17 +142,36 @@ export default function App() {
     // Fetch T&C opportunity data
     if (isBackendAvailable()) {
       const sfdcId = account.sfdcAccountId;
+      // Try SFDC ID first, then fall back to name matching
       if (sfdcId) {
         getTCData(sfdcId).then(result => {
-          if (result.summary) setTcData(result.summary);
+          if (result.summary) {
+            setTcData(result.summary);
+          } else {
+            // ID didn't match — try name matching (accounts may have different IDs)
+            getTCData().then(allResult => {
+              if (allResult.summaries) {
+                const nameNorm = account.customer_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const match = allResult.summaries.find(s => {
+                  const sNorm = s.accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  return sNorm.includes(nameNorm) || nameNorm.includes(sNorm) ||
+                    // Also try first word match (e.g., "Itau" matches "Itaú Unibanco")
+                    sNorm.startsWith(nameNorm.slice(0, 4)) || nameNorm.startsWith(sNorm.slice(0, 4));
+                });
+                if (match) setTcData(match);
+              }
+            }).catch(() => {});
+          }
         }).catch(() => {});
       } else {
         getTCData().then(result => {
           if (result.summaries) {
-            const match = result.summaries.find(s =>
-              s.accountName.toLowerCase().includes(account.customer_name.toLowerCase()) ||
-              account.customer_name.toLowerCase().includes(s.accountName.toLowerCase())
-            );
+            const nameNorm = account.customer_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const match = result.summaries.find(s => {
+              const sNorm = s.accountName.toLowerCase().replace(/[^a-z0-9]/g, '');
+              return sNorm.includes(nameNorm) || nameNorm.includes(sNorm) ||
+                sNorm.startsWith(nameNorm.slice(0, 4)) || nameNorm.startsWith(sNorm.slice(0, 4));
+            });
             if (match) setTcData(match);
           }
         }).catch(() => {});
