@@ -138,9 +138,9 @@ export function AgendaModal({ agenda, onClose }: { agenda: Agenda; onClose: () =
   ].join('\n');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto pt-4" onClick={onClose}>
       <div
-        className="bg-dark-800 border border-dark-600 rounded-b-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto animate-fade-in"
+        className="bg-dark-800 border border-dark-600 rounded-2xl w-full max-w-[430px] max-h-[85vh] overflow-y-auto animate-fade-in mt-4"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
