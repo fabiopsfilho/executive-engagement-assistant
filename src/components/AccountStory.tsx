@@ -26,40 +26,7 @@ function fmt(n: number) {
 
 type TopTab = 'approach' | 'summary' | 'next-steps' | 'key-asks';
 
-function generateNextSteps(a: Account, userNotes: UserNote[]): { text: string; connection: string }[] {
-  const isGreenfield = !a.tc_current_state.skill_builder;
-  const steps: { text: string; connection: string }[] = [];
-  if (isGreenfield) {
-    steps.push({ text: `Conduct a Learning Needs Assessment to map the skills gap across ${a.customer_name}'s workforce against their ${a.sfdc_data.account_plan_priority} transformation goals.`, connection: `Now: Top initiative. Agenda: Featured in Working Backwards Workshop. Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles confirm the gap.` });
-    steps.push({ text: `Design a phased training program starting with a 50-100 person pilot aligned to the most critical roles for the ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles they can't fill externally.`, connection: `Buzz: LinkedIn hiring data (${a.public_intelligence.linkedin_job_postings.yoy_change} YoY). Skills Session: Covered in Technical Roles block.` });
-    steps.push({ text: `Develop an Executive AI Literacy program for the C-suite and board.`, connection: `Now: Executive sponsor is a key ask. Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} is already thinking about this` : 'Executive signals detected'}. Skills Session: Non-Technical Roles block.` });
-  } else {
-    steps.push({ text: `Complete a Subscription Health Review to understand why activation has plateaued — then redesign the program with dedicated learning time and manager accountability.`, connection: `Buzz: Glassdoor says "${a.public_intelligence.glassdoor_signals[0] || 'employee feedback'}". Summary: ${a.tc_current_state.activation_rate}% activation. Skills Session: Engagement Model block.` });
-    steps.push({ text: `Transition from a subscription model to a structured workforce development program with role-based tracks and measurable outcomes tied to ${a.sfdc_data.account_plan_priority}.`, connection: `Now: Strategic priority. Agenda: Working Backwards Workshop. Summary: ${a.sfdc_data.smgs_phase} phase.` });
-    steps.push({ text: `Launch a program redesign pilot with the highest-priority teams before the renewal window.`, connection: `Summary: Renewal approaching. Now: Urgency signal. Agenda: Investment Framework block.` });
-  }
-  steps.push({ text: `Establish a quarterly business review cadence to track training ROI and certification progress.`, connection: `Agenda: Commitments & Next Steps block. Summary: ${a.sfdc_data.open_opps} open opportunities to connect to.` });
-  steps.push({ text: `Build a long-term Skills Transformation Roadmap scaling from pilot to enterprise-wide over 12-18 months.`, connection: `Now: Think big, start small. Agenda: Working Backwards Workshop. Trend: ${a.public_intelligence.industry_context.split(';')[0]}.` });
-  userNotes.forEach(n => steps.push({ text: `Address: ${n.text}${n.url ? ` (ref: ${n.url})` : ''}`, connection: `Added topic. Agenda: Included in Additional Topics block. Skills Session: Included in Additional Topics block.` }));
-  return steps;
-}
 
-function generateKeyAsks(a: Account, userNotes: UserNote[]): { ask: string; why: string; connection: string }[] {
-  const isGreenfield = !a.tc_current_state.skill_builder;
-  const asks: { ask: string; why: string; connection: string }[] = [
-    { ask: 'Executive sponsor', why: 'Without a C-level champion, training programs become optional.', connection: `Now: Key ask. Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} is a potential champion` : 'Executive signals detected'}. Agenda: Commitments block.` },
-    { ask: 'Dedicated learning time', why: `${a.customer_name} must commit 2-4 hours/week of protected learning time. This is the #1 success factor.`, connection: `Buzz: Glassdoor says "${a.public_intelligence.glassdoor_signals.find(s => s.toLowerCase().includes('time') || s.toLowerCase().includes('learning')) || a.public_intelligence.glassdoor_signals[0] || 'employee feedback'}". Skills Session: Engagement Model block.` },
-  ];
-  if (isGreenfield) {
-    asks.push({ ask: 'Identify pilot team (50-100 people)', why: `Roles most critical to ${a.sfdc_data.account_plan_priority}.`, connection: `Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles show where demand is. Skills Session: Technical Roles block. Agenda: Workshop block.` });
-  } else {
-    asks.push({ ask: 'Share usage data and feedback', why: 'Essential for redesigning the program to drive real adoption.', connection: `Summary: ${a.tc_current_state.activation_rate}% activation needs investigation. Buzz: Glassdoor signals reveal root causes. Skills Session: Engagement Model block.` });
-  }
-  asks.push({ ask: 'Measurable success criteria', why: 'Activation rates, certification targets, skill uplift, business impact.', connection: `Agenda: Investment Framework block. Now: 90-day checkpoint is critical. Summary: ${a.tc_current_state.certifications} certs as baseline.` });
-  asks.push({ ask: '90-day checkpoint', why: 'Concrete review point to evaluate results and plan expansion.', connection: `Now: Creates urgency. Agenda: Commitments block. Skills Session: Next Steps block.` });
-  userNotes.forEach(n => asks.push({ ask: n.text, why: n.url ? `Reference: ${n.url}` : 'Flagged for engagement.', connection: `Added topic. Included in both Agenda and Skills Session.` }));
-  return asks;
-}
 
 export function AccountStory({ account, notes = [], onEngagePersona, tcData }: { account: Account; notes?: UserNote[]; onEngagePersona?: () => void; tcData?: TCAccountSummary | null }) {
   const a = account;
@@ -167,8 +134,8 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
 
   const ebcAgenda = generateAgenda(a, notes);
   const trainingAgenda = generateTrainingSessionAgenda(a, notes);
-  const nextSteps = aiNextSteps?.next_steps || generateNextSteps(a, notes).map(s => s.text);
-  const keyAsks = aiNextSteps?.key_asks || generateKeyAsks(a, notes).map(k => k.ask);
+  const nextSteps = aiNextSteps?.next_steps || [];
+  const keyAsks = aiNextSteps?.key_asks || [];
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 animate-fade-in">

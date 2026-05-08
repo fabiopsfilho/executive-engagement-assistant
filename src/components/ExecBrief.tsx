@@ -30,31 +30,7 @@ function ConnectionToggle({ text }: { text: string }) {
   );
 }
 
-function generateNextSteps(a: Account): { text: string; connection: string }[] {
-  const isGreenfield = !a.tc_current_state.skill_builder;
-  if (isGreenfield) return [
-    { text: `Learning Needs Assessment for ${a.customer_name}`, connection: `Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles. Agenda: Workshop block.` },
-    { text: `Phased pilot: 50-100 people in critical roles`, connection: `Now: Top signal. Skills Session: Technical Roles block.` },
-    { text: `Executive AI Literacy for C-suite`, connection: `Buzz: ${a.public_intelligence.executive_social[0]?.name || 'Executive'} signals. Skills Session: Non-Technical block.` },
-  ];
-  return [
-    { text: `Subscription Health Review & program redesign`, connection: `Buzz: Glassdoor "${a.public_intelligence.glassdoor_signals[0] || ''}". Skills Session: Engagement Model.` },
-    { text: `Transition to structured workforce program`, connection: `Now: ${a.sfdc_data.account_plan_priority}. Agenda: Workshop block.` },
-    { text: `Pilot redesign before renewal window`, connection: `Summary: Renewal approaching. Agenda: Investment Framework.` },
-  ];
-}
 
-function generateKeyAsks(a: Account): { ask: string; connection: string }[] {
-  const isGreenfield = !a.tc_current_state.skill_builder;
-  const asks = [
-    { ask: 'Executive sponsor commitment', connection: `Buzz: ${a.public_intelligence.executive_social[0]?.name || 'Executive'} is a potential champion. Agenda: Commitments block.` },
-    { ask: 'Dedicated learning time (2-4 hrs/week)', connection: `Buzz: Glassdoor feedback. Skills Session: Engagement Model.` },
-  ];
-  if (isGreenfield) asks.push({ ask: 'Identify pilot team (50-100 people)', connection: `Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles. Agenda: Workshop.` });
-  else asks.push({ ask: 'Share current usage data', connection: `Summary: ${a.tc_current_state.activation_rate}% activation. Skills Session: Engagement Model.` });
-  asks.push({ ask: '90-day checkpoint agreement', connection: `Now: Creates urgency. Agenda: Commitments block.` });
-  return asks;
-}
 
 
 function SayThisSection({ account, bestStarter, allStarters, followUps }: { account: Account; bestStarter: string; allStarters: string[]; followUps?: string[] }) {
@@ -279,8 +255,8 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
   const bestStarter = plan0?.conversation_starters[0] || aiStarters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
   const allStarters = plan0?.conversation_starters || (aiStarters.length > 0 ? aiStarters : [bestStarter]);
 
-  const nextSteps = aiNextSteps?.next_steps || generateNextSteps(a).map(s => s.text);
-  const keyAsks = aiNextSteps?.key_asks || generateKeyAsks(a).map(k => k.ask);
+  const nextSteps = aiNextSteps?.next_steps || [];
+  const keyAsks = aiNextSteps?.key_asks || [];
 
   // Show full loading state until insights are ready
   if (insightsLoading && !insights) {
@@ -391,13 +367,13 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
 
 
           {heroTab === 'next-steps' && (
+            nextStepsLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                <span className="text-xs text-muted">Generating next steps...</span>
+              </div>
+            ) : nextSteps.length > 0 ? (
             <div className="space-y-2">
-              {nextStepsLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted py-1">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                  <span>Generating AI next steps...</span>
-                </div>
-              )}
               {nextSteps.map((s, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <ArrowRight className="w-3 h-3 text-purple-400 shrink-0 mt-1" />
@@ -405,16 +381,19 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
                 </div>
               ))}
             </div>
+            ) : (
+              <p className="text-xs text-muted text-center py-4">No next steps generated yet</p>
+            )
           )}
 
           {heroTab === 'key-asks' && (
+            nextStepsLoading ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+                <span className="text-xs text-muted">Generating key asks...</span>
+              </div>
+            ) : keyAsks.length > 0 ? (
             <div className="space-y-2">
-              {nextStepsLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted py-1">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
-                  <span>Generating AI key asks...</span>
-                </div>
-              )}
               {keyAsks.map((k, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <CheckCircle2 className="w-3 h-3 text-green-400 shrink-0 mt-1" />
@@ -422,6 +401,9 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
                 </div>
               ))}
             </div>
+            ) : (
+              <p className="text-xs text-muted text-center py-4">No key asks generated yet</p>
+            )
           )}
         </div>
         </div>
