@@ -529,20 +529,15 @@ export default function App() {
               {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
               {tab === 'summary' && <SummaryView account={account} />}
               {tab === 'demo' && (
-                <div className="space-y-4 py-4">
-                  <h3 className="text-sm font-semibold text-white">Demo Data</h3>
-                  <p className="text-xs text-muted">Showing raw account data for demonstration purposes.</p>
-                  <pre className="text-[10px] text-slate-400 bg-dark-800 border border-dark-600 rounded-xl p-4 overflow-auto max-h-[60vh] whitespace-pre-wrap">
-                    {JSON.stringify({ ...account, accountPlanText: account.accountPlanText ? `[${account.accountPlanText.length} chars]` : undefined }, null, 2)}
-                  </pre>
-                  {tcData && (
-                    <>
-                      <h4 className="text-xs font-semibold text-purple-400 mt-4">T&C Opportunity Data</h4>
-                      <pre className="text-[10px] text-slate-400 bg-dark-800 border border-dark-600 rounded-xl p-4 overflow-auto max-h-[40vh] whitespace-pre-wrap">
-                        {JSON.stringify(tcData, null, 2)}
-                      </pre>
-                    </>
-                  )}
+                <div className="space-y-3 py-2">
+                  <p className="text-xs text-muted">Switch to demo accounts with pre-built data:</p>
+                  {accounts.filter(a => ['Oceanic Capital Corporation', 'MedVista Health Systems', 'NordicRetail Group'].includes(a.customer_name)).map(a => (
+                    <button key={a.customer_name} onClick={() => { setAccount(a); setTab('brief'); setBuzzNow(null); setRefreshKey(k => k + 1); }}
+                      className="w-full text-left p-3 bg-dark-800 border border-dark-600 rounded-xl active:bg-dark-700">
+                      <span className="text-sm font-medium text-white">{a.customer_name}</span>
+                      <p className="text-[11px] text-muted mt-0.5">{a.industry} · {a.segment} · {a.geo}</p>
+                    </button>
+                  ))}
                 </div>
               )}
             </>
