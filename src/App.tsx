@@ -126,7 +126,7 @@ export default function App() {
         setAccountPlanText(capturedText);
         setAccountPlanName(`Captured: ${event.data.title || 'Page content'}`);
         setAccount(prev => prev ? { ...prev, accountPlanText: capturedText } : prev);
-        setAttendeeUploadMsg(`Page content captured — regenerating insights...`);
+        setAttendeeUploadMsg(null); // Don't show duplicate — sidepanel shows it
         setBuzzNow(null);
         setRefreshKey(k => k + 1);
         setTimeout(() => setAttendeeUploadMsg(null), 4000);
@@ -347,7 +347,7 @@ export default function App() {
           {/* Signal badges */}
           {account.signals.length > 0 && (
             <div className="px-4 py-1.5 flex flex-wrap gap-1.5 border-t border-dark-700">
-              {account.signals.slice(0, 3).map(s => (
+              {account.signals.filter(s => !s.label.toLowerCase().includes('no direct') && !s.label.toLowerCase().includes('intelligence found')).slice(0, 3).map(s => (
                 <span key={s.label} className={`text-[9px] px-2 py-0.5 rounded-full font-medium ${s.severity === 'HIGH' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'}`}>{s.label}</span>
               ))}
             </div>
