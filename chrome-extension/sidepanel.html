@@ -57,13 +57,34 @@
       cursor: pointer;
     }
     .detect-btn:hover { background: #6d28d9; }
+    .capture-btn {
+      padding: 4px 10px;
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 10px;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    .capture-btn:hover { background: #047857; }
+    .capture-msg {
+      padding: 6px 16px;
+      font-size: 10px;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border-bottom: 1px solid #1e2d4a;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <img src="icon.svg" alt="icon">
     <span>T&C Engagement Advisor</span>
+    <button id="captureBtn" class="capture-btn">Capture</button>
   </div>
+  <div class="capture-msg" id="captureMsg">✓ Page content captured</div>
   <div class="status" id="status">
     Navigate to a Salesforce account to get started
   </div>

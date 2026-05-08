@@ -12,10 +12,27 @@ function loadAccount(accountName) {
   content.innerHTML = '<iframe src="' + APP_URL + '?account=' + encodeURIComponent(accountName) + '" allow="clipboard-write"></iframe>';
 }
 
-// Listen for account updates from background script
+// Listen for account updates and page captures from background script
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'UPDATE_ACCOUNT') {
     loadAccount(message.accountName);
+  }
+  if (message.type === 'PAGE_CONTENT') {
+    // Pass captured content to the iframe app via postMessage
+    const iframe = document.querySelector('iframe');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'CAPTURED_CONTENT',
+        text: message.text,
+        url: message.url,
+        title: message.title,
+      }, '*');
+    }
+    // Show confirmation
+    const msg = document.getElementById('captureMsg');
+    msg.style.display = 'block';
+    msg.textContent = '✓ Page content captured — regenerating insights...';
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
   }
 });
 
@@ -37,8 +54,14 @@ function requestDetection() {
   });
 }
 
+// Capture page content
+function capturePageContent() {
+  chrome.runtime.sendMessage({ type: 'CAPTURE_PAGE_REQUEST' });
+}
+
 // Auto-request detection when panel opens
 setTimeout(requestDetection, 1000);
 
-// Attach button click
+// Attach button clicks
 document.getElementById('detectBtn').addEventListener('click', requestDetection);
+document.getElementById('captureBtn').addEventListener('click', capturePageContent);

@@ -126,4 +126,31 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'REQUEST_ACCOUNT') {
     checkForAccount();
   }
+  if (message.type === 'CAPTURE_PAGE') {
+    // Capture visible text content from the current page
+    const capturedText = capturePageContent();
+    chrome.runtime.sendMessage({
+      type: 'PAGE_CAPTURED',
+      text: capturedText,
+      url: window.location.href,
+      title: document.title,
+    });
+  }
 });
+
+// Capture readable text content from the page
+function capturePageContent() {
+  // Get the main content area text, excluding nav/footer/scripts
+  const excludeSelectors = ['nav', 'footer', 'script', 'style', 'noscript', 'header[role="banner"]'];
+  const body = document.body.cloneNode(true);
+  excludeSelectors.forEach(sel => {
+    body.querySelectorAll(sel).forEach(el => el.remove());
+  });
+  
+  // Get text content, clean up whitespace
+  let text = body.innerText || body.textContent || '';
+  text = text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  
+  // Limit to 15K characters
+  return text.slice(0, 15000);
+}

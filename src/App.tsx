@@ -117,6 +117,24 @@ export default function App() {
     }
   }, []);
 
+  // Listen for captured page content from Chrome extension
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'CAPTURED_CONTENT' && event.data.text) {
+        const capturedText = event.data.text.slice(0, 15000);
+        setAccountPlanText(capturedText);
+        setAccountPlanName(`Captured: ${event.data.title || 'Page content'}`);
+        setAccount(prev => prev ? { ...prev, accountPlanText: capturedText } : prev);
+        setAttendeeUploadMsg(`Page content captured — regenerating insights...`);
+        setBuzzNow(null);
+        setRefreshKey(k => k + 1);
+        setTimeout(() => setAttendeeUploadMsg(null), 4000);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   // When a live account is selected with empty intelligence, fetch from Bedrock
   useEffect(() => {
     if (!account) return;
