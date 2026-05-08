@@ -184,7 +184,7 @@ ${context}
 Return JSON:
 {
   "buzz_summary": "2-3 sentence synthesis of what's happening at this company based on all signals",
-  "buzz_executive_insights": ["Insight about each executive's activity and what it means for T&C — 1 per executive"],
+  "buzz_executive_insights": ["For each confirmed attendee or known executive, provide a role-based T&C engagement insight — what they likely care about and how to approach them. If attendees are listed, include one insight per attendee."],
   "buzz_hiring_analysis": "What the hiring data tells us about their skills gap and T&C opportunity",
   "buzz_sentiment_analysis": "What employees are saying and what it means for training programs",
   "now_focus": "The single most important thing to focus on right now and why",

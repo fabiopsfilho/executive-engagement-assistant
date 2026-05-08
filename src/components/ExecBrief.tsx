@@ -214,8 +214,7 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
     if (aiStarters.length > 0) return; // Already fetched
 
     setLoadingQuote(true);
-    const topPersona = rankedPersonas[0] || a.ebc_data.attendees[0];
-    if (!topPersona) { setLoadingQuote(false); return; }
+    const topPersona = rankedPersonas[0] || a.ebc_data.attendees[0] || { name: "Executive", title: "Senior Leader", persona: "CEO" as const };
 
     generateEngagementPlan(
       a,
