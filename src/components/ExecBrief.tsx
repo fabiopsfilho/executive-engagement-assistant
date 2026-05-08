@@ -33,8 +33,7 @@ function ConnectionToggle({ text }: { text: string }) {
 
 
 
-function SayThisSection({ account, bestStarter, allStarters, followUps }: { account: Account; bestStarter: string; allStarters: string[]; followUps?: string[] }) {
-  const a = account;
+function SayThisSection({ bestStarter, allStarters, followUps }: { account: Account; bestStarter: string; allStarters: string[]; followUps?: string[] }) {
   const [expanded, setExpanded] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
@@ -77,11 +76,7 @@ function SayThisSection({ account, bestStarter, allStarters, followUps }: { acco
                 <li key={i} className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>{f}</li>
               ))
             ) : (
-              <>
-                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Are {a.industry === 'Financial Services' ? 'GenAI' : 'cloud'} skills part of your hiring strategy?</li>
-                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Build vs. buy vs. train — what's the plan?</li>
-                <li className="text-sm text-slate-300 flex items-start gap-2"><span className="text-muted">•</span>Where are you seeing the biggest delays?</li>
-              </>
+              <li className="text-sm text-muted flex items-start gap-2"><span className="text-muted">•</span>Generating follow-ups...</li>
             )}
           </ul>
         </div>
@@ -237,13 +232,11 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       if (result.conversation_starters && result.conversation_starters.length > 0) {
         setAiStarters(result.conversation_starters);
       }
-      // Generate follow-ups from the narrative
-      if (result.narrative) {
-        setAiFollowUps([
-          `What's your biggest skills bottleneck on ${a.sfdc_data.account_plan_priority}?`,
-          result.recommended_plays?.[0] ? `Have you explored ${result.recommended_plays[0].play_name.toLowerCase()}?` : 'Build vs. buy vs. train — what\'s the plan?',
-          `What does success look like in 90 days for your workforce?`,
-        ]);
+      // Generate follow-ups from the AI response
+      if (result.conversation_starters && result.conversation_starters.length > 1) {
+        setAiFollowUps(result.conversation_starters.slice(1, 4));
+      } else if (result.recommended_plays?.length) {
+        setAiFollowUps(result.recommended_plays.slice(0, 3).map(p => `Have you considered ${p.play_name}? ${p.description.slice(0, 60)}...`));
       }
     }).catch(err => {
       console.warn('Failed to generate engagement plan:', err);

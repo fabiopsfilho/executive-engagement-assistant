@@ -295,12 +295,15 @@ T&C CURRENT STATE:`);
   }
   if (tcData) {
     lines.push(`
-T&C OPPORTUNITY DATA:`);
+T&C OPPORTUNITY DATA (IMPORTANT \u2014 use this to inform your recommendations):`);
     lines.push(`Total Pipeline: $${(tcData.totalPipeline || 0).toLocaleString()}`);
     lines.push(`Open T&C Opportunities: ${tcData.openOpportunities || 0}`);
     lines.push(`Closed Won Revenue: $${(tcData.closedWonRevenue || 0).toLocaleString()}`);
     lines.push(`Products: ${(tcData.products || []).join(", ") || "None"}`);
     lines.push(`Total Students: ${tcData.totalStudents || 0}`);
+    if (tcData.openOpportunities > 0) {
+      lines.push(`NOTE: This customer has ACTIVE T&C opportunities. Reference these in your recommendations \u2014 build on existing engagement.`);
+    }
   }
   if (accountData.ebc_data) {
     lines.push(`

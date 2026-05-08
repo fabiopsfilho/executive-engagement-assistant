@@ -146,12 +146,15 @@ function buildAccountContext(accountData: any, tcData: any): string {
 
   // T&C Opportunity Data (from T&C pipeline system)
   if (tcData) {
-    lines.push(`\nT&C OPPORTUNITY DATA:`);
+    lines.push(`\nT&C OPPORTUNITY DATA (IMPORTANT — use this to inform your recommendations):`);
     lines.push(`Total Pipeline: $${(tcData.totalPipeline || 0).toLocaleString()}`);
     lines.push(`Open T&C Opportunities: ${tcData.openOpportunities || 0}`);
     lines.push(`Closed Won Revenue: $${(tcData.closedWonRevenue || 0).toLocaleString()}`);
     lines.push(`Products: ${(tcData.products || []).join(', ') || 'None'}`);
     lines.push(`Total Students: ${tcData.totalStudents || 0}`);
+    if (tcData.openOpportunities > 0) {
+      lines.push(`NOTE: This customer has ACTIVE T&C opportunities. Reference these in your recommendations — build on existing engagement.`);
+    }
   }
 
   // EBC Data
