@@ -102,18 +102,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const { accountData, tcData } = body;
     if (!accountData) return error(400, 'accountData is required');
 
-    // Check cache (1-hour TTL — include attendee count so uploading new attendees busts cache)
-    const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `buzz:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}:${accountData.accountPlanText ? 'plan' : 'noplan'}`;
-    try {
-      const cached = await ddb.send(new GetCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
-        Key: { cacheKey },
-      }));
-      if (cached.Item && cached.Item.ttl > Math.floor(Date.now() / 1000)) {
-        return success(cached.Item.data);
-      }
-    } catch { /* cache miss */ }
+
 
     // Fetch real-time intelligence from Google + AWS docs + Knowledge Base in parallel
     const industry = accountData.industry || 'Technology';
@@ -138,7 +127,6 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const pi = accountData.public_intelligence || {};
     const context = `
 COMPANY: ${accountData.customer_name} (${industry}, ${accountData.segment}, ${accountData.geo})
-AWS SPEND: ${(accountData.aws_spend?.current_year && accountData.aws_spend.current_year > 0) ? '$' + accountData.aws_spend.current_year.toLocaleString() : 'Data not available (do NOT assume zero)'}
 STRATEGIC PRIORITY: ${accountData.sfdc_data?.account_plan_priority || 'Unknown'}
 SMGS PHASE: ${accountData.sfdc_data?.smgs_phase || 'Unknown'}
 T2K: ${accountData.sfdc_data?.t2k ? 'Yes' : 'No'}
@@ -210,19 +198,6 @@ Return JSON:
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );
-
-    // Cache for 1 hour
-    try {
-      await ddb.send(new PutCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
-        Item: {
-          cacheKey,
-          data: result,
-          ttl: Math.floor(Date.now() / 1000) + 3600,
-          createdAt: new Date().toISOString(),
-        },
-      }));
-    } catch { /* continue */ }
 
     return success(result);
   } catch (err) {

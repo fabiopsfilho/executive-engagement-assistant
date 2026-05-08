@@ -238,18 +238,6 @@ async function handler(event) {
     if (!accountData) {
       return error(400, "accountData is required");
     }
-    const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, "-")}:${attendeeCount}:${accountData.accountPlanText ? "plan" : "noplan"}`;
-    try {
-      const cached = await ddb.send(new import_lib_dynamodb.GetCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE,
-        Key: { cacheKey }
-      }));
-      if (cached.Item && cached.Item.ttl > Math.floor(Date.now() / 1e3)) {
-        return success(cached.Item.data);
-      }
-    } catch {
-    }
     const context = buildAccountContext(accountData, tcData);
     const persona = accountData.ebc_data?.attendees?.[0]?.persona || "CTO";
     const industry = accountData.industry || "Technology";
@@ -279,19 +267,6 @@ Return JSON with exactly these fields:
       [{ role: "user", content: userMessage }],
       { maxTokens: 1024, temperature: 0.7 }
     );
-    try {
-      await ddb.send(new import_lib_dynamodb.PutCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE,
-        Item: {
-          cacheKey,
-          data: result,
-          ttl: Math.floor(Date.now() / 1e3) + 3600,
-          createdAt: (/* @__PURE__ */ new Date()).toISOString()
-        }
-      }));
-    } catch (cacheErr) {
-      console.warn("Failed to cache insights:", cacheErr);
-    }
     return success(result);
   } catch (err) {
     console.error("Error generating account insights:", err);
@@ -302,13 +277,6 @@ function buildAccountContext(accountData, tcData) {
   const lines = [];
   lines.push(`Company: ${accountData.customer_name}`);
   lines.push(`Industry: ${accountData.industry} | Segment: ${accountData.segment} | Geo: ${accountData.geo}`);
-  const spend = accountData.aws_spend?.current_year;
-  if (spend && spend > 0) {
-    lines.push(`AWS Spend: $${spend.toLocaleString()} (prior year: $${(accountData.aws_spend?.prior_year || 0).toLocaleString()})`);
-  } else {
-    lines.push(`AWS Spend: Data not available (do NOT assume zero \u2014 spend data is simply not in the source system)`);
-  }
-  lines.push(`PPA: ${accountData.aws_spend?.ppa || "None"}`);
   if (accountData.sfdc_data) {
     lines.push(`
 SALESFORCE:`);

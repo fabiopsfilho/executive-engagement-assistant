@@ -77,20 +77,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return error(400, 'accountData is required');
     }
 
-    // Check cache (1-hour TTL for insights — include attendee count in key so uploading new attendees busts cache)
-    const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
-    const cacheKey = `insights:${accountData.customer_name?.toLowerCase().replace(/\s+/g, '-')}:${attendeeCount}:${accountData.accountPlanText ? 'plan' : 'noplan'}`;
-    try {
-      const cached = await ddb.send(new GetCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
-        Key: { cacheKey },
-      }));
-      if (cached.Item && cached.Item.ttl > Math.floor(Date.now() / 1000)) {
-        return success(cached.Item.data);
-      }
-    } catch {
-      // Cache miss — continue
-    }
+
 
     // Build rich context from account data
     const context = buildAccountContext(accountData, tcData);
@@ -125,20 +112,7 @@ Return JSON with exactly these fields:
       { maxTokens: 1024, temperature: 0.7 }
     );
 
-    // Cache for 1 hour
-    try {
-      await ddb.send(new PutCommand({
-        TableName: process.env.INTELLIGENCE_CACHE_TABLE!,
-        Item: {
-          cacheKey,
-          data: result,
-          ttl: Math.floor(Date.now() / 1000) + 3600,
-          createdAt: new Date().toISOString(),
-        },
-      }));
-    } catch (cacheErr) {
-      console.warn('Failed to cache insights:', cacheErr);
-    }
+
 
     return success(result);
   } catch (err) {
@@ -152,14 +126,6 @@ function buildAccountContext(accountData: any, tcData: any): string {
 
   lines.push(`Company: ${accountData.customer_name}`);
   lines.push(`Industry: ${accountData.industry} | Segment: ${accountData.segment} | Geo: ${accountData.geo}`);
-  const spend = accountData.aws_spend?.current_year;
-  if (spend && spend > 0) {
-    lines.push(`AWS Spend: $${spend.toLocaleString()} (prior year: $${(accountData.aws_spend?.prior_year || 0).toLocaleString()})`);
-  } else {
-    lines.push(`AWS Spend: Data not available (do NOT assume zero — spend data is simply not in the source system)`);
-  }
-  lines.push(`PPA: ${accountData.aws_spend?.ppa || 'None'}`);
-
   // Salesforce data
   if (accountData.sfdc_data) {
     lines.push(`\nSALESFORCE:`);
