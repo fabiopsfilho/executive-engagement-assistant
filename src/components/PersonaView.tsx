@@ -276,6 +276,36 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
             </div>
           </div>
         )}
+        {/* Simulation disclaimer + LinkedIn paste option */}
+        <div className="px-4 pt-3 pb-1">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 mb-2">
+            <p className="text-[10px] text-amber-400">⚠️ This is a <strong>simulated interaction</strong> based on available data about this persona's role, industry, and company context. This is not the real person.</p>
+          </div>
+          {!personaIntel?.linkedin_summary || personaIntel.linkedin_summary === 'No LinkedIn data found' || personaIntel.linkedin_summary.includes('content not available') ? (
+            <div className="bg-dark-800 border border-dark-600 rounded-lg p-2.5 mb-2">
+              <p className="text-[10px] text-muted mb-1.5">💡 Paste LinkedIn profile info to improve simulation accuracy:</p>
+              <textarea
+                placeholder="Paste the person's LinkedIn About section, recent posts, or any profile info here..."
+                className="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400/50 resize-none"
+                rows={3}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && e.metaKey) {
+                    const text = (e.target as HTMLTextAreaElement).value.trim();
+                    if (text.length > 20) {
+                      // Store as persona intel context and re-trigger
+                      setPersonaIntel(prev => prev ? { ...prev, linkedin_summary: text.slice(0, 2000), recent_activity: [text.slice(0, 200)] } : { name: persona.name, title: persona.title, company: account.customer_name, linkedin_summary: text.slice(0, 2000), recent_activity: [text.slice(0, 200)], interests: [], engagement_angle: '', is_aws_champion: false });
+                      if (onPersonaIntelUpdate) {
+                        onPersonaIntelUpdate({ name: persona.name, title: persona.title, company: account.customer_name, linkedin_summary: text.slice(0, 2000), recent_activity: [text.slice(0, 200)], interests: [], engagement_angle: '', is_aws_champion: false });
+                      }
+                      (e.target as HTMLTextAreaElement).value = '';
+                    }
+                  }
+                }}
+              />
+              <p className="text-[9px] text-muted mt-1">Press ⌘+Enter to submit</p>
+            </div>
+          ) : null}
+        </div>
         <div className="px-4 py-3">
           <div ref={chatRef} className="space-y-3 max-h-[55vh] overflow-y-auto mb-3">
             {chatMessages.map((msg, i) => (
