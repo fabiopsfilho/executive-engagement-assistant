@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
+import { tavilySearch, tavilyLinkedInSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -16,40 +17,16 @@ export interface PersonaIntelResponse {
   interests: string[];
   engagement_angle: string;
   is_aws_champion: boolean;
-}
-
-/**
- * Google search for real-time intelligence about a person
- */
-async function googleSearch(query: string): Promise<string> {
-  try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!response.ok) return '';
-    const html = await response.text();
-    const snippets: string[] = [];
-    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
-    for (const match of matches.slice(0, 8)) {
-      const text = match.replace(/<[^>]+>/g, '').trim();
-      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
-        snippets.push(text);
-      }
-    }
-    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
-    for (const match of textMatches.slice(0, 6)) {
-      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
-      if (text.length > 20) snippets.push(text);
-    }
-    return snippets.slice(0, 8).join('\n');
-  } catch {
-    return '';
-  }
+  communication_style: {
+    disc_type: string;
+    disc_label: string;
+    confidence: number;
+    confidence_level: 'High' | 'Medium' | 'Low';
+    data_sources: string[];
+    do_list: string[];
+    avoid_list: string[];
+    suggested_opening: string;
+  };
 }
 
 const SYSTEM_PROMPT = `You are a globally renowned expert in skills transformation for the age of Generative AI. You work for AWS Training & Certification and have deep expertise in:
@@ -92,17 +69,17 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
     } catch { /* cache miss */ }
 
-    // Run multiple Google searches in parallel — use LinkedIn URL if provided
+    // Run multiple Tavily searches in parallel — use LinkedIn URL if provided
     const searches = [
       linkedinUrl
-        ? googleSearch(`site:linkedin.com "${personaName}" ${linkedinUrl.split('/in/')[1]?.replace('/', '') || ''}`).catch(() => '')
-        : googleSearch(`"${personaName}" "${company}" site:linkedin.com`).catch(() => ''),
-      googleSearch(`"${personaName}" "${company}" cloud OR AI OR training OR transformation`).catch(() => ''),
-      googleSearch(`"${personaName}" "${company}" ${industry}`).catch(() => ''),
+        ? tavilyLinkedInSearch(`"${personaName}" ${linkedinUrl.split('/in/')[1]?.replace('/', '') || ''}`)
+        : tavilyLinkedInSearch(`"${personaName}" "${company}"`),
+      tavilySearch(`"${personaName}" "${company}" cloud OR AI OR training OR transformation`),
+      tavilySearch(`"${personaName}" "${company}" ${industry}`),
     ];
     // If LinkedIn URL provided, also search for their posts specifically
     if (linkedinUrl) {
-      searches.push(googleSearch(`"${personaName}" site:linkedin.com posts OR articles`).catch(() => ''));
+      searches.push(tavilyLinkedInSearch(`"${personaName}" posts articles`));
     }
     const [linkedinResults, cloudAIResults, companyResults, postsResults] = await Promise.all(searches);
 
@@ -113,16 +90,35 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       postsResults ? `LINKEDIN POSTS & ARTICLES:\n${postsResults}` : '',
     ].filter(Boolean).join('\n\n');
 
-    const userMessage = `Build a persona intelligence profile for this executive:
+    const userMessage = `Build a persona intelligence profile for this executive, including a DISC communication style assessment:
 
 NAME: ${personaName}
 TITLE: ${personaTitle || 'Unknown'}
 COMPANY: ${company}
 INDUSTRY: ${industry || 'Technology'}
 ${linkedinUrl ? `LINKEDIN URL: ${linkedinUrl}` : ''}
+${body.buzzContext ? `\nACCOUNT INTELLIGENCE (from Buzz/Now analysis):\n${body.buzzContext}` : ''}
 
 SEARCH RESULTS:
 ${searchContext || 'No search results found for this person.'}
+
+DISC CLASSIFICATION RULES:
+Analyze the search results for communication signals and classify into one of these types (or blends):
+- D (Dominance) — Direct & Results-Oriented: Short posts, decisive language, focus on outcomes, competitive tone
+- I (Influence) — Energetic & People-Oriented: Frequent posting, storytelling, enthusiasm, large networks, collaborative language
+- S (Steadiness) — Calm & Relationship-Oriented: Consistent but infrequent posting, team-focused language, long tenure, supportive tone
+- C (Conscientiousness) — Analytical & Detail-Oriented: Technical content, data-heavy posts, methodical career, precision language, risk-aware tone
+
+Confidence scoring:
+- High (70%+): Rich LinkedIn profile + writing samples + social activity found
+- Medium (40-70%): LinkedIn profile with job history but limited content found
+- Low (<40%): Sparse profile, minimal public footprint found
+
+T&C TAILORING for DO/AVOID/OPENING:
+- D-type: Lead with ROI metrics, certification velocity, workforce readiness KPIs
+- I-type: Lead with success stories, peer company examples, the vision of a transformed workforce
+- S-type: Lead with the support structure, phased rollout plan, low disruption to current teams
+- C-type: Lead with the methodology, assessment framework, data on skill gap measurement
 
 Return JSON:
 {
@@ -133,15 +129,25 @@ Return JSON:
   "recent_activity": ["Recent posts, talks, or activity found — empty array if none found"],
   "interests": ["Topics they care about based on search results and their role"],
   "engagement_angle": "How to approach this person for a T&C/skills transformation conversation — be specific and actionable",
-  "is_aws_champion": false
+  "is_aws_champion": false,
+  "communication_style": {
+    "disc_type": "D or I or S or C or blend like DC",
+    "disc_label": "Direct & Results-Oriented",
+    "confidence": 65,
+    "confidence_level": "Medium",
+    "data_sources": ["LinkedIn profile", "2 articles", "1 conference talk"],
+    "do_list": ["4 specific DO recommendations tailored to T&C conversation with this DISC type"],
+    "avoid_list": ["3 specific AVOID recommendations tailored to this DISC type"],
+    "suggested_opening": "A specific opening statement for a T&C skills transformation conversation with this person, referencing their company's actual situation"
+  }
 }
 
-IMPORTANT: Only include information that was ACTUALLY found in the search results. Do not fabricate LinkedIn profiles or activity. If no data was found, say so honestly and base recommendations on their role/title.`;
+IMPORTANT: Only include information that was ACTUALLY found in the search results. Do not fabricate LinkedIn profiles or activity. If no data was found, say so honestly, set confidence to Low, base DISC on their role/title/industry patterns, and add disclaimer.`;
 
     const result = await invokeClaudeJSON<PersonaIntelResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 1024, temperature: 0.5 }
+      { maxTokens: 2048, temperature: 0.5 }
     );
 
     // Cache for 24 hours

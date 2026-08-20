@@ -470,13 +470,13 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
                         </div>
                         <span className="text-sm text-emerald-400 font-semibold">{a.public_intelligence.linkedin_job_postings.yoy_change} YoY</span>
                       </div>
-                      <p className="text-sm text-slate-300">{buzzNow?.buzz_hiring_analysis || 'Signals demand for cloud skills — they can\'t hire fast enough.'}</p>
+                      <p className="text-sm text-slate-300">{typeof buzzNow?.buzz_hiring_analysis === 'string' ? buzzNow.buzz_hiring_analysis : (buzzNow?.buzz_hiring_analysis?.why_this_matters || 'Signals demand for cloud skills — they can\'t hire fast enough.')}</p>
                     </div>
                   </div>
                   {/* AI Sentiment Analysis */}
                   <div className="pt-3 border-t border-navy-600">
                     <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Employee Sentiment & Culture</span>
-                    <p className="text-sm text-slate-300 mt-2">{buzzNow?.buzz_sentiment_analysis || (a.public_intelligence.glassdoor_signals[0] ? `"${a.public_intelligence.glassdoor_signals[0]}"` : 'No sentiment data available')}</p>
+                    <p className="text-sm text-slate-300 mt-2">{typeof buzzNow?.buzz_sentiment_analysis === 'string' ? buzzNow.buzz_sentiment_analysis : (buzzNow?.buzz_sentiment_analysis?.why_this_matters || (a.public_intelligence.glassdoor_signals[0] ? `"${a.public_intelligence.glassdoor_signals[0]}"` : 'No sentiment data available'))}</p>
                   </div>
                 </div>
               )}

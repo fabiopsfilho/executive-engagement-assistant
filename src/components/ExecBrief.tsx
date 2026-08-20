@@ -96,7 +96,7 @@ function SayThisSection({ bestStarter, allStarters, followUps }: { account: Acco
   );
 }
 
-export function ExecBrief({ account, onEngagePersona, tcData }: { account: Account; onEngagePersona: () => void; tcData?: TCAccountSummary | null }) {
+export function ExecBrief({ account, onEngagePersona, tcData, onInsightsReady }: { account: Account; onEngagePersona: () => void; tcData?: TCAccountSummary | null; onInsightsReady?: (insights: AccountInsightsResponse | null, nextSteps: NextStepsResponse | null) => void }) {
   const a = account;
   const [showAgenda, setShowAgenda] = useState<'ebc' | 'training' | null>(null);
   const [heroTab, setHeroTab] = useState<'approach' | 'next-steps' | 'key-asks'>('approach');
@@ -129,6 +129,13 @@ export function ExecBrief({ account, onEngagePersona, tcData }: { account: Accou
       .catch(err => console.warn('Failed to generate next steps:', err))
       .finally(() => setNextStepsLoading(false));
   }, [a.customer_name, a.ebc_data.attendees.length]);
+
+  // Notify parent when insights are ready
+  useEffect(() => {
+    if (onInsightsReady && (insights || aiNextSteps)) {
+      onInsightsReady(insights, aiNextSteps);
+    }
+  }, [insights, aiNextSteps]);
 
   // Handle agenda generation via Bedrock
   const handleGenerateAgenda = async (format: 'ebc' | 'training') => {

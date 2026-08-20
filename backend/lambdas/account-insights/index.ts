@@ -50,10 +50,11 @@ ADDITIONAL GUARDRAILS:
 
 Your responses must be:
 - Based ONLY on confirmed data provided (reference real data points, names, numbers)
-- Actionable for the T&C Skills Enablement team (what skills transformation conversations to drive)
-- Grounded in the T&C framework (Skill Builder, Certification, Private Training, Skills Guild, Cloud Institute, re/Start, Jam)
+- Consultative and strategic — lead with the business problem and workforce transformation methodology
+- NOT product-driven — never lead with product names or AWS service names
 - Written in a direct, conversational tone (2-3 sentences max per answer)
 - Honest about data limitations — if limited data, say so briefly
+- Focused on the APPROACH (how to develop people differently) not the TOOL (which product to sell)
 
 T&C Engagement Patterns to consider:
 - Talent War: losing talent to competitors, high open roles
@@ -92,7 +93,15 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     ]);
     const allContext = [kbContext, mcpContext].filter(Boolean).join('\n\n');
 
-    const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC — reference actual names, numbers, and signals from the data. Use the T&C Knowledge Base context to recommend specific plays, proof points, and approaches that are documented in our strategy materials.
+    const userMessage = `Generate four strategic insights for this account. Be HIGHLY SPECIFIC — reference actual names, numbers, and signals from the data.
+
+IMPORTANT: Your approach must be CONSULTATIVE and STRATEGIC, not product-driven. You are a workforce transformation advisor, not a product seller.
+
+- For "where_to_start": Describe a strategic APPROACH to cloud skills transformation and GenAI readiness — what kind of learning engagement program would serve this customer best? Think methodology first (assessment → strategy → execution → measurement). Only at the very end, you may briefly mention that AWS can enable this through programs like Skills Guild, but lead with the strategic approach, not the product.
+- NEVER lead with product names (Skill Builder, Glue, Step Functions, etc.)
+- NEVER reference specific AWS technical services as part of the approach
+- DO lead with the business problem, the workforce gap, and the transformation methodology
+- Think: "What would a world-class workforce strategist recommend?" not "What AWS product should we sell?"
 
 ACCOUNT DATA:
 ${context}
@@ -100,10 +109,10 @@ ${allContext ? `\nAWS T&C KNOWLEDGE & DOCUMENTATION:\n${allContext}` : ''}
 
 Return JSON with exactly these fields:
 {
-  "who_to_focus": "Which specific executive(s) to prioritize and WHY based on their signals",
-  "what_conversations": "What specific conversation angles to drive based on their signals and pain points",
-  "where_to_start": "The specific first move — what T&C play to lead with and why it fits THIS account",
-  "whats_happening": "What's happening in their world that creates urgency for T&C NOW"
+  "who_to_focus": "Which specific executive(s) to prioritize and WHY based on their signals — what do they care about?",
+  "what_conversations": "What strategic conversation angles to drive — frame around their business challenges, not our products",
+  "where_to_start": "A comprehensive strategic approach to cloud skills transformation and GenAI readiness for this company. Describe the methodology and engagement model. At the end you may note that AWS can support this through programs like Skills Guild, but lead with strategy.",
+  "whats_happening": "What's happening in their world (industry, hiring, sentiment) that creates urgency for workforce transformation NOW"
 }`;
 
     const result = await invokeClaudeJSON<AccountInsightsResponse>(
@@ -188,9 +197,9 @@ function buildAccountContext(accountData: any, tcData: any): string {
     if (pi.news_signals?.length) lines.push(`News: ${pi.news_signals.join('; ')}`);
   }
 
-  // Account Plan (if uploaded by user)
+  // Account Plan / Captured Page Content (if uploaded or captured by user)
   if (accountData.accountPlanText) {
-    lines.push(`\nACCOUNT PLAN DOCUMENT (uploaded by user — this is the customer's strategic plan, analyze it for T&C opportunities):`);
+    lines.push(`\nCAPTURED ACCOUNT DATA (from Salesforce page or uploaded document — IMPORTANT: analyze this for training status, Polaris level, T&C engagement history, opportunity pipeline, and any skills/workforce development information. Use this data to inform ALL your recommendations):`);
     lines.push(accountData.accountPlanText.slice(0, 8000));
   }
 

@@ -8,7 +8,7 @@ import { SummaryView } from './components/SummaryView';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
-import { isBackendAvailable, getIntelligence, getTCData, generateBuzzNow, type TCAccountSummary, type BuzzNowResponse } from './services/api';
+import { isBackendAvailable, getIntelligence, getTCData, generateBuzzNow, type TCAccountSummary, type BuzzNowResponse, type AccountInsightsResponse, type NextStepsResponse } from './services/api';
 import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
 
 type MainTab = 'brief' | 'summary' | 'demo';
@@ -29,6 +29,8 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [, setAccountPlanText] = useState<string>('');
   const [accountPlanName, setAccountPlanName] = useState<string>('');
+  const [cachedInsights, setCachedInsights] = useState<AccountInsightsResponse | null>(null);
+  const [cachedNextSteps, setCachedNextSteps] = useState<NextStepsResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const accountPlanInputRef = useRef<HTMLInputElement>(null);
 
@@ -249,7 +251,7 @@ export default function App() {
             <p className="text-[11px] text-muted">{persona.title}</p>
           </div>
         </header>
-        <PersonaView account={account} persona={persona} onPersonaIntelUpdate={(intel) => {
+        <PersonaView account={account} persona={persona} buzzContext={buzzNow ? `Hiring: ${typeof buzzNow.buzz_hiring_analysis === 'object' ? buzzNow.buzz_hiring_analysis.why_this_matters : buzzNow.buzz_hiring_analysis || ''}. Sentiment: ${typeof buzzNow.buzz_sentiment_analysis === 'object' ? buzzNow.buzz_sentiment_analysis.why_this_matters : buzzNow.buzz_sentiment_analysis || ''}. Focus: ${buzzNow.now_focus || ''}. Opening: ${buzzNow.now_opening_move || ''}` : undefined} onPersonaIntelUpdate={(intel) => {
           // Update account's executive_social with real persona data so all AI calls include it
           if (intel && intel.linkedin_summary && intel.linkedin_summary !== 'No LinkedIn data found') {
             setAccount(prev => {
@@ -360,12 +362,12 @@ export default function App() {
           )}
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
-            <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'now' ? 'text-blue-400' : 'text-muted'}`}>
               <Zap className="w-4 h-4" />
               <span className="text-[9px] font-medium">Now</span>
             </button>
-            <button onClick={() => { setInsightPopup(insightPopup === 'buzz' ? null : 'buzz'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => { setInsightPopup(insightPopup === 'buzz' ? null : 'buzz'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'buzz' ? 'text-orange-400' : 'text-muted'}`}>
               <Megaphone className="w-4 h-4" />
               <span className="text-[9px] font-medium">Buzz</span>
@@ -493,7 +495,31 @@ export default function App() {
                         <div className="pt-3 border-t border-dark-600">
                           <span className="text-xs font-semibold text-muted uppercase">Hiring & Skills Gap</span>
                           <div className="flex items-center gap-3 mt-1"><span className="text-xl font-bold text-white">{account.public_intelligence.linkedin_job_postings.cloud_ai_roles}</span><span className="text-xs text-muted">cloud/AI roles</span><span className="text-xs text-green-400">{account.public_intelligence.linkedin_job_postings.yoy_change} YoY</span></div>
-                          {buzzNow.buzz_hiring_analysis && <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_hiring_analysis}</p>}
+                          {buzzNow.buzz_hiring_analysis && (
+                            typeof buzzNow.buzz_hiring_analysis === 'object' && buzzNow.buzz_hiring_analysis.roles ? (
+                              <div className="mt-3">
+                                {buzzNow.buzz_hiring_analysis.roles.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    {buzzNow.buzz_hiring_analysis.roles.map((role, i) => (
+                                      <div key={i} className="flex items-start gap-2 pl-1">
+                                        <span className="text-blue-400 mt-0.5 shrink-0">•</span>
+                                        {role.url ? (
+                                          <a href={role.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline hover:text-blue-300">{role.title}</a>
+                                        ) : (
+                                          <span className="text-xs text-slate-200">{role.title}</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {buzzNow.buzz_hiring_analysis.why_this_matters && (
+                                  <p className="text-xs text-slate-400 mt-4 pt-3 border-t border-dark-700 leading-relaxed">{buzzNow.buzz_hiring_analysis.why_this_matters}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-300 mt-2">{String(buzzNow.buzz_hiring_analysis)}</p>
+                            )
+                          )}
                         </div>
                       )}
                       {/* AI Sentiment — only show if there's data */}
@@ -501,10 +527,34 @@ export default function App() {
                         <div className="pt-3 border-t border-dark-600">
                           <span className="text-xs font-semibold text-muted uppercase">Employee Sentiment</span>
                           {buzzNow.buzz_sentiment_analysis ? (
-                            <p className="text-xs text-slate-300 mt-1.5">{buzzNow.buzz_sentiment_analysis}</p>
+                            typeof buzzNow.buzz_sentiment_analysis === 'object' && buzzNow.buzz_sentiment_analysis.signals ? (
+                              <div className="mt-3">
+                                {buzzNow.buzz_sentiment_analysis.signals.length > 0 && (
+                                  <div className="space-y-2">
+                                    {buzzNow.buzz_sentiment_analysis.signals.map((signal, i) => (
+                                      <p key={i} className="text-xs text-slate-200 pl-3 border-l-2 border-orange-500/30">"{signal}"</p>
+                                    ))}
+                                  </div>
+                                )}
+                                {buzzNow.buzz_sentiment_analysis.why_this_matters && (
+                                  <p className="text-xs text-slate-400 mt-4 pt-3 border-t border-dark-700 leading-relaxed">{buzzNow.buzz_sentiment_analysis.why_this_matters}</p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-300 mt-2">{String(buzzNow.buzz_sentiment_analysis)}</p>
+                            )
                           ) : (
                             account.public_intelligence.glassdoor_signals.map((s, i) => (<p key={i} className="text-xs text-slate-300 pl-2.5 border-l-2 border-dark-600 mt-1.5">"{s}"</p>))
                           )}
+                        </div>
+                      )}
+                      {/* T&C Opportunity — separate section */}
+                      {buzzNow.buzz_tc_opportunity && (
+                        <div className="pt-3 border-t border-dark-600">
+                          <span className="text-xs font-semibold text-muted uppercase">Training Opportunity</span>
+                          <div className="mt-2 bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
+                            <p className="text-xs text-slate-200 leading-relaxed">{buzzNow.buzz_tc_opportunity}</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -526,7 +576,7 @@ export default function App() {
             </div>
           ) : (
             <>
-              {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} />}
+              {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} onInsightsReady={(ins, ns) => { setCachedInsights(ins); setCachedNextSteps(ns); }} />}
               {tab === 'summary' && <SummaryView account={account} />}
               {tab === 'demo' && (
                 <div className="space-y-3 py-2">

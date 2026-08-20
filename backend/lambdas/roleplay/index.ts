@@ -3,41 +3,13 @@ import { invokeClaudeText, BedrockMessage } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { tavilySearch } from '../shared/tavily';
 
 /**
- * Search Google for a person's public posts and statements
+ * Search for a person's public posts and statements using Tavily
  */
 async function searchPersona(name: string, company: string): Promise<string> {
-  try {
-    const query = `"${name}" "${company}" site:linkedin.com OR interview OR keynote OR conference`;
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!response.ok) return '';
-    const html = await response.text();
-
-    const snippets: string[] = [];
-    const matches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
-    for (const match of matches.slice(0, 6)) {
-      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
-      if (text.length > 20) snippets.push(text);
-    }
-    const divMatches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
-    for (const match of divMatches.slice(0, 6)) {
-      const text = match.replace(/<[^>]+>/g, '').trim();
-      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in')) {
-        snippets.push(text);
-      }
-    }
-    return snippets.slice(0, 6).join('\n');
-  } catch {
-    return '';
-  }
+  return tavilySearch(`"${name}" "${company}" interview keynote conference LinkedIn`);
 }
 
 interface RolePlayRequest {
@@ -62,6 +34,8 @@ interface RolePlayRequest {
     earnings_signals: string[];
     tc_state: string;
     industry_context: string;
+    disc_style?: string;
+    buzz_context?: string;
   };
 }
 
@@ -84,6 +58,8 @@ ABOUT YOUR COMPANY:
 - Current Training State: ${account.tc_state}
 - Industry Context: ${account.industry_context}
 ${account.executive_social_theme ? `- Your Recent LinkedIn Post: "${account.executive_social_theme}"` : ''}
+${account.disc_style ? `\nCOMMUNICATION STYLE (use this to shape HOW you respond — your language patterns, pace, and focus):\n${account.disc_style}` : ''}
+${account.buzz_context ? `\nACCOUNT INTELLIGENCE (what the AWS team already knows — react realistically if they reference these):\n${account.buzz_context}` : ''}
 
 YOUR PERSONALITY AND PRIORITIES:`;
 

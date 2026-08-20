@@ -218,6 +218,8 @@ export async function sendRolePlayMessage(
     earnings_signals: string[];
     tc_state: string;
     industry_context: string;
+    disc_style?: string;
+    buzz_context?: string;
   }
 ): Promise<RolePlayResponse> {
   return post<RolePlayResponse>('/accounts/default/roleplay', {
@@ -346,8 +348,15 @@ export async function generateAccountInsights(
 export interface BuzzNowResponse {
   buzz_summary: string;
   buzz_executive_insights: string[];
-  buzz_hiring_analysis: string;
-  buzz_sentiment_analysis: string;
+  buzz_hiring_analysis: {
+    roles: { title: string; url: string }[];
+    why_this_matters: string;
+  } | string;
+  buzz_sentiment_analysis: {
+    signals: string[];
+    why_this_matters: string;
+  } | string;
+  buzz_tc_opportunity: string;
   now_focus: string;
   now_initiatives: string[];
   now_key_asks: string[];
@@ -356,11 +365,17 @@ export interface BuzzNowResponse {
 
 export async function generateBuzzNow(
   accountData: unknown,
-  tcData?: TCAccountSummary | null
+  tcData?: TCAccountSummary | null,
+  existingInsights?: {
+    approach?: { who_to_focus?: string; what_conversations?: string; where_to_start?: string; whats_happening?: string };
+    next_steps?: string[];
+    key_asks?: string[];
+  }
 ): Promise<BuzzNowResponse> {
   return post<BuzzNowResponse>('/accounts/default/buzz', {
     accountData,
     tcData,
+    existingInsights,
   });
 }
 
@@ -393,6 +408,16 @@ export interface PersonaIntelResponse {
   interests: string[];
   engagement_angle: string;
   is_aws_champion: boolean;
+  communication_style?: {
+    disc_type: string;
+    disc_label: string;
+    confidence: number;
+    confidence_level: 'High' | 'Medium' | 'Low';
+    data_sources: string[];
+    do_list: string[];
+    avoid_list: string[];
+    suggested_opening: string;
+  };
 }
 
 export async function getPersonaIntel(
@@ -400,7 +425,8 @@ export async function getPersonaIntel(
   personaTitle: string,
   company: string,
   industry: string,
-  linkedinUrl?: string
+  linkedinUrl?: string,
+  buzzContext?: string
 ): Promise<PersonaIntelResponse> {
   return post<PersonaIntelResponse>('/accounts/default/persona-intel', {
     personaName,
@@ -408,5 +434,6 @@ export async function getPersonaIntel(
     company,
     industry,
     linkedinUrl,
+    buzzContext,
   });
 }

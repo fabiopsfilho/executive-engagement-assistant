@@ -5,43 +5,10 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
-
-/**
- * Google search for real-time intelligence
- */
-async function googleSearch(query: string): Promise<string> {
-  try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!response.ok) return '';
-    const html = await response.text();
-    const snippets: string[] = [];
-    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
-    for (const match of matches.slice(0, 8)) {
-      const text = match.replace(/<[^>]+>/g, '').trim();
-      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
-        snippets.push(text);
-      }
-    }
-    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
-    for (const match of textMatches.slice(0, 6)) {
-      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
-      if (text.length > 20) snippets.push(text);
-    }
-    return snippets.slice(0, 8).join('\n');
-  } catch {
-    return '';
-  }
-}
 
 export interface NextStepsResponse {
   next_steps: string[];
@@ -96,16 +63,16 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 
 
-    // Fetch real-time intelligence from Google + AWS docs + Knowledge Base in parallel
+    // Fetch real-time intelligence from Tavily + AWS docs + Knowledge Base in parallel
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
     const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, databookResults] = await Promise.all([
       getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''),
       getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''),
-      googleSearch(`${companyName} site:linkedin.com cloud AI engineer jobs`).catch(() => ''),
-      googleSearch(`${companyName} site:glassdoor.com reviews culture training development`).catch(() => ''),
-      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`).catch(() => ''),
-      googleSearch(`${companyName} revenue earnings financial results 2025`).catch(() => ''),
+      tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`),
+      tavilyGlassdoorSearch(`${companyName} reviews culture training development`),
+      tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
+      tavilySearch(`${companyName} revenue earnings financial results 2025`),
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
     const onlineSearch = [
@@ -162,23 +129,29 @@ Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
 
-${accountData.accountPlanText ? `ACCOUNT PLAN DOCUMENT (analyze for T&C opportunities and executive engagement angles):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
+${accountData.accountPlanText ? `CAPTURED ACCOUNT DATA (from Salesforce or uploaded document — analyze for training status, Polaris level, T&C engagement history, opportunity pipeline, skills/workforce development info. Use this to inform ALL recommendations):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}
 ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
-    const userMessage = `Based on all the intelligence gathered for ${companyName}, generate specific next steps and key asks for the T&C engagement.
+    const userMessage = `Based on all the intelligence gathered for ${companyName}, generate specific next steps and key asks for the engagement.
 
-Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.
+IMPORTANT: Be CONSULTATIVE and STRATEGIC — not product-driven.
+- Next steps should focus on understanding their workforce reality, building relationships, and co-creating a skills transformation strategy
+- Key asks should be discovery questions that demonstrate you understand their challenge
+- Do NOT lead with product names — lead with the strategic approach
+- It's OK to mention AWS programs as enablers at the end of a step, but the step itself should be about the strategic action
+
+Use the T&C Knowledge Base content as your primary reference for methodology. The online search results supplement this with real-time data.
 
 ${context}
 
 Return JSON:
 {
   "next_steps": [
-    "5 specific, actionable next steps — each referencing real data (names, numbers, quotes). Example: 'Conduct a Learning Needs Assessment targeting the 45 open cloud/AI roles identified on LinkedIn...' NOT generic like 'Schedule a meeting'"
+    "5 specific, actionable next steps focused on consultative engagement. Example: 'Propose a 2-hour workforce readiness workshop with the L&D team to map their current cloud/AI skills against their transformation roadmap — reference the 5 open ML roles as evidence of the gap.' NOT 'Sell them Skill Builder.'"
   ],
   "key_asks": [
-    "5 specific questions or commitments to secure — each grounded in account data. Example: 'Secure Maria Santos (CHRO) as executive sponsor — she posted about talent development last week' NOT generic like 'Get executive buy-in'"
+    "5 specific questions or commitments to secure — discovery-oriented, not transactional. Example: 'Ask: What percentage of your workforce will need GenAI skills in the next 18 months, and who owns that readiness today?' NOT 'Get them to sign a PO.'"
   ]
 }`;
 

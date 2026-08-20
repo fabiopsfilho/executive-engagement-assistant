@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Get AI-powered T&C engagement insights for any Salesforce account",
   "permissions": ["activeTab", "sidePanel", "storage", "tabs", "scripting"],
+  "host_permissions": ["http://localhost:5173/*", "https://*.amplifyapp.com/*"],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
@@ -22,7 +23,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.lightning.force.com/*", "https://*.salesforce.com/*", "https://*/*"],
+      "matches": ["https://*.lightning.force.com/*", "https://*.salesforce.com/*", "https://*.my.salesforce.com/*"],
       "js": ["content.js"]
     }
   ],

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap, Loader2, Pencil, ExternalLink } from 'lucide-react';
+import { BookOpen, Presentation, CalendarClock, Plus, X, Link2, StickyNote, RefreshCw, Send, MessageCircle, Zap, Loader2, Pencil, ExternalLink, Target } from 'lucide-react';
 import type { Account, Attendee } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { PersonaStory } from './PersonaStory';
@@ -8,6 +8,78 @@ import { AgendaView } from './AgendaView';
 import { isBackendAvailable, sendRolePlayMessage, getPersonaIntel, type PersonaIntelResponse } from '../services/api';
 
 type Tab = 'conversation' | 'story' | 'pitch' | 'agenda';
+
+function CommunicationStyleCard({ style }: { style: NonNullable<PersonaIntelResponse['communication_style']> }) {
+  const [expanded, setExpanded] = useState(false);
+  const discColors: Record<string, string> = {
+    D: 'text-red-400 bg-red-500/15 border-red-500/30',
+    I: 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30',
+    S: 'text-green-400 bg-green-500/15 border-green-500/30',
+    C: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
+  };
+  const primaryType = style.disc_type.charAt(0);
+  const colorClass = discColors[primaryType] || discColors.D;
+
+  return (
+    <div className="bg-dark-800 border border-dark-600 rounded-xl overflow-hidden">
+      <button onClick={() => setExpanded(!expanded)} className="w-full px-3.5 py-3 flex items-center gap-3 active:bg-dark-700">
+        <Target className="w-4 h-4 text-purple-400 shrink-0" />
+        <div className="flex-1 text-left">
+          <span className="text-[10px] font-semibold text-muted uppercase tracking-wider">Communication Style</span>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${colorClass}`}>{style.disc_type}</span>
+            <span className="text-xs text-slate-200">{style.disc_label}</span>
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <span className={`text-[10px] font-medium ${style.confidence_level === 'High' ? 'text-green-400' : style.confidence_level === 'Medium' ? 'text-yellow-400' : 'text-slate-400'}`}>
+            {style.confidence_level} ({style.confidence}%)
+          </span>
+        </div>
+        <span className="text-muted text-xs">{expanded ? '▴' : '▾'}</span>
+      </button>
+
+      {expanded && (
+        <div className="px-3.5 pb-3.5 space-y-3 border-t border-dark-600 pt-3">
+          {style.confidence_level === 'Low' && (
+            <p className="text-[10px] text-amber-400 italic">⚠️ Limited public data — treat as directional only.</p>
+          )}
+
+          {/* DO */}
+          <div>
+            <span className="text-[10px] font-semibold text-green-400 uppercase">DO</span>
+            <div className="space-y-1 mt-1">
+              {style.do_list.map((item, i) => (
+                <p key={i} className="text-xs text-slate-200 pl-2 border-l-2 border-green-500/30">• {item}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* AVOID */}
+          <div>
+            <span className="text-[10px] font-semibold text-red-400 uppercase">AVOID</span>
+            <div className="space-y-1 mt-1">
+              {style.avoid_list.map((item, i) => (
+                <p key={i} className="text-xs text-slate-200 pl-2 border-l-2 border-red-500/30">• {item}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* SUGGESTED OPENING */}
+          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2.5">
+            <span className="text-[10px] font-semibold text-purple-400 uppercase">Suggested Opening</span>
+            <p className="text-xs text-slate-200 mt-1 italic">"{style.suggested_opening}"</p>
+          </div>
+
+          {/* Sources */}
+          {style.data_sources.length > 0 && (
+            <p className="text-[10px] text-muted">Sources: {style.data_sources.join(', ')}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export interface PersonaNote {
   id: string;
@@ -55,7 +127,7 @@ function getRolePlayResponse(q: string, a: Account, persona: Attendee): string {
   return `"From my perspective as ${persona.title}, I'm most concerned about how this impacts my team's ability to deliver. Can you be specific?"\n\n💡 Ask about their team's specific skills gaps and connect to their functional goals.`;
 }
 
-export function PersonaView({ account, persona, onPersonaIntelUpdate }: { account: Account; persona: Attendee; onPersonaIntelUpdate?: (intel: PersonaIntelResponse) => void }) {
+export function PersonaView({ account, persona, onPersonaIntelUpdate, buzzContext }: { account: Account; persona: Attendee; onPersonaIntelUpdate?: (intel: PersonaIntelResponse) => void; buzzContext?: string }) {
   const [tab, setTab] = useState<Tab>('conversation');
   const [notes, setNotes] = useState<PersonaNote[]>([]);
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -91,7 +163,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
   useEffect(() => {
     if (!isBackendAvailable()) return;
     setPersonaIntelLoading(true);
-    getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined)
+    getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, linkedinUrl || undefined, buzzContext)
       .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
       .catch(() => setPersonaIntel(null))
       .finally(() => setPersonaIntelLoading(false));
@@ -134,6 +206,8 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
             ? `${account.tc_current_state.skill_builder_seats} Skill Builder seats at ${account.tc_current_state.activation_rate}% activation`
             : `Greenfield — ${account.tc_current_state.certifications} organic certs, no structured program`,
           industry_context: account.public_intelligence.industry_context,
+          disc_style: personaIntel?.communication_style ? `DISC: ${personaIntel.communication_style.disc_type} (${personaIntel.communication_style.disc_label}). Confidence: ${personaIntel.communication_style.confidence_level}. This person responds best to: ${personaIntel.communication_style.do_list.slice(0, 2).join('; ')}. Avoid: ${personaIntel.communication_style.avoid_list.slice(0, 2).join('; ')}.` : undefined,
+          buzz_context: buzzContext,
         }
       ).then(result => {
         setChatMessages(prev => [...prev, { role: 'persona', text: result.response }]);
@@ -202,7 +276,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
                       // Re-fetch persona intel with updated URL context
                       if (isBackendAvailable()) {
                         setPersonaIntelLoading(true);
-                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined)
+                        getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined, buzzContext)
                           .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                           .catch(() => setPersonaIntel(null))
                           .finally(() => setPersonaIntelLoading(false));
@@ -227,9 +301,27 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
             </div>
           )}
         </div>
-        {/* Chat-only mode for live accounts without pre-built plans */}
+        {/* Analysis / Simulation Tab Bar */}
+        <div className="sticky top-[53px] z-40 bg-dark-900 border-b border-dark-600">
+          <div className="flex">
+            <button onClick={() => setTab('conversation')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative ${tab === 'conversation' ? 'text-purple-400' : 'text-slate-400'}`}>
+              <BookOpen className="w-3.5 h-3.5" />Analysis
+              {tab === 'conversation' && <div className="absolute bottom-0 left-3 right-3 h-0.5 bg-purple-400 rounded-full" />}
+            </button>
+            <button onClick={() => setTab('story')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors relative ${tab === 'story' ? 'text-amber-400' : 'text-slate-400'}`}>
+              <MessageCircle className="w-3.5 h-3.5" />Simulation
+              {tab === 'story' && <div className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-400 rounded-full" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Analysis Tab */}
+        {tab === 'conversation' && (
+          <>
         {/* Persona Intelligence Panel */}
-        {(personaIntelLoading || personaIntel) && (
+        {(personaIntelLoading || (personaIntel && (personaIntel.linkedin_summary || personaIntel.interests?.length > 0 || personaIntel.engagement_angle))) && (
           <div className="px-4 py-3">
             <div className="bg-dark-800 border border-dark-600 rounded-xl p-3.5 space-y-2.5">
               {personaIntelLoading ? (
@@ -276,6 +368,18 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
             </div>
           </div>
         )}
+        {/* Communication Style Card */}
+        {personaIntel?.communication_style && (
+          <div className="px-4 pb-3">
+            <CommunicationStyleCard style={personaIntel.communication_style} />
+          </div>
+        )}
+          </>
+        )}
+
+        {/* Simulation Tab */}
+        {tab === 'story' && (
+          <>
         {/* Simulation disclaimer + LinkedIn paste option */}
         <div className="px-4 pt-3 pb-1">
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 mb-2">
@@ -331,6 +435,8 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
             </button>
           </div>
         </div>
+          </>
+        )}
       </div>
     );
   }
@@ -372,7 +478,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
                     setEditingUrl(false);
                     if (isBackendAvailable()) {
                       setPersonaIntelLoading(true);
-                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined)
+                      getPersonaIntel(persona.name, persona.title, account.customer_name, account.industry, url || linkedinUrl || undefined, buzzContext)
                         .then(intel => { setPersonaIntel(intel); if (intel && onPersonaIntelUpdate) onPersonaIntelUpdate(intel); })
                         .catch(() => setPersonaIntel(null))
                         .finally(() => setPersonaIntelLoading(false));
@@ -399,7 +505,7 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
       </div>
 
       {/* Persona Intelligence Panel */}
-      {(personaIntelLoading || personaIntel) && (
+      {(personaIntelLoading || (personaIntel && (personaIntel.linkedin_summary || personaIntel.interests?.length > 0 || personaIntel.engagement_angle))) && (
         <div className="px-4 pb-3">
           <div className="bg-dark-800 border border-dark-600 rounded-xl p-3.5 space-y-2.5">
             {personaIntelLoading ? (
@@ -444,6 +550,13 @@ export function PersonaView({ account, persona, onPersonaIntelUpdate }: { accoun
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Communication Style Card (plan version) */}
+      {personaIntel?.communication_style && (
+        <div className="px-4 pb-3">
+          <CommunicationStyleCard style={personaIntel.communication_style} />
         </div>
       )}
 

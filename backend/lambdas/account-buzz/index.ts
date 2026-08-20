@@ -5,49 +5,23 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
 
-/**
- * Google search for real-time intelligence
- */
-async function googleSearch(query: string): Promise<string> {
-  try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!response.ok) return '';
-    const html = await response.text();
-    const snippets: string[] = [];
-    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
-    for (const match of matches.slice(0, 8)) {
-      const text = match.replace(/<[^>]+>/g, '').trim();
-      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
-        snippets.push(text);
-      }
-    }
-    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
-    for (const match of textMatches.slice(0, 6)) {
-      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
-      if (text.length > 20) snippets.push(text);
-    }
-    return snippets.slice(0, 8).join('\n');
-  } catch {
-    return '';
-  }
-}
-
 export interface BuzzNowResponse {
   buzz_summary: string;
   buzz_executive_insights: string[];
-  buzz_hiring_analysis: string;
-  buzz_sentiment_analysis: string;
+  buzz_hiring_analysis: {
+    roles: { title: string; url: string }[];
+    why_this_matters: string;
+  };
+  buzz_sentiment_analysis: {
+    signals: string[];
+    why_this_matters: string;
+  };
+  buzz_tc_opportunity: string;
   now_focus: string;
   now_initiatives: string[];
   now_key_asks: string[];
@@ -99,21 +73,22 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     if (!accountId) return error(400, 'accountId is required');
 
     const body = JSON.parse(event.body || '{}');
-    const { accountData, tcData } = body;
+    const { accountData, tcData, existingInsights } = body;
     if (!accountData) return error(400, 'accountData is required');
 
 
 
-    // Fetch real-time intelligence from Google + AWS docs + Knowledge Base in parallel
+    // Fetch real-time intelligence from Tavily + AWS docs + Knowledge Base in parallel
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
-    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults] = await Promise.all([
+    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults, chroSkillsResults] = await Promise.all([
       getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''),
       getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''),
-      googleSearch(`${companyName} site:linkedin.com cloud AI engineer jobs`).catch(() => ''),
-      googleSearch(`${companyName} site:glassdoor.com reviews culture training development`).catch(() => ''),
-      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`).catch(() => ''),
-      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`).catch(() => ''),
+      tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`),
+      tavilyGlassdoorSearch(`${companyName} reviews culture training development`),
+      tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
+      tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`),
+      tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`),
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
     const onlineSearch = [
@@ -121,6 +96,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       glassdoorResults ? `GLASSDOOR SEARCH RESULTS:\n${glassdoorResults}` : '',
       newsResults ? `NEWS & TRANSFORMATION SEARCH:\n${newsResults}` : '',
       executiveResults ? `EXECUTIVE LINKEDIN PROFILES:\n${executiveResults}` : '',
+      chroSkillsResults ? `CHRO / HR / SKILLS TRANSFORMATION PRACTICES:\n${chroSkillsResults}` : '',
     ].filter(Boolean).join('\n\n');
 
     // Build the context
@@ -171,7 +147,14 @@ Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
 Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
 
-${accountData.accountPlanText ? `ACCOUNT PLAN DOCUMENT (analyze for T&C opportunities and executive engagement angles):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
+${accountData.accountPlanText ? `CAPTURED ACCOUNT DATA (from Salesforce or uploaded document — analyze for training status, Polaris level, T&C engagement history, opportunity pipeline, skills/workforce development info. Use this to inform ALL recommendations):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
+${existingInsights ? `EXISTING APPROACH & STRATEGY (already generated — use this as foundation for NOW recommendations):
+Who to focus on: ${existingInsights.approach?.who_to_focus || 'Not yet determined'}
+What conversations to drive: ${existingInsights.approach?.what_conversations || 'Not yet determined'}
+Where to start: ${existingInsights.approach?.where_to_start || 'Not yet determined'}
+What's happening in their world: ${existingInsights.approach?.whats_happening || 'Not yet determined'}
+Next Steps: ${(existingInsights.next_steps || []).join(' | ') || 'None generated'}
+Key Asks: ${(existingInsights.key_asks || []).join(' | ') || 'None generated'}` : ''}
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}
 ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
@@ -181,16 +164,42 @@ Use the T&C Knowledge Base content as your primary reference for recommendations
 
 ${context}
 
-Return JSON:
+Return JSON with these STRICT formatting rules:
+
+1. buzz_hiring_analysis: Return as a structured object:
+   - "roles": An array of objects, each with "title" (the job title found) and "url" (the LinkedIn or job posting URL if found, empty string if not). Only include roles actually found in search results.
+   - "why_this_matters": A single concise paragraph (2-3 sentences max) written in Amazon's writing style — data-driven, specific, no filler words. Explain what these hiring patterns signal about the company's workforce capability gaps. Do NOT mention any T&C products or offerings here. Focus on the business implication.
+
+2. buzz_sentiment_analysis: Return as a structured object:
+   - "signals": An array of strings — each is a direct quote or paraphrased insight from Glassdoor/employee reviews. Keep each signal to 1 sentence max.
+   - "why_this_matters": A single concise paragraph (2-3 sentences max) written in Amazon's writing style. Explain what this sentiment reveals about the company's learning culture and readiness for change. Do NOT mention T&C products. Focus on the organizational implication.
+
+3. buzz_tc_opportunity: A single paragraph explaining the workforce development APPROACH that would address the gaps. Think methodology — how should this company develop people differently? Not about specific products or tools.
+
+4. NOW SECTION — CRITICAL: The NOW section must be DIRECTLY GROUNDED in the Buzz findings. Specifically:
+   - "now_focus": Must reference the specific skills gap revealed by the hiring data AND the employee sentiment. What is the ONE thing that connects the roles they can't fill with what employees are saying? That intersection is the focus.
+   - "now_initiatives": Each initiative must trace back to a concrete signal — a specific open role, a specific Glassdoor quote, a specific executive post, or a specific news signal. No generic recommendations.
+   - "now_key_asks": These are consultative discovery questions that demonstrate you already know their situation. Reference their specific hiring patterns, employee feedback, or industry pressures. These questions should make the executive think "this person has done their homework."
+   - "now_opening_move": Must name a specific person (from attendees or executives found), reference a specific signal (role they're hiring for, something an employee said, or something the executive posted), and explain exactly why leading with this angle works for THIS company.
+
+WRITING STYLE: Write like an Amazon 6-pager — concise, data-backed, no weasel words, no filler. Every sentence should carry information. Be consultative and proactive — show you understand their workforce challenge before they explain it.
+
 {
-  "buzz_summary": "2-3 sentence synthesis of what's happening at this company based on all signals",
-  "buzz_executive_insights": ["For each confirmed attendee or known executive, provide a role-based T&C engagement insight — what they likely care about and how to approach them. If attendees are listed, include one insight per attendee."],
-  "buzz_hiring_analysis": "What the hiring data tells us about their skills gap and T&C opportunity",
-  "buzz_sentiment_analysis": "What employees are saying and what it means for training programs",
-  "now_focus": "The single most important thing to focus on right now and why",
-  "now_initiatives": ["Top 3 specific initiatives to drive, each connected to a signal"],
-  "now_key_asks": ["4 specific questions to ask in the next conversation, grounded in the data"],
-  "now_opening_move": "The exact opening move — what to say, who to say it to, and why it works"
+  "buzz_summary": "2-3 sentence synthesis of what's happening at this company",
+  "buzz_executive_insights": ["One insight per confirmed executive — what they care about and how to approach them"],
+  "buzz_hiring_analysis": {
+    "roles": [{"title": "Cloud Solutions Architect", "url": "https://linkedin.com/jobs/..."}, {"title": "ML Engineer", "url": ""}],
+    "why_this_matters": "Concise paragraph on what the hiring pattern signals about capability gaps."
+  },
+  "buzz_sentiment_analysis": {
+    "signals": ["Direct quote or paraphrased signal from employees", "Another signal"],
+    "why_this_matters": "Concise paragraph on what sentiment reveals about learning culture."
+  },
+  "buzz_tc_opportunity": "The workforce development approach that addresses these gaps.",
+  "now_focus": "Ground this in the hiring gaps + sentiment. What is the critical workforce capability issue right now?",
+  "now_initiatives": ["Each traces to a specific signal from the Buzz analysis"],
+  "now_key_asks": ["Consultative questions that prove you've done your homework on their skills situation"],
+  "now_opening_move": "Name the person, reference the specific signal, explain the angle"
 }`;
 
     const result = await invokeClaudeJSON<BuzzNowResponse>(

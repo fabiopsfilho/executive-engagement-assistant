@@ -4,6 +4,7 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dyn
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -17,57 +18,6 @@ interface IntelligenceResponse {
   news_signals: string[];
   signals: { severity: 'HIGH' | 'MEDIUM'; label: string; evidence: string }[];
   tc_opportunity_score: number;
-}
-
-/**
- * Fetch Google search results for a query.
- * Returns titles, snippets, and URLs from the search results page.
- */
-async function googleSearch(query: string): Promise<string> {
-  try {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&num=5&hl=en`;
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-    if (!response.ok) return '';
-    const html = await response.text();
-
-    const snippets: string[] = [];
-
-    // Extract URLs and snippets from Google results
-    const urlMatches = html.match(/href="\/url\?q=([^&"]+)/g) || [];
-    const urls = urlMatches.map(m => decodeURIComponent(m.replace('href="/url?q=', ''))).filter(u => u.startsWith('http') && !u.includes('google.com'));
-    if (urls.length > 0) {
-      snippets.push(`URLS FOUND: ${urls.slice(0, 5).join(' | ')}`);
-    }
-
-    // Extract text content from result snippets
-    const matches = html.match(/<div[^>]*class="[^"]*"[^>]*>([^<]{40,300})<\/div>/g) || [];
-    for (const match of matches.slice(0, 10)) {
-      const text = match.replace(/<[^>]+>/g, '').trim();
-      if (text.length > 40 && !text.includes('Google') && !text.includes('Sign in') && !text.includes('cookie')) {
-        snippets.push(text);
-      }
-    }
-
-    // Also extract from BNeawe patterns
-    const textMatches = html.match(/class="BNeawe[^"]*"[^>]*>([^<]{20,500})/g) || [];
-    for (const match of textMatches.slice(0, 8)) {
-      const text = match.replace(/class="BNeawe[^"]*"[^>]*>/, '').trim();
-      if (text.length > 20) {
-        snippets.push(text);
-      }
-    }
-
-    return snippets.slice(0, 10).join('\n');
-  } catch (e) {
-    console.warn('Google search failed for:', query, e);
-    return '';
-  }
 }
 
 const SYSTEM_PROMPT = `You are an intelligence analyst supporting the AWS Training & Certification Skills Enablement team. You will receive REAL Google search results about a company. Extract and structure ONLY factual information found in the search results into JSON.
@@ -109,13 +59,14 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       // Cache miss — continue
     }
 
-    // Fetch REAL data from Google search (parallel requests) + Knowledge Base
-    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults, kbDocs] = await Promise.all([
-      googleSearch(`${companyName} site:linkedin.com/jobs cloud AI engineer`),
-      googleSearch(`${companyName} site:glassdoor.com reviews culture training`),
-      googleSearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
-      googleSearch(`${companyName} AWS cloud spend revenue technology investment`),
-      googleSearch(`"${companyName}" CEO OR CTO OR CFO OR CHRO site:linkedin.com`),
+    // Fetch REAL data from Tavily search (parallel requests) + Knowledge Base
+    const [linkedinResults, glassdoorResults, newsResults, dataBookResults, executivePostsResults, chroSkillsResults, kbDocs] = await Promise.all([
+      tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`),
+      tavilyGlassdoorSearch(`${companyName} reviews culture training learning`),
+      tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
+      tavilySearch(`${companyName} AWS cloud spend revenue technology investment`),
+      tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`),
+      tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`),
       getTCStrategyContext(industry, 'CTO', []).catch(() => ''),
     ]);
 
@@ -123,6 +74,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const searchContext = [
       linkedinResults ? `LINKEDIN JOB POSTINGS:\n${linkedinResults}` : '',
       executivePostsResults ? `EXECUTIVE LINKEDIN PROFILES & POSTS:\n${executivePostsResults}` : '',
+      chroSkillsResults ? `CHRO / HR / SKILLS TRANSFORMATION:\n${chroSkillsResults}` : '',
       glassdoorResults ? `GLASSDOOR EMPLOYEE REVIEWS:\n${glassdoorResults}` : '',
       newsResults ? `COMPANY NEWS & TRANSFORMATION:\n${newsResults}` : '',
       dataBookResults ? `COMPANY DATA, REVENUE & INVESTMENT:\n${dataBookResults}` : '',
