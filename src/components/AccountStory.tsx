@@ -201,8 +201,9 @@ export function AccountStory({ account, notes = [], onEngagePersona, tcData }: {
                     <span className="text-sm font-medium text-white">Who should we focus on?</span>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {insights?.who_to_focus
-                        || (a.ebc_data.attendees.filter(att => a.public_intelligence.executive_social.find(e => e.name === att.name) || att.persona === 'CHRO' || att.persona === 'CEO')
-                          .map(att => att.name + ' (' + att.title + ')').join(', ') + ' — strongest signals for workforce conversations.')}
+                        || (a.ebc_data.attendees.length > 0
+                          ? a.ebc_data.attendees.map(att => att.name + ' (' + att.title + ')').join(', ') + ' — confirmed attendees from the imported list.'
+                          : 'No attendee list imported yet. Prioritize the CHRO and CFO for workforce conversations, and import the attendee list to unlock attendee-specific guidance.')}
                     </p>
                     <ConnectionToggle text={`Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}"` : 'Executive social signals detected'}. Agenda: These personas are featured in the suggested EBC agenda Welcome & Vision blocks.`} />
                   </div>

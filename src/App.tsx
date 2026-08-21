@@ -208,20 +208,12 @@ export default function App() {
             },
             signals: intel.signals && intel.signals.length > 0 ? intel.signals : prev.signals,
             tc_opportunity_score: intel.tc_opportunity_score ? Math.min(10, intel.tc_opportunity_score) : prev.tc_opportunity_score,
+            // NOTE: executives found via online search stay in public_intelligence.executive_social
+            // ("executives worth knowing about"). They are NEVER written into ebc_data.attendees —
+            // confirmed attendees ONLY come from the user's imported attendee CSV. This prevents
+            // the assistant from treating a searched executive as a confirmed EBC attendee.
             ebc_data: {
               ...prev.ebc_data,
-              attendees: intel.executive_social && intel.executive_social.length > 0
-                ? intel.executive_social.map(e => ({
-                    name: e.name,
-                    title: e.title,
-                    persona: (e.title.toLowerCase().includes('ceo') || e.title.toLowerCase().includes('chief executive') ? 'CEO' :
-                      e.title.toLowerCase().includes('cfo') || e.title.toLowerCase().includes('chief financial') ? 'CFO' :
-                      e.title.toLowerCase().includes('cto') || e.title.toLowerCase().includes('chief technology') ? 'CTO' :
-                      e.title.toLowerCase().includes('cio') || e.title.toLowerCase().includes('chief information') ? 'CIO' :
-                      e.title.toLowerCase().includes('chro') || e.title.toLowerCase().includes('people') || e.title.toLowerCase().includes('human') ? 'CHRO' :
-                      'Other') as 'CEO' | 'CFO' | 'CTO' | 'CIO' | 'CHRO' | 'Other',
-                  }))
-                : prev.ebc_data.attendees,
             },
           };
         });

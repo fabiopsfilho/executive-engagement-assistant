@@ -324,7 +324,9 @@ export function ExecBrief({ account, onEngagePersona, tcData, onInsightsReady }:
             <div>
               <span className="text-sm font-medium text-white">Who should we focus on?</span>
               <p className="text-xs text-muted mt-0.5">
-                {insights?.who_to_focus || (rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ') + ' — strongest signals for workforce conversations.')}
+                {insights?.who_to_focus || (rankedPersonas.length > 0
+                  ? rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ') + ' — confirmed attendees from the imported list.'
+                  : 'No attendee list imported yet. Prioritize the CHRO and CFO for workforce conversations, and import the attendee list to unlock attendee-specific guidance.')}
               </p>
               <ConnectionToggle text={`Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}"` : 'Executive signals'}. Agenda: Featured in Welcome & Vision blocks.`} />
             </div>
