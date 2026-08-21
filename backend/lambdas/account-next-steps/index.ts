@@ -146,20 +146,22 @@ Use the T&C Knowledge Base content as your primary reference for methodology. Th
 
 ${context}
 
-Return JSON:
+Keep each item to ONE concise executive-level sentence (no sub-bullets, no markdown).
+
+Return JSON with exactly 4 next_steps and 4 key_asks:
 {
   "next_steps": [
-    "5 specific, actionable next steps focused on consultative engagement. Example: 'Propose a 2-hour workforce readiness workshop with the L&D team to map their current cloud/AI skills against their transformation roadmap — reference the 5 open ML roles as evidence of the gap.' NOT 'Sell them Skill Builder.'"
+    "4 concise, consultative next steps. Example: 'Propose a 2-hour workforce readiness workshop with the L&D team to map current cloud/AI skills against their transformation roadmap.' NOT 'Sell them Skill Builder.'"
   ],
   "key_asks": [
-    "5 specific questions or commitments to secure — discovery-oriented, not transactional. Example: 'Ask: What percentage of your workforce will need GenAI skills in the next 18 months, and who owns that readiness today?' NOT 'Get them to sign a PO.'"
+    "4 concise, discovery-oriented questions/commitments. Example: 'What percentage of your workforce will need GenAI skills in the next 18 months, and who owns that readiness today?' NOT 'Get them to sign a PO.'"
   ]
 }`;
 
     const result = await invokeClaudeJSON<NextStepsResponse>(
       EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 1024, temperature: 0.7 }
+      { maxTokens: 1536, temperature: 0.7 }
     );
 
 
