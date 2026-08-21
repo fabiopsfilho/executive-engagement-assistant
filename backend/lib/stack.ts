@@ -239,6 +239,26 @@ class EngagementAssistantStack extends cdk.Stack {
       },
     });
 
+    // Ensure CORS headers are present even on error responses (4xx/5xx),
+    // including Lambda timeouts and integration failures. Without this,
+    // the browser reports failures as "blocked by CORS" instead of the real error.
+    new apigateway.GatewayResponse(this, 'GatewayResponseDefault4XX', {
+      restApi: api,
+      type: apigateway.ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'",
+      },
+    });
+    new apigateway.GatewayResponse(this, 'GatewayResponseDefault5XX', {
+      restApi: api,
+      type: apigateway.ResponseType.DEFAULT_5XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'",
+      },
+    });
+
     // Routes
     const accounts = api.root.addResource('accounts');
     const account = accounts.addResource('{accountId}');

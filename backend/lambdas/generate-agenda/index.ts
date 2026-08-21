@@ -153,7 +153,7 @@ Use the T&C strategy reference material to recommend specific plays, frameworks,
     const result = await invokeClaudeJSON<AgendaResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 4096, temperature: 0.6 }
+      { maxTokens: 3072, temperature: 0.6 }
     );
 
     return success(result);

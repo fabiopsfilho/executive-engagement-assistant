@@ -117,28 +117,28 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 ACCOUNT: ${accountData.customer_name}
 INDUSTRY: ${accountData.industry}
 SEGMENT: ${accountData.segment} (${accountData.geo})
-AWS SPEND: $${(accountData.aws_spend.current_year / 1_000_000).toFixed(1)}M (up from $${(accountData.aws_spend.prior_year / 1_000_000).toFixed(1)}M prior year)
-PPA: ${accountData.aws_spend.ppa || 'None'}
+AWS SPEND: ${accountData.aws_spend && accountData.aws_spend.current_year > 0 ? `$${(accountData.aws_spend.current_year / 1_000_000).toFixed(1)}M (up from $${((accountData.aws_spend.prior_year || 0) / 1_000_000).toFixed(1)}M prior year)` : 'Not available'}
+PPA: ${accountData.aws_spend?.ppa || 'None'}
 
 SALESFORCE DATA:
-- Open Opportunities: ${accountData.sfdc_data.open_opps}
-- T2K: ${accountData.sfdc_data.t2k ? 'Yes' : 'No'}
-- Account Plan Priority: ${accountData.sfdc_data.account_plan_priority}
-- SMGS Phase: ${accountData.sfdc_data.smgs_phase}
+- Open Opportunities: ${accountData.sfdc_data?.open_opps ?? 'N/A'}
+- T2K: ${accountData.sfdc_data?.t2k ? 'Yes' : 'No'}
+- Account Plan Priority: ${accountData.sfdc_data?.account_plan_priority || 'N/A'}
+- SMGS Phase: ${accountData.sfdc_data?.smgs_phase || 'N/A'}
 
 T&C CURRENT STATE:
-- Skill Builder: ${accountData.tc_current_state.skill_builder ? `Yes (${accountData.tc_current_state.skill_builder_seats} seats, ${accountData.tc_current_state.activation_rate}% activation)` : 'No structured engagement'}
-- Certifications: ${accountData.tc_current_state.certifications}
-- Prior Engagement: ${accountData.tc_current_state.prior_engagement}
-- Renewal Date: ${accountData.tc_current_state.renewal_date || 'N/A'}
+- Skill Builder: ${accountData.tc_current_state?.skill_builder ? `Yes (${accountData.tc_current_state.skill_builder_seats} seats, ${accountData.tc_current_state.activation_rate}% activation)` : 'No structured engagement'}
+- Certifications: ${accountData.tc_current_state?.certifications ?? 0}
+- Prior Engagement: ${accountData.tc_current_state?.prior_engagement || 'None'}
+- Renewal Date: ${accountData.tc_current_state?.renewal_date || 'N/A'}
 
 PUBLIC INTELLIGENCE:
-- Earnings Call Signals: ${accountData.public_intelligence.earnings_call_signals.join('; ')}
-- LinkedIn Job Postings: ${accountData.public_intelligence.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${accountData.public_intelligence.linkedin_job_postings.yoy_change} YoY)
-- Executive Social Activity: ${accountData.public_intelligence.executive_social.map(e => `${e.name} (${e.title}): "${e.post_theme}"`).join('; ')}
-- Glassdoor Signals: ${accountData.public_intelligence.glassdoor_signals.join('; ')}
-- Industry Context: ${accountData.public_intelligence.industry_context}
-- News: ${accountData.public_intelligence.news_signals.join('; ')}
+- Earnings Call Signals: ${(accountData.public_intelligence?.earnings_call_signals || []).join('; ')}
+- LinkedIn Job Postings: ${accountData.public_intelligence?.linkedin_job_postings?.cloud_ai_roles ?? 0} cloud/AI roles (${accountData.public_intelligence?.linkedin_job_postings?.yoy_change || 'N/A'} YoY)
+- Executive Social Activity: ${(accountData.public_intelligence?.executive_social || []).map(e => `${e.name} (${e.title}): "${e.post_theme}"`).join('; ')}
+- Glassdoor Signals: ${(accountData.public_intelligence?.glassdoor_signals || []).join('; ')}
+- Industry Context: ${accountData.public_intelligence?.industry_context || 'N/A'}
+- News: ${(accountData.public_intelligence?.news_signals || []).join('; ')}
 
 TARGET PERSONA:
 - Name: ${persona.name}
@@ -155,7 +155,7 @@ Generate the engagement plan. Remember: ground everything in the specific data a
     const result = await invokeClaudeJSON<EngagementPlanResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 4096, temperature: 0.7 }
+      { maxTokens: 2048, temperature: 0.7 }
     );
 
     return success(result);

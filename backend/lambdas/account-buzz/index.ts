@@ -145,7 +145,7 @@ EBC DATA:
 Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
 Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
-Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
+Attendees: ${(accountData.ebc_data?.attendees || []).length > 0 ? accountData.ebc_data.attendees.map((a: any) => `${a.name} (${a.persona})`).join(', ') : 'NONE PROVIDED — do NOT invent attendee names; refer to executive roles generically'}
 
 ${accountData.accountPlanText ? `CAPTURED ACCOUNT DATA (from Salesforce or uploaded document — analyze for training status, Polaris level, T&C engagement history, opportunity pipeline, skills/workforce development info. Use this to inform ALL recommendations):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
 ${existingInsights ? `EXISTING APPROACH & STRATEGY (already generated — use this as foundation for NOW recommendations):
@@ -159,6 +159,8 @@ ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3
 ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
     const userMessage = `Analyze this account's intelligence and generate both BUZZ and NOW insights. Be highly specific — reference actual names, numbers, and quotes from the data.
+
+ATTENDEE ACCURACY (ZERO TOLERANCE): Never state or imply that any specific person will attend the EBC unless their name is in the Attendees list above. If Attendees is "NONE PROVIDED", do not name attendees — you may reference real executives from the Executive Social data as "worth knowing about" but never as confirmed attendees. Never invent names or biographical details.
 
 Use the T&C Knowledge Base content as your primary reference for recommendations. The online search results supplement this with real-time data about the specific company.
 

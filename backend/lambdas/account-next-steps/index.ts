@@ -127,13 +127,15 @@ EBC DATA:
 Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
 Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
-Attendees: ${(accountData.ebc_data?.attendees || []).map((a: any) => `${a.name} (${a.persona})`).join(', ')}
+Attendees: ${(accountData.ebc_data?.attendees || []).length > 0 ? accountData.ebc_data.attendees.map((a: any) => `${a.name} (${a.persona})`).join(', ') : 'NONE PROVIDED — do NOT invent attendee names; refer to executive roles generically'}
 
 ${accountData.accountPlanText ? `CAPTURED ACCOUNT DATA (from Salesforce or uploaded document — analyze for training status, Polaris level, T&C engagement history, opportunity pipeline, skills/workforce development info. Use this to inform ALL recommendations):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
 ${awsContext ? `AWS T&C KNOWLEDGE BASE & DOCUMENTATION:\n${awsContext.slice(0, 3000)}` : ''}
 ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
     const userMessage = `Based on all the intelligence gathered for ${companyName}, generate specific next steps and key asks for the engagement.
+
+ATTENDEE ACCURACY (ZERO TOLERANCE): Never state or imply that any specific person will attend the EBC unless their name is in the Attendees list above. If Attendees is "NONE PROVIDED", do not name attendees — you may reference real executives from public data as "worth researching" but never as confirmed attendees. Never invent names or biographical details.
 
 IMPORTANT: Be CONSULTATIVE and STRATEGIC — not product-driven.
 - Next steps should focus on understanding their workforce reality, building relationships, and co-creating a skills transformation strategy

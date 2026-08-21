@@ -39,15 +39,52 @@ export async function invokeClaudeJSON<T>(
   const text = responseBody.content[0].text;
 
   // Try to parse as JSON (Claude often wraps in markdown code blocks)
-  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const jsonStr = jsonMatch ? jsonMatch[1].trim() : text.trim();
+  let jsonStr = text.trim();
+
+  // Strip leading ```json or ``` fence (with or without a closing fence — handles truncation)
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)(?:```|$)/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
+
+  // Isolate the JSON object/array if there's leading prose
+  const firstBrace = jsonStr.search(/[{[]/);
+  if (firstBrace > 0) {
+    jsonStr = jsonStr.slice(firstBrace);
+  }
 
   try {
     return JSON.parse(jsonStr) as T;
   } catch {
-    // If JSON parsing fails, return the raw text wrapped in an object
-    return { raw: text } as unknown as T;
+    // Attempt to repair truncated JSON (e.g. hit max_tokens mid-output)
+    try {
+      return JSON.parse(repairTruncatedJson(jsonStr)) as T;
+    } catch {
+      // If JSON parsing still fails, return the raw text wrapped in an object
+      return { raw: text } as unknown as T;
+    }
   }
+}
+
+/**
+ * Best-effort repair of JSON truncated mid-output. Closes an unterminated
+ * string then balances any open braces/brackets.
+ */
+function repairTruncatedJson(s: string): string {
+  let str = s.trim();
+  const quoteCount = (str.match(/(?<!\\)"/g) || []).length;
+  if (quoteCount % 2 !== 0) str += '"';
+  const opens: string[] = [];
+  for (const ch of str) {
+    if (ch === '{' || ch === '[') opens.push(ch);
+    else if (ch === '}' || ch === ']') opens.pop();
+  }
+  str = str.replace(/,\s*$/, '');
+  while (opens.length) {
+    const o = opens.pop();
+    str += o === '{' ? '}' : ']';
+  }
+  return str;
 }
 
 export async function invokeClaudeText(

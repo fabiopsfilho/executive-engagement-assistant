@@ -362,12 +362,12 @@ export default function App() {
           )}
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
-            <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(err => { console.error('Buzz/Now generation failed:', err); }).finally(() => setBuzzNowLoading(false)); } }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'now' ? 'text-blue-400' : 'text-muted'}`}>
               <Zap className="w-4 h-4" />
               <span className="text-[9px] font-medium">Now</span>
             </button>
-            <button onClick={() => { setInsightPopup(insightPopup === 'buzz' ? null : 'buzz'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(() => {}).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => { setInsightPopup(insightPopup === 'buzz' ? null : 'buzz'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(err => { console.error('Buzz/Now generation failed:', err); }).finally(() => setBuzzNowLoading(false)); } }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'buzz' ? 'text-orange-400' : 'text-muted'}`}>
               <Megaphone className="w-4 h-4" />
               <span className="text-[9px] font-medium">Buzz</span>

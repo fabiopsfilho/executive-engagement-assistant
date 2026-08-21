@@ -47,6 +47,13 @@ ADDITIONAL GUARDRAILS:
 3. CHAMPION DESIGNATION: Only call someone an "AWS champion" if there is explicit evidence of AWS-related activity (AWS posts, AWS certifications, AWS event attendance). Otherwise, do not use that term.
 4. Frame everything through the T&C Skills Enablement lens: skills transformation, workforce development, training ROI, certification programs, learning culture.
 5. Do NOT show or reference anything marked as unavailable or not found — just focus on what IS available.
+6. CRITICAL — ATTENDEE ACCURACY (ZERO TOLERANCE FOR FABRICATION):
+   - The ONLY source of confirmed EBC attendees is the "Confirmed Attendees" list provided in the data (which comes from a user-imported attendee list).
+   - You must NEVER state, imply, or infer that any specific person "will attend", "is attending", or is a "confirmed attendee" unless their exact name appears in the Confirmed Attendees list.
+   - If the Confirmed Attendees list is empty/NONE: explicitly note that the attendee list has not been imported yet, and that the team should import it to get attendee-specific guidance.
+   - You MAY reference real executives found in the Executive Social / public intelligence data as "executives worth knowing about at this company" or "who you should be aware of before the session" — but clearly frame these as general company knowledge, NOT as confirmed attendees.
+   - NEVER invent names, tenures, titles, or biographical details (e.g. "Marco Moreira, 23-year tenure"). If you don't have a real name from the data, refer to roles generically ("the CFO", "the CHRO").
+   - When suggesting who to prioritize with no attendee list, frame it as: "Based on this account's profile, prioritize engaging these ROLES..." and optionally "Executives worth researching before the session (from public data): [only real names found in the data]".
 
 Your responses must be:
 - Based ONLY on confirmed data provided (reference real data points, names, numbers)
@@ -109,7 +116,7 @@ ${allContext ? `\nAWS T&C KNOWLEDGE & DOCUMENTATION:\n${allContext}` : ''}
 
 Return JSON with exactly these fields:
 {
-  "who_to_focus": "Which specific executive(s) to prioritize and WHY based on their signals — what do they care about?",
+  "who_to_focus": "Which executive ROLES to prioritize and WHY, based on the account profile and signals. If Confirmed Attendees are provided, reference them by name as attendees. If NOT, do two things: (1) recommend which roles to prioritize (e.g. CHRO, CFO), and (2) if real executives appear in the Executive Social/public data, mention them as 'worth researching before the session' — clearly NOT as confirmed attendees. Note that importing the attendee list will unlock attendee-specific guidance. NEVER invent a name or claim someone will attend.",
   "what_conversations": "What strategic conversation angles to drive — frame around their business challenges, not our products",
   "where_to_start": "A comprehensive strategic approach to cloud skills transformation and GenAI readiness for this company. Describe the methodology and engagement model. At the end you may note that AWS can support this through programs like Skills Guild, but lead with strategy.",
   "whats_happening": "What's happening in their world (industry, hiring, sentiment) that creates urgency for workforce transformation NOW"
@@ -171,7 +178,12 @@ function buildAccountContext(accountData: any, tcData: any): string {
     lines.push(`\nEBC DATA:`);
     lines.push(`Meeting Dates: ${(accountData.ebc_data.meeting_dates || []).join(', ')}`);
     lines.push(`Themes: ${(accountData.ebc_data.themes || []).join(', ')}`);
-    lines.push(`Attendees: ${(accountData.ebc_data.attendees || []).map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}`);
+    const attendees = accountData.ebc_data.attendees || [];
+    if (attendees.length > 0) {
+      lines.push(`Confirmed Attendees: ${attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}`);
+    } else {
+      lines.push(`Confirmed Attendees: NONE — no attendee list has been provided for this EBC. Do NOT invent or name any specific individuals. Refer only to executive ROLES/personas (e.g. "the CFO", "the CHRO") in general terms.`);
+    }
   }
 
   // Signals

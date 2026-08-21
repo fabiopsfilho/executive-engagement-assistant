@@ -158,7 +158,7 @@ Create a 7-slide pitch deck tailored to ${persona.name}'s perspective as a ${per
     const result = await invokeClaudeJSON<PitchResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: fullMessage }],
-      { maxTokens: 4096, temperature: 0.7 }
+      { maxTokens: 3072, temperature: 0.7 }
     );
 
     return success(result);
