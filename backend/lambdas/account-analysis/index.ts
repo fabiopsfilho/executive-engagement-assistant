@@ -3,8 +3,6 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
-import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
-import { EXPERT_PERSONA } from '../shared/persona';
 import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 /**
@@ -18,15 +16,11 @@ import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../sh
  */
 
 export interface UnifiedAnalysisResponse {
-  // Approach
+  // Approach (concise executive summaries)
   who_to_focus: string;
-  who_to_focus_detail: string;
   what_conversations: string;
-  what_conversations_detail: string;
   where_to_start: string;
-  where_to_start_detail: string;
   whats_happening: string;
-  whats_happening_detail: string;
   // Buzz
   buzz_summary: string;
   buzz_executive_insights: string[];
@@ -55,9 +49,10 @@ ATTENDEE RULE:
 - If it is empty: "who_to_focus" centers on the REAL executives found online (name them, e.g. the CEO from LinkedIn) as the key people to engage and research. Do NOT call them attendees, do NOT claim they will attend, and do NOT add any disclaimer about a missing/unimported list — just give the recommendation naturally.
 - Never invent a person, tenure, or biography.
 
-FORMAT:
-- Each Approach field is a SHORT executive summary (1-2 sentences, plain prose, no asterisks/markdown). The matching "_detail" field holds 2-4 sentences of expanded reasoning.
-- next_steps and key_asks: exactly 4 each, one concise executive sentence per item.
+FORMAT (BE CONCISE — this keeps the response fast and complete):
+- Each Approach field: 2 tight executive sentences max.
+- next_steps and key_asks: exactly 4 each, one concise sentence per item.
+- now_initiatives: exactly 4, one sentence each. buzz why_this_matters: 2 sentences max.
 - buzz_hiring_analysis.roles: only real roles found in search (title + url).
 - Empty arrays are fine when no real data exists — never fill with speculation.
 
@@ -65,6 +60,12 @@ Return ONLY valid JSON.`;
 
 const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
   Promise.race([p, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))]);
+
+// Condensed persona + guardrails for this high-volume unified call, to keep the
+// prompt small enough that generation completes within API Gateway's 29s limit.
+const CONDENSED_SYSTEM = `You are an AI Skills Transformation expert advising the AWS T&C team for an EBC (executive, business-focused — no technical jargon). Core lens: AI transformation is 70% people/process/org change (BCG 10-20-70); leaders win on TALENT not technology; workflow redesign over tool training; manager activation is critical; measure the chain (capability -> adoption -> workflow -> business outcome). Bridge to AWS T&C only as the execution partner, never a product pitch.
+
+DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from the "Confirmed Attendees" list — never claim anyone attends unless listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees, and never add a disclaimer about a missing list. If data is thin, give a smaller honest recommendation.`;
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
@@ -77,16 +78,22 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
+    const existingPi = accountData.public_intelligence || {};
+    // The intelligence Lambda usually already populated executive_social / hiring / glassdoor
+    // on the account. If so, we SKIP re-searching (saves ~6s and keeps us under 29s) and only
+    // do a light CHRO/skills search. If the account has no intelligence yet, we search fully.
+    const hasIntel = (existingPi.executive_social?.length > 0) ||
+      (existingPi.linkedin_job_postings?.cloud_ai_roles > 0) ||
+      (existingPi.glassdoor_signals?.length > 0);
 
-    // Gather all intelligence ONCE (parallel, each capped so nothing hangs).
     const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults, chroSkillsResults] = await Promise.all([
-      withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 4000, ''),
-      withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 4000, ''),
-      tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`),
-      tavilyGlassdoorSearch(`${companyName} reviews culture training development`),
-      tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
-      tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`),
-      tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`),
+      withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 3000, ''),
+      withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 3000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`), 6000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyGlassdoorSearch(`${companyName} reviews culture training development`), 6000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`), 6000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`), 6000, ''),
+      withTimeout(tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`), 6000, ''),
     ]);
 
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
@@ -149,16 +156,12 @@ ${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 30
 
 ${context}
 
-Return JSON with exactly these fields (summaries brief, details expanded, 4 items each for next_steps/key_asks/now_initiatives):
+Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_initiatives):
 {
-  "who_to_focus": "1-2 sentence exec summary of who to focus on (real executives by name, or confirmed attendees if provided).",
-  "who_to_focus_detail": "2-4 sentences on each key person's role, public activity, and how to approach them.",
-  "what_conversations": "1-2 sentence summary of the strategic conversation angle to drive.",
-  "what_conversations_detail": "2-4 sentences expanding it, referencing named executives' activity and real challenges.",
-  "where_to_start": "1-2 sentence summary of the recommended strategic approach (methodology, not products).",
-  "where_to_start_detail": "2-4 sentences: assessment -> strategy -> execution -> measurement. May briefly note AWS can enable this at the end.",
-  "whats_happening": "1-2 sentence summary of what's happening in their world creating urgency now.",
-  "whats_happening_detail": "2-4 sentences on industry, hiring, sentiment, and named executives' public statements.",
+  "who_to_focus": "2 tight sentences: who to focus on (real executives by name, or confirmed attendees if provided) and why.",
+  "what_conversations": "2 tight sentences: the strategic conversation angle to drive, grounded in real signals.",
+  "where_to_start": "2 tight sentences: the recommended strategic approach (methodology, not products).",
+  "whats_happening": "2 tight sentences: what's happening in their world creating urgency now.",
   "buzz_summary": "2-3 sentence synthesis of what's happening at this company.",
   "buzz_executive_insights": ["One insight per REAL executive found — empty array if none. Never invent."],
   "buzz_hiring_analysis": { "roles": [{"title": "Role", "url": "https://..."}], "why_this_matters": "Concise paragraph on the capability gap the hiring signals." },
@@ -173,9 +176,9 @@ Return JSON with exactly these fields (summaries brief, details expanded, 4 item
 }`;
 
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
-      EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
+      CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 4096, temperature: 0.6 }
+      { maxTokens: 3000, temperature: 0.5 }
     );
 
     return success(result);
