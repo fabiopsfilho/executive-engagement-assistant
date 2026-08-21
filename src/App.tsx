@@ -49,11 +49,11 @@ export default function App() {
   // Central regeneration: runs the single unified analysis. Called on account load
   // AND whenever new data arrives (attendee import, brief/plan upload, Salesforce capture)
   // so Approach, Buzz, Now, Next Steps, and Key Asks all refresh together and stay consistent.
-  const regenerateAnalysis = (acct: Account | null, tc: TCAccountSummary | null) => {
+  const regenerateAnalysis = (acct: Account | null, tc: TCAccountSummary | null, refresh = false) => {
     if (!acct || !isBackendAvailable()) return;
     setAnalysisLoading(true);
     setAnalysis(null);
-    generateUnifiedAnalysis(acct, tc)
+    generateUnifiedAnalysis(acct, tc, { refresh })
       .then(result => setAnalysis(result))
       .catch(err => console.error('Unified analysis failed:', err))
       .finally(() => setAnalysisLoading(false));
@@ -74,7 +74,7 @@ export default function App() {
       setAccount(prev => prev ? { ...prev, ebc_data: { ...prev.ebc_data, attendees: personas } } : prev);
       setAttendeeUploadMsg(`${personas.length} attendees loaded — regenerating insights...`);
       // New data → regenerate the full unified analysis (Approach + Buzz + Now + Next Steps + Key Asks)
-      regenerateAnalysis(updated, tcData);
+      regenerateAnalysis(updated, tcData, true);
       setTimeout(() => setRefreshKey(k => k + 1), 100);
       setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
@@ -114,7 +114,7 @@ export default function App() {
         setAccount(prev => prev ? { ...prev, accountPlanText: planText } : prev);
         setAttendeeUploadMsg(`Account plan "${fileName}" loaded — regenerating insights...`);
         // New data → regenerate the full unified analysis
-        regenerateAnalysis(updated, tcData);
+        regenerateAnalysis(updated, tcData, true);
         setTimeout(() => setRefreshKey(k => k + 1), 100);
         setTimeout(() => setAttendeeUploadMsg(null), 4000);
       } else {
@@ -158,7 +158,7 @@ export default function App() {
           if (!prev) return prev;
           const updated = { ...prev, accountPlanText: capturedText };
           // New Salesforce data → regenerate the full unified analysis
-          regenerateAnalysis(updated, tcData);
+          regenerateAnalysis(updated, tcData, true);
           return updated;
         });
         setRefreshKey(k => k + 1);
@@ -302,7 +302,7 @@ export default function App() {
               };
             });
             // New persona intel → regenerate the full unified analysis so all sections include it
-            setAccount(prev => { if (prev) regenerateAnalysis(prev, tcData); return prev; });
+            setAccount(prev => { if (prev) regenerateAnalysis(prev, tcData, true); return prev; });
             setRefreshKey(k => k + 1);
             setInsightPopup(null);
           }

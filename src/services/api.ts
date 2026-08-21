@@ -371,14 +371,34 @@ export interface UnifiedAnalysisResponse {
   key_asks: string[];
 }
 
+/**
+ * Kicks off the unified analysis and polls until it's ready.
+ * The backend runs the heavy work asynchronously (worker Lambda), so there is no
+ * 29s API Gateway timeout — we poll every few seconds until the result is ready.
+ */
 export async function generateUnifiedAnalysis(
   accountData: unknown,
-  tcData?: TCAccountSummary | null
+  tcData?: TCAccountSummary | null,
+  opts?: { refresh?: boolean; maxWaitMs?: number }
 ): Promise<UnifiedAnalysisResponse> {
-  return post<UnifiedAnalysisResponse>('/accounts/default/analysis', {
-    accountData,
-    tcData,
+  const pollInterval = 4000;
+  const maxWait = opts?.maxWaitMs ?? 120000;
+  const started = Date.now();
+
+  // First call may kick off the job (refresh forces regeneration).
+  let res = await post<{ status?: string } & Partial<UnifiedAnalysisResponse>>('/accounts/default/analysis', {
+    accountData, tcData, refresh: opts?.refresh || false,
   });
+
+  while (res.status === 'processing') {
+    if (Date.now() - started > maxWait) throw new Error('Analysis timed out');
+    await new Promise(r => setTimeout(r, pollInterval));
+    res = await post<{ status?: string } & Partial<UnifiedAnalysisResponse>>('/accounts/default/analysis', {
+      accountData, tcData, refresh: false,
+    });
+  }
+
+  return res as UnifiedAnalysisResponse;
 }
 
 // ─── Account Buzz/Now (AI-Generated) ─────────────────────────────────────────

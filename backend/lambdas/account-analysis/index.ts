@@ -1,9 +1,25 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
+
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const lambdaClient = new LambdaClient({});
+const CACHE_TABLE = process.env.INTELLIGENCE_CACHE_TABLE!;
+
+/** Stable cache key from the inputs that affect the analysis. */
+function analysisCacheKey(accountData: any): string {
+  const name = (accountData.customer_name || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
+  const planLen = (accountData.accountPlanText || '').length;
+  // Key changes when attendees or captured/plan data change → forces fresh analysis.
+  return `analysis:${name}:att${attendeeCount}:plan${planLen}`;
+}
 
 /**
  * UNIFIED ACCOUNT ANALYSIS
@@ -67,15 +83,7 @@ const CONDENSED_SYSTEM = `You are an AI Skills Transformation expert advising th
 
 DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from the "Confirmed Attendees" list — never claim anyone attends unless listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees, and never add a disclaimer about a missing list. If data is thin, give a smaller honest recommendation.`;
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-  try {
-    const accountId = event.pathParameters?.accountId;
-    if (!accountId) return error(400, 'accountId is required');
-
-    const body = JSON.parse(event.body || '{}');
-    const { accountData, tcData } = body;
-    if (!accountData) return error(400, 'accountData is required');
-
+async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
     const existingPi = accountData.public_intelligence || {};
@@ -181,9 +189,75 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
       { maxTokens: 2300, temperature: 0.5 }
     );
 
-    return success(result);
+    return result;
+}
+
+/**
+ * Async orchestration handler.
+ * - Worker mode (invoked async with { __worker: true }): runs generateAnalysis and
+ *   writes the result to the cache table. Never hits API Gateway, so no 29s limit.
+ * - API mode (from the frontend): returns cached result if ready; otherwise kicks off
+ *   the worker asynchronously and returns { status: 'processing' } immediately.
+ *   The frontend polls until the result is ready.
+ */
+export async function handler(event: any): Promise<APIGatewayProxyResult | void> {
+  // ── Worker mode (async self-invocation) ──
+  if (event && event.__worker === true) {
+    const { accountData, tcData, cacheKey } = event;
+    try {
+      const result = await generateAnalysis(accountData, tcData);
+      await ddb.send(new PutCommand({
+        TableName: CACHE_TABLE,
+        Item: { cacheKey, status: 'ready', data: result, ttl: Math.floor(Date.now() / 1000) + 86400, createdAt: new Date().toISOString() },
+      }));
+    } catch (err) {
+      console.error('Worker analysis failed:', err);
+      await ddb.send(new PutCommand({
+        TableName: CACHE_TABLE,
+        Item: { cacheKey, status: 'error', ttl: Math.floor(Date.now() / 1000) + 600, createdAt: new Date().toISOString() },
+      })).catch(() => {});
+    }
+    return;
+  }
+
+  // ── API mode (from API Gateway / frontend) ──
+  try {
+    const accountId = (event as APIGatewayProxyEvent).pathParameters?.accountId;
+    if (!accountId) return error(400, 'accountId is required');
+
+    const body = JSON.parse((event as APIGatewayProxyEvent).body || '{}');
+    const { accountData, tcData, refresh } = body;
+    if (!accountData) return error(400, 'accountData is required');
+
+    const cacheKey = analysisCacheKey(accountData);
+
+    // Check for an existing result/job.
+    const cached = await ddb.send(new GetCommand({ TableName: CACHE_TABLE, Key: { cacheKey } })).catch(() => null);
+    const item = cached?.Item;
+
+    if (!refresh && item?.status === 'ready' && item.data) {
+      return success({ status: 'ready', ...item.data });
+    }
+    if (item?.status === 'processing' && item.startedAt && (Date.now() - item.startedAt) < 90000) {
+      // A job is already running — tell the client to keep polling.
+      return success({ status: 'processing' });
+    }
+
+    // Mark a job as processing, then kick off the worker asynchronously.
+    await ddb.send(new PutCommand({
+      TableName: CACHE_TABLE,
+      Item: { cacheKey, status: 'processing', startedAt: Date.now(), ttl: Math.floor(Date.now() / 1000) + 600 },
+    }));
+
+    await lambdaClient.send(new InvokeCommand({
+      FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME!,
+      InvocationType: 'Event', // async — returns immediately, no 29s limit on the worker
+      Payload: Buffer.from(JSON.stringify({ __worker: true, accountData, tcData, cacheKey })),
+    }));
+
+    return success({ status: 'processing' });
   } catch (err) {
-    console.error('Error generating unified account analysis:', err);
-    return error(500, 'Failed to generate account analysis');
+    console.error('Error orchestrating account analysis:', err);
+    return error(500, 'Failed to start account analysis');
   }
 }
