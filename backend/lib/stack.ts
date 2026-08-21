@@ -241,7 +241,13 @@ class EngagementAssistantStack extends cdk.Stack {
 
     // Allow the unified analysis Lambda to invoke ITSELF asynchronously (worker pattern),
     // so the heavy generation runs off the API Gateway request path (no 29s timeout).
-    accountAnalysisFn.grantInvoke(accountAnalysisFn);
+    // Use a scoped IAM policy (by function name) rather than grantInvoke(self), which
+    // would create a circular dependency between the function and its role.
+    accountAnalysisFn.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['lambda:InvokeFunction'],
+      resources: [`arn:aws:lambda:${this.region}:${this.account}:function:engagement-assistant-account-analysis`],
+    }));
 
     // ─── API Gateway ────────────────────────────────────────────────────
     const api = new apigateway.RestApi(this, 'EngagementAssistantApi', {
