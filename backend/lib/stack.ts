@@ -218,8 +218,19 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 13. Unified Account Analysis (single call → Approach + Buzz + Now + Next Steps + Key Asks)
+    const accountAnalysisFn = new NodejsFunction(this, 'AccountAnalysisFn', {
+      functionName: 'engagement-assistant-account-analysis',
+      entry: path.join(__dirname, '../lambdas/account-analysis/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(90),
+      memorySize: 1024,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn, personaIntelFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn, personaIntelFn, accountAnalysisFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -298,6 +309,10 @@ class EngagementAssistantStack extends cdk.Stack {
     // POST /accounts/{accountId}/next-steps
     const nextSteps = account.addResource('next-steps');
     nextSteps.addMethod('POST', new apigateway.LambdaIntegration(accountNextStepsFn));
+
+    // POST /accounts/{accountId}/analysis (unified: Approach + Buzz + Now + Next Steps + Key Asks)
+    const analysis = account.addResource('analysis');
+    analysis.addMethod('POST', new apigateway.LambdaIntegration(accountAnalysisFn));
 
     // POST /accounts/{accountId}/persona-intel
     const personaIntel = account.addResource('persona-intel');

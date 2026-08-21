@@ -347,6 +347,44 @@ export async function generateAccountInsights(
   });
 }
 
+// ─── Unified Account Analysis (single call → everything, all consistent) ──────
+
+export interface UnifiedAnalysisResponse {
+  // Approach
+  who_to_focus: string;
+  who_to_focus_detail: string;
+  what_conversations: string;
+  what_conversations_detail: string;
+  where_to_start: string;
+  where_to_start_detail: string;
+  whats_happening: string;
+  whats_happening_detail: string;
+  // Buzz
+  buzz_summary: string;
+  buzz_executive_insights: string[];
+  buzz_hiring_analysis: { roles: { title: string; url: string }[]; why_this_matters: string };
+  buzz_sentiment_analysis: { signals: string[]; why_this_matters: string };
+  buzz_tc_opportunity: string;
+  // Now
+  now_focus: string;
+  now_initiatives: string[];
+  now_key_asks: string[];
+  now_opening_move: string;
+  // Next Steps & Key Asks
+  next_steps: string[];
+  key_asks: string[];
+}
+
+export async function generateUnifiedAnalysis(
+  accountData: unknown,
+  tcData?: TCAccountSummary | null
+): Promise<UnifiedAnalysisResponse> {
+  return post<UnifiedAnalysisResponse>('/accounts/default/analysis', {
+    accountData,
+    tcData,
+  });
+}
+
 // ─── Account Buzz/Now (AI-Generated) ─────────────────────────────────────────
 
 export interface BuzzNowResponse {

@@ -8,7 +8,7 @@ import { SummaryView } from './components/SummaryView';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
-import { isBackendAvailable, getIntelligence, getTCData, generateBuzzNow, type TCAccountSummary, type BuzzNowResponse, type AccountInsightsResponse, type NextStepsResponse } from './services/api';
+import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse } from './services/api';
 import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
 
 type MainTab = 'brief' | 'summary' | 'demo';
@@ -22,17 +22,42 @@ export default function App() {
   const [insightPopup, setInsightPopup] = useState<'now' | 'buzz' | null>(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [tcData, setTcData] = useState<TCAccountSummary | null>(null);
-  const [buzzNow, setBuzzNow] = useState<BuzzNowResponse | null>(null);
-  const [buzzNowLoading, setBuzzNowLoading] = useState(false);
+  // Single unified analysis powers Approach, Buzz, Now, Next Steps, Key Asks — all consistent.
+  const [analysis, setAnalysis] = useState<UnifiedAnalysisResponse | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [uploadedAttendees, setUploadedAttendees] = useState<Attendee[]>([]);
   const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [, setAccountPlanText] = useState<string>('');
   const [accountPlanName, setAccountPlanName] = useState<string>('');
-  const [cachedInsights, setCachedInsights] = useState<AccountInsightsResponse | null>(null);
-  const [cachedNextSteps, setCachedNextSteps] = useState<NextStepsResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Derive the Buzz/Now shape from the unified analysis (the popup reads this).
+  const buzzNow: BuzzNowResponse | null = analysis ? {
+    buzz_summary: analysis.buzz_summary,
+    buzz_executive_insights: analysis.buzz_executive_insights,
+    buzz_hiring_analysis: analysis.buzz_hiring_analysis,
+    buzz_sentiment_analysis: analysis.buzz_sentiment_analysis,
+    buzz_tc_opportunity: analysis.buzz_tc_opportunity,
+    now_focus: analysis.now_focus,
+    now_initiatives: analysis.now_initiatives,
+    now_key_asks: analysis.now_key_asks,
+    now_opening_move: analysis.now_opening_move,
+  } : null;
   const accountPlanInputRef = useRef<HTMLInputElement>(null);
+
+  // Central regeneration: runs the single unified analysis. Called on account load
+  // AND whenever new data arrives (attendee import, brief/plan upload, Salesforce capture)
+  // so Approach, Buzz, Now, Next Steps, and Key Asks all refresh together and stay consistent.
+  const regenerateAnalysis = (acct: Account | null, tc: TCAccountSummary | null) => {
+    if (!acct || !isBackendAvailable()) return;
+    setAnalysisLoading(true);
+    setAnalysis(null);
+    generateUnifiedAnalysis(acct, tc)
+      .then(result => setAnalysis(result))
+      .catch(err => console.error('Unified analysis failed:', err))
+      .finally(() => setAnalysisLoading(false));
+  };
 
   // Handle attendee CSV upload
   const handleAttendeeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +70,11 @@ export default function App() {
       const parsed = parseAttendeeCSV(csvText);
       const personas = attendeesToPersonas(parsed);
       setUploadedAttendees(personas);
+      const updated = account ? { ...account, ebc_data: { ...account.ebc_data, attendees: personas } } : null;
       setAccount(prev => prev ? { ...prev, ebc_data: { ...prev.ebc_data, attendees: personas } } : prev);
       setAttendeeUploadMsg(`${personas.length} attendees loaded — regenerating insights...`);
-      // Clear cached analysis and re-trigger with new attendee data
-      setBuzzNow(null);
-      // Delay refreshKey to ensure account state has updated
+      // New data → regenerate the full unified analysis (Approach + Buzz + Now + Next Steps + Key Asks)
+      regenerateAnalysis(updated, tcData);
       setTimeout(() => setRefreshKey(k => k + 1), 100);
       setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
@@ -85,10 +110,11 @@ export default function App() {
         const planText = text.slice(0, 15000);
         setAccountPlanText(planText);
         setAccountPlanName(fileName);
+        const updated = account ? { ...account, accountPlanText: planText } : null;
         setAccount(prev => prev ? { ...prev, accountPlanText: planText } : prev);
         setAttendeeUploadMsg(`Account plan "${fileName}" loaded — regenerating insights...`);
-        setBuzzNow(null);
-        // Delay refreshKey to ensure account state has updated
+        // New data → regenerate the full unified analysis
+        regenerateAnalysis(updated, tcData);
         setTimeout(() => setRefreshKey(k => k + 1), 100);
         setTimeout(() => setAttendeeUploadMsg(null), 4000);
       } else {
@@ -127,16 +153,20 @@ export default function App() {
         const capturedText = event.data.text.slice(0, 15000);
         setAccountPlanText(capturedText);
         setAccountPlanName(`Captured: ${event.data.title || 'Page content'}`);
-        setAccount(prev => prev ? { ...prev, accountPlanText: capturedText } : prev);
-        setAttendeeUploadMsg(null); // Don't show duplicate — sidepanel shows it
-        setBuzzNow(null);
+        // Use functional update to get the current account, then regenerate with the captured data.
+        setAccount(prev => {
+          if (!prev) return prev;
+          const updated = { ...prev, accountPlanText: capturedText };
+          // New Salesforce data → regenerate the full unified analysis
+          regenerateAnalysis(updated, tcData);
+          return updated;
+        });
         setRefreshKey(k => k + 1);
-        setTimeout(() => setAttendeeUploadMsg(null), 4000);
       }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [tcData]);
 
   // When a live account is selected with empty intelligence, fetch from Bedrock
   useEffect(() => {
@@ -225,10 +255,20 @@ export default function App() {
     }
   }, [account?.customer_name]);
 
+  // Generate the single unified analysis when an account is selected.
+  // Runs once per account; data-change handlers (attendee/plan/capture) call
+  // regenerateAnalysis directly so everything refreshes together.
+  useEffect(() => {
+    if (account && isBackendAvailable()) {
+      regenerateAnalysis(account, tcData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account?.customer_name]);
+
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
       <div className="w-full max-w-[430px] md:max-w-[800px] lg:max-w-[1000px]">
-        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setBuzzNow(null); setUploadedAttendees([]); setAttendeeUploadMsg(null); setAccountPlanText(''); setAccountPlanName(''); }} />
+        <AccountSelector accounts={accounts} onSelect={a => { setAccount(a); setTab('brief'); setAnalysis(null); setUploadedAttendees([]); setAttendeeUploadMsg(null); setAccountPlanText(''); setAccountPlanName(''); }} />
       </div>
     </div>
   );
@@ -261,8 +301,8 @@ export default function App() {
                 },
               };
             });
-            // Clear buzz cache and force re-render so all analysis includes this persona's data
-            setBuzzNow(null);
+            // New persona intel → regenerate the full unified analysis so all sections include it
+            setAccount(prev => { if (prev) regenerateAnalysis(prev, tcData); return prev; });
             setRefreshKey(k => k + 1);
             setInsightPopup(null);
           }
@@ -354,12 +394,12 @@ export default function App() {
           )}
           {/* Now & Buzz bar — inside the sticky header */}
           <div className="flex border-t border-dark-600">
-            <button onClick={() => { setInsightPopup(insightPopup === 'now' ? null : 'now'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(err => { console.error('Buzz/Now generation failed:', err); }).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => setInsightPopup(insightPopup === 'now' ? null : 'now')}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'now' ? 'text-blue-400' : 'text-muted'}`}>
               <Zap className="w-4 h-4" />
               <span className="text-[9px] font-medium">Now</span>
             </button>
-            <button onClick={() => { setInsightPopup(insightPopup === 'buzz' ? null : 'buzz'); if (!buzzNow && !buzzNowLoading && account && isBackendAvailable()) { setBuzzNowLoading(true); generateBuzzNow(account, tcData, { approach: cachedInsights || undefined, next_steps: cachedNextSteps?.next_steps, key_asks: cachedNextSteps?.key_asks }).then(r => setBuzzNow(r)).catch(err => { console.error('Buzz/Now generation failed:', err); }).finally(() => setBuzzNowLoading(false)); } }}
+            <button onClick={() => setInsightPopup(insightPopup === 'buzz' ? null : 'buzz')}
               className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${insightPopup === 'buzz' ? 'text-orange-400' : 'text-muted'}`}>
               <Megaphone className="w-4 h-4" />
               <span className="text-[9px] font-medium">Buzz</span>
@@ -377,7 +417,7 @@ export default function App() {
               </div>
               <div className="px-5 pb-5">
                 {insightPopup === 'now' && (
-                  buzzNowLoading ? (
+                  analysisLoading ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3">
                       <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
                       <span className="text-sm text-slate-400">Analyzing...</span>
@@ -424,7 +464,7 @@ export default function App() {
                   )
                 )}
                 {insightPopup === 'buzz' && (
-                  buzzNowLoading ? (
+                  analysisLoading ? (
                     <div className="flex flex-col items-center justify-center py-12 gap-3">
                       <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
                       <span className="text-sm text-slate-400">Analyzing...</span>
@@ -568,13 +608,13 @@ export default function App() {
             </div>
           ) : (
             <>
-              {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} onInsightsReady={(ins, ns) => { setCachedInsights(ins); setCachedNextSteps(ns); }} />}
+              {tab === 'brief' && <ExecBrief key={refreshKey} account={account} onEngagePersona={() => setShowPersonaPicker(true)} tcData={tcData} analysis={analysis} analysisLoading={analysisLoading} />}
               {tab === 'summary' && <SummaryView account={account} />}
               {tab === 'demo' && (
                 <div className="space-y-3 py-2">
                   <p className="text-xs text-muted">Switch to demo accounts with pre-built data:</p>
                   {accounts.filter(a => ['Oceanic Capital Corporation', 'MedVista Health Systems', 'NordicRetail Group'].includes(a.customer_name)).map(a => (
-                    <button key={a.customer_name} onClick={() => { setAccount(a); setTab('brief'); setBuzzNow(null); setRefreshKey(k => k + 1); }}
+                    <button key={a.customer_name} onClick={() => { setAccount(a); setTab('brief'); setAnalysis(null); setRefreshKey(k => k + 1); }}
                       className="w-full text-left p-3 bg-dark-800 border border-dark-600 rounded-xl active:bg-dark-700">
                       <span className="text-sm font-medium text-white">{a.customer_name}</span>
                       <p className="text-[11px] text-muted mt-0.5">{a.industry} · {a.segment} · {a.geo}</p>

@@ -4,7 +4,7 @@ import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
 import { AgendaModal } from './AgendaModal';
-import { isBackendAvailable, generateEngagementPlan, generateAccountInsights, generateAgenda as generateAgendaAPI, generateNextStepsAndAsks, type TCAccountSummary, type AccountInsightsResponse, type NextStepsResponse } from '../services/api';
+import { isBackendAvailable, generateEngagementPlan, generateAgenda as generateAgendaAPI, type TCAccountSummary, type UnifiedAnalysisResponse } from '../services/api';
 
 
 function CopyBtn({ text }: { text: string }) {
@@ -117,46 +117,18 @@ function SayThisSection({ bestStarter, allStarters, followUps }: { account: Acco
   );
 }
 
-export function ExecBrief({ account, onEngagePersona, tcData, onInsightsReady }: { account: Account; onEngagePersona: () => void; tcData?: TCAccountSummary | null; onInsightsReady?: (insights: AccountInsightsResponse | null, nextSteps: NextStepsResponse | null) => void }) {
+export function ExecBrief({ account, onEngagePersona, tcData, analysis, analysisLoading }: { account: Account; onEngagePersona: () => void; tcData?: TCAccountSummary | null; analysis?: UnifiedAnalysisResponse | null; analysisLoading?: boolean }) {
   const a = account;
   const [showAgenda, setShowAgenda] = useState<'ebc' | 'training' | null>(null);
   const [heroTab, setHeroTab] = useState<'approach' | 'next-steps' | 'key-asks'>('approach');
-  const [insights, setInsights] = useState<AccountInsightsResponse | null>(null);
-  const [insightsLoading, setInsightsLoading] = useState(false);
   const [aiAgenda, setAiAgenda] = useState<any | null>(null);
   const [agendaLoading, setAgendaLoading] = useState<'ebc' | 'training' | false>(false);
-  const [aiNextSteps, setAiNextSteps] = useState<NextStepsResponse | null>(null);
-  const [nextStepsLoading, setNextStepsLoading] = useState(false);
   const isGreenfield = !a.tc_current_state.skill_builder;
 
-  // Fetch AI-generated insights when account changes
-  useEffect(() => {
-    if (!isBackendAvailable()) return;
-    setInsightsLoading(true);
-    setInsights(null);
-    generateAccountInsights(a, tcData)
-      .then(result => setInsights(result))
-      .catch(err => console.warn('Failed to generate insights:', err))
-      .finally(() => setInsightsLoading(false));
-  }, [a.customer_name, a.ebc_data.attendees.length]);
-
-  // Fetch AI-generated next steps and key asks
-  useEffect(() => {
-    if (!isBackendAvailable()) return;
-    setNextStepsLoading(true);
-    setAiNextSteps(null);
-    generateNextStepsAndAsks(a, tcData)
-      .then(result => setAiNextSteps(result))
-      .catch(err => console.warn('Failed to generate next steps:', err))
-      .finally(() => setNextStepsLoading(false));
-  }, [a.customer_name, a.ebc_data.attendees.length]);
-
-  // Notify parent when insights are ready
-  useEffect(() => {
-    if (onInsightsReady && (insights || aiNextSteps)) {
-      onInsightsReady(insights, aiNextSteps);
-    }
-  }, [insights, aiNextSteps]);
+  // All insights come from the single unified analysis passed in by the parent.
+  const insights = analysis;
+  const insightsLoading = !!analysisLoading;
+  const nextStepsLoading = !!analysisLoading;
 
   // Handle agenda generation via Bedrock
   const handleGenerateAgenda = async (format: 'ebc' | 'training') => {
@@ -273,8 +245,8 @@ export function ExecBrief({ account, onEngagePersona, tcData, onInsightsReady }:
   const bestStarter = plan0?.conversation_starters[0] || aiStarters[0] || `How are you planning to close your ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} AI talent gaps in the next 12–18 months?`;
   const allStarters = plan0?.conversation_starters || (aiStarters.length > 0 ? aiStarters : [bestStarter]);
 
-  const nextSteps = aiNextSteps?.next_steps || [];
-  const keyAsks = aiNextSteps?.key_asks || [];
+  const nextSteps = analysis?.next_steps || [];
+  const keyAsks = analysis?.key_asks || [];
 
   // Show full loading state until insights are ready
   if (insightsLoading && !insights) {
