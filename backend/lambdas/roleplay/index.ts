@@ -4,6 +4,7 @@ import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { tavilySearch } from '../shared/tavily';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 /**
  * Search for a person's public posts and statements using Tavily
@@ -184,7 +185,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       : systemPrompt;
 
     const response = await invokeClaudeText(
-      enrichedSystemPrompt,
+      ANTI_FABRICATION_POLICY + '\n\n' + enrichedSystemPrompt,
       messages,
       { maxTokens: 1024, temperature: 0.8 }
     );

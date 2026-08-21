@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getEngagementKnowledge } from '../shared/mcp';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 interface EngagementRequest {
   accountData: {
@@ -153,7 +154,7 @@ IMPORTANT: When generating conversation starters and recommended plays, referenc
 Generate the engagement plan. Remember: ground everything in the specific data above. Reference ${persona.name}'s own words and public activity. Make the narrative tell THEIR story, not ours.`;
 
     const result = await invokeClaudeJSON<EngagementPlanResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );

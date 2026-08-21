@@ -6,6 +6,7 @@ import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -158,7 +159,7 @@ Return JSON:
 }`;
 
     const result = await invokeClaudeJSON<NextStepsResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );

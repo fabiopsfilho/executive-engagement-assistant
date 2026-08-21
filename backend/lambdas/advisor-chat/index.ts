@@ -3,6 +3,7 @@ import { invokeClaudeText, BedrockMessage } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 interface AdvisorRequest {
   message: string;
@@ -128,7 +129,7 @@ ${capability ? `\nACTIVE CAPABILITY: ${capability}` : ''}`;
     });
 
     const response = await invokeClaudeText(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       messages,
       { maxTokens: 2048, temperature: 0.7 }
     );

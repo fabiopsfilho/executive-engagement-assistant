@@ -4,6 +4,7 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dyn
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { tavilySearch, tavilyLinkedInSearch } from '../shared/tavily';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -145,7 +146,7 @@ Return JSON:
 IMPORTANT: Only include information that was ACTUALLY found in the search results. Do not fabricate LinkedIn profiles or activity. If no data was found, say so honestly, set confidence to Low, base DISC on their role/title/industry patterns, and add disclaimer.`;
 
     const result = await invokeClaudeJSON<PersonaIntelResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.5 }
     );

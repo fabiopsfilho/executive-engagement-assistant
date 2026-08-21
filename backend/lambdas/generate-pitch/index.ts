@@ -3,6 +3,7 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 interface PitchRequest {
   accountContext: {
@@ -156,7 +157,7 @@ Create a 7-slide pitch deck tailored to ${persona.name}'s perspective as a ${per
       : userMessage;
 
     const result = await invokeClaudeJSON<PitchResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: fullMessage }],
       { maxTokens: 3072, temperature: 0.7 }
     );

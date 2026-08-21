@@ -3,6 +3,7 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { getTCProductKnowledge } from '../shared/mcp';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 interface AgendaRequest {
   accountContext: {
@@ -151,7 +152,7 @@ ${mcpContext ? `\nAWS DOCUMENTATION:\n${mcpContext}` : ''}
 Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
 
     const result = await invokeClaudeJSON<AgendaResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 3072, temperature: 0.6 }
     );

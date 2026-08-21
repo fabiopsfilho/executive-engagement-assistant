@@ -5,6 +5,7 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
@@ -182,13 +183,13 @@ Return JSON with these STRICT formatting rules:
    - "now_focus": Must reference the specific skills gap revealed by the hiring data AND the employee sentiment. What is the ONE thing that connects the roles they can't fill with what employees are saying? That intersection is the focus.
    - "now_initiatives": Each initiative must trace back to a concrete signal — a specific open role, a specific Glassdoor quote, a specific executive post, or a specific news signal. No generic recommendations.
    - "now_key_asks": These are consultative discovery questions that demonstrate you already know their situation. Reference their specific hiring patterns, employee feedback, or industry pressures. These questions should make the executive think "this person has done their homework."
-   - "now_opening_move": Must name a specific person (from attendees or executives found), reference a specific signal (role they're hiring for, something an employee said, or something the executive posted), and explain exactly why leading with this angle works for THIS company.
+   - "now_opening_move": Reference a specific signal (a role they're hiring for, something an employee said, an executive post, or industry context) and explain why leading with this angle works for THIS company. ONLY name a specific person if they are in the Attendees list. If no attendees are provided, address the opening move to a ROLE (e.g. "When you meet the CHRO or transformation lead, open with...") — NEVER invent a person's name or claim anyone is a confirmed attendee.
 
 WRITING STYLE: Write like an Amazon 6-pager — concise, data-backed, no weasel words, no filler. Every sentence should carry information. Be consultative and proactive — show you understand their workforce challenge before they explain it.
 
 {
   "buzz_summary": "2-3 sentence synthesis of what's happening at this company",
-  "buzz_executive_insights": ["One insight per confirmed executive — what they care about and how to approach them"],
+  "buzz_executive_insights": ["One insight per REAL executive found in the Attendees list or Executive Social data — what they care about and how to approach them. If none are known, return an empty array []. NEVER invent an executive."],
   "buzz_hiring_analysis": {
     "roles": [{"title": "Cloud Solutions Architect", "url": "https://linkedin.com/jobs/..."}, {"title": "ML Engineer", "url": ""}],
     "why_this_matters": "Concise paragraph on what the hiring pattern signals about capability gaps."
@@ -201,11 +202,11 @@ WRITING STYLE: Write like an Amazon 6-pager — concise, data-backed, no weasel 
   "now_focus": "Ground this in the hiring gaps + sentiment. What is the critical workforce capability issue right now?",
   "now_initiatives": ["Each traces to a specific signal from the Buzz analysis"],
   "now_key_asks": ["Consultative questions that prove you've done your homework on their skills situation"],
-  "now_opening_move": "Name the person, reference the specific signal, explain the angle"
+  "now_opening_move": "Reference the specific signal and explain the angle. Address it to a ROLE unless a real attendee name was provided. NEVER invent a name or claim someone is a confirmed attendee."
 }`;
 
     const result = await invokeClaudeJSON<BuzzNowResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );

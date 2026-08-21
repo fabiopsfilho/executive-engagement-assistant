@@ -5,6 +5,7 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { getTCProductKnowledge } from '../shared/mcp';
+import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -123,7 +124,7 @@ Return JSON with exactly these fields:
 }`;
 
     const result = await invokeClaudeJSON<AccountInsightsResponse>(
-      SYSTEM_PROMPT,
+      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 1024, temperature: 0.7 }
     );
