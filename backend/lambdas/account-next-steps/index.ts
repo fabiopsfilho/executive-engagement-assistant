@@ -71,9 +71,12 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // API Gateway timeout. We only fetch the lightweight AWS knowledge context.
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
+    // Cap knowledge lookups at 4s each so they can't drag out the total response time.
+    const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+      Promise.race([p, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))]);
     const [mcpDocs, kbDocs] = await Promise.all([
-      getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''),
-      getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''),
+      withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 4000, ''),
+      withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 4000, ''),
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
     const onlineSearch: string = '';
@@ -156,7 +159,7 @@ Return JSON:
     const result = await invokeClaudeJSON<NextStepsResponse>(
       EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 2048, temperature: 0.7 }
+      { maxTokens: 1024, temperature: 0.7 }
     );
 
 
