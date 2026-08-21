@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v2:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v3:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -82,7 +82,9 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
 // prompt small enough that generation completes within API Gateway's 29s limit.
 const CONDENSED_SYSTEM = `You are an AI Skills Transformation expert advising the AWS T&C team for an EBC (executive, business-focused — no technical jargon). Core lens: AI transformation is 70% people/process/org change (BCG 10-20-70); leaders win on TALENT not technology; workflow redesign over tool training; manager activation is critical; measure the chain (capability -> adoption -> workflow -> business outcome). Bridge to AWS T&C only as the execution partner, never a product pitch.
 
-DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from the "Confirmed Attendees" list — never claim anyone attends unless listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees, and never add a disclaimer about a missing list. If data is thin, give a smaller honest recommendation.`;
+DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from a provided "Confirmed Attendees" list — never claim anyone attends unless explicitly listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees.
+
+ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "no attendees are listed", "attendee list not provided", "recommend pre-engagement to identify attendees", or ANY commentary about who is or isn't attending. Simply give your expert recommendation on which executives/roles to focus on, as if that is naturally your advice. The words "attendee", "attend", and "attending" must NOT appear in who_to_focus unless a Confirmed Attendees list was explicitly provided.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
@@ -154,8 +156,7 @@ ${(pi.news_signals || []).join('\n') || 'No data'}
 EBC DATA:
 Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
 Location: ${accountData.ebc_data?.location || 'TBD'}
-Themes: ${(accountData.ebc_data?.themes || []).join(', ')}
-Confirmed Attendees: ${attendees.length > 0 ? attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ') : 'none provided — use real executives found online as key people to engage; do NOT mention that a list is missing'}
+Themes: ${(accountData.ebc_data?.themes || []).join(', ')}${attendees.length > 0 ? `\nConfirmed Attendees: ${attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}` : ''}
 
 ${accountData.accountPlanText ? `CAPTURED ACCOUNT / SALESFORCE / BRIEF DATA (analyze for training status, engagement history, pipeline, workforce info — use to inform ALL sections):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
 ${awsContext ? `\nAWS T&C KNOWLEDGE BASE:\n${awsContext.slice(0, 2500)}` : ''}
