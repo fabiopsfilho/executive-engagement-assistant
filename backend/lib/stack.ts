@@ -225,7 +225,7 @@ class EngagementAssistantStack extends cdk.Stack {
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(90),
-      memorySize: 1024,
+      memorySize: 2048,
       environment: sharedEnv,
     });
 
