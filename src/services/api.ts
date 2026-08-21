@@ -328,9 +328,13 @@ export async function getTCData(accountId?: string): Promise<{ summaries?: TCAcc
 
 export interface AccountInsightsResponse {
   who_to_focus: string;
+  who_to_focus_detail?: string;
   what_conversations: string;
+  what_conversations_detail?: string;
   where_to_start: string;
+  where_to_start_detail?: string;
   whats_happening: string;
+  whats_happening_detail?: string;
 }
 
 export async function generateAccountInsights(

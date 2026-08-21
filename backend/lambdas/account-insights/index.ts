@@ -13,9 +13,13 @@ const ddb = DynamoDBDocumentClient.from(ddbClient);
 
 export interface AccountInsightsResponse {
   who_to_focus: string;
+  who_to_focus_detail: string;
   what_conversations: string;
+  what_conversations_detail: string;
   where_to_start: string;
+  where_to_start_detail: string;
   whats_happening: string;
+  whats_happening_detail: string;
 }
 
 const SYSTEM_PROMPT = `You are a globally renowned expert in skills transformation for the age of Generative AI. You work for AWS Training & Certification and have deep expertise in:
@@ -116,26 +120,34 @@ ACCOUNT DATA:
 ${context}
 ${allContext ? `\nAWS T&C KNOWLEDGE & DOCUMENTATION:\n${allContext}` : ''}
 
-ATTENDEE vs. KNOWN-EXECUTIVE RULE (READ CAREFULLY):
-- REAL executives found in the Executive Social / public search data (with a name and ideally a LinkedIn URL) are GREAT intelligence. Use them freely BY NAME across all fields — their role, their public activity, what's happening in their world. This enriches the narrative.
-- BUT you must NEVER say or imply that any named executive "will attend", "is attending", "will be present", or is a "confirmed attendee" of the EBC — UNLESS their exact name is in the "Confirmed Attendees" list.
-- WHO_TO_FOCUS LOGIC:
-    * IF a Confirmed Attendees list IS provided: focus on THOSE attendees by name.
-    * IF NO Confirmed Attendees list: focus on the real key executives found online (name them, e.g. the CEO found on LinkedIn) as "the key people at this company to build a relationship with" and/or the priority ROLES (CHRO, CFO). Frame them as who matters / who to research and engage — NOT as confirmed session attendees. Add a short note that importing the attendee list will tailor this to who is actually in the room.
-- Never invent a name that is not in the provided data.
+RULES FOR THIS OUTPUT:
 
-Return JSON with exactly these fields:
+1. USE THE ONLINE EXECUTIVE INTELLIGENCE. Real executives found in the Executive Social / public search data (names, roles, LinkedIn activity) are valuable — reference them BY NAME and weave their public activity into who to focus on, what conversations to drive, and what's happening. This is the good intelligence the AM needs.
+
+2. NEVER claim a named executive "will attend" / "is attending" / "is a confirmed attendee" unless their name is in the Confirmed Attendees list.
+   - IF a Confirmed Attendees list IS provided: "who_to_focus" centers on THOSE attendees by name.
+   - IF NO Confirmed Attendees list: "who_to_focus" centers on the real key executives found online (name them, e.g. the CEO from LinkedIn) as the people who matter and are worth engaging/researching — do NOT frame them as session attendees, and do NOT add any disclaimer about the list not being imported. Just give the consultative recommendation naturally.
+
+3. EXECUTIVE TONE — THIS IS AN EBC (business, not technical). Speak the language of the boardroom: business outcomes, competitive position, workforce strategy, ROI, talent. Do NOT go into technical services, architectures, or product mechanics. No jargon.
+
+4. FORMAT — BRIEVITY FIRST. Each main field is a SHORT executive summary: 1-2 sentences, plain readable prose, NO asterisks, NO bullet lists, NO markdown. The matching "_detail" field holds the fuller reasoning (a few sentences, still executive-level, still no heavy markdown) for a "more info" expansion.
+
+Return JSON with exactly these fields (summary = brief; detail = expanded):
 {
-  "who_to_focus": "Apply the WHO_TO_FOCUS LOGIC above. Name the real executives found online (e.g. the CEO from LinkedIn) as key people to engage/research, or the confirmed attendees if the list was imported. Never claim an un-imported person is attending.",
-  "what_conversations": "What strategic conversation angles to drive — grounded in the real company signals and named executives' public activity. Frame around their business challenges, not our products.",
-  "where_to_start": "A comprehensive strategic approach to cloud skills transformation and GenAI readiness for this company, grounded in their real situation. Methodology first (assessment → strategy → execution → measurement). At the end you may briefly note AWS can enable this (e.g. Skills Guild), but lead with strategy.",
-  "whats_happening": "What's actually happening in their world (industry, hiring, sentiment, named executives' public statements/activity found online) that creates urgency for workforce transformation NOW."
+  "who_to_focus": "1-2 sentence executive summary. Name real executives found online (or confirmed attendees if imported) and why they matter.",
+  "who_to_focus_detail": "2-4 sentences expanding on each key person's role, public activity, and how to approach them — executive tone, no technical jargon.",
+  "what_conversations": "1-2 sentence summary of the strategic conversation angle to drive, grounded in their real business signals.",
+  "what_conversations_detail": "2-4 sentences expanding the conversation strategy, referencing named executives' public activity and the company's real challenges.",
+  "where_to_start": "1-2 sentence summary of the recommended strategic approach to their skills transformation (methodology, not products).",
+  "where_to_start_detail": "2-4 sentences expanding the approach: assessment → strategy → execution → measurement. May briefly note AWS can enable this at the end.",
+  "whats_happening": "1-2 sentence summary of what's happening in their world creating urgency now.",
+  "whats_happening_detail": "2-4 sentences expanding on industry, hiring, sentiment, and named executives' public statements found online."
 }`;
 
     const result = await invokeClaudeJSON<AccountInsightsResponse>(
       EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 1024, temperature: 0.7 }
+      { maxTokens: 2048, temperature: 0.7 }
     );
 
 

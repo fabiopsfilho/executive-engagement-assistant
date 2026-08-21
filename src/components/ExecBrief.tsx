@@ -18,6 +18,27 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function InsightItem({ icon: Icon, iconColor, title, summary, detail }: { icon: React.ComponentType<{ className?: string }>; iconColor: string; title: string; summary: string; detail?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="flex items-start gap-2.5">
+      <Icon className={`w-4 h-4 ${iconColor} shrink-0 mt-0.5`} />
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-white">{title}</span>
+        <p className="text-xs text-muted mt-0.5 leading-relaxed">{summary}</p>
+        {detail && detail.trim() && (
+          <>
+            {expanded && <p className="text-xs text-slate-400 mt-2 leading-relaxed border-l-2 border-purple-500/30 pl-2.5">{detail}</p>}
+            <button onClick={() => setExpanded(!expanded)} className="text-[11px] text-purple-400 mt-1 active:text-purple-300">
+              {expanded ? 'Show less' : 'More detail →'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ConnectionToggle({ text }: { text: string }) {
   const [show, setShow] = useState(false);
   return (
@@ -319,48 +340,32 @@ export function ExecBrief({ account, onEngagePersona, tcData, onInsightsReady }:
               </div>
             ) : (
             <div className="space-y-4">
-          <div className="flex items-start gap-2.5">
-            <Users className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="text-sm font-medium text-white">Who should we focus on?</span>
-              <p className="text-xs text-muted mt-0.5">
-                {insights?.who_to_focus || (rankedPersonas.length > 0
-                  ? rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ') + ' — confirmed attendees from the imported list.'
-                  : 'No attendee list imported yet. Prioritize the CHRO and CFO for workforce conversations, and import the attendee list to unlock attendee-specific guidance.')}
-              </p>
-              <ConnectionToggle text={`Buzz: ${a.public_intelligence.executive_social[0] ? `${a.public_intelligence.executive_social[0].name} posted about "${a.public_intelligence.executive_social[0].post_theme}"` : 'Executive signals'}. Agenda: Featured in Welcome & Vision blocks.`} />
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <MessageSquareText className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="text-sm font-medium text-white">What conversations should we drive?</span>
-              <p className="text-xs text-muted mt-0.5">
-                {insights?.what_conversations || `${a.signals[0] ? `Start with "${a.signals[0].label}" — ${a.signals[0].evidence.split(';')[0]}. ` : ''}Ask where skills gaps are slowing down ${a.sfdc_data.account_plan_priority}.`}
-              </p>
-              <ConnectionToggle text={`Now: ${a.signals[0]?.label || 'Top signal'} is the priority. Buzz: Earnings & Glassdoor support this. Skills Session: Workforce Landscape block.`} />
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Target className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="text-sm font-medium text-white">Where should we start?</span>
-              <p className="text-xs text-muted mt-0.5">
-                {insights?.where_to_start || (tcData && tcData.openOpportunities > 0 ? `${tcData.openOpportunities} open T&C opportunities (${(tcData.totalPipeline / 1000).toFixed(0)}K pipeline). Products: ${tcData.products.slice(0, 3).join(', ')}. Build on existing engagement.` : isGreenfield ? `No structured training. Understand their workforce reality. The assessment is just a tool — the conversation is the value.` : `Adoption stalled. Glassdoor: "${a.public_intelligence.glassdoor_signals[0] || 'feedback pending'}". Redesign how they develop people.`)}
-              </p>
-              <ConnectionToggle text={`${tcData ? `T&C Data: ${tcData.products.join(', ')}. ` : ''}Summary: ${isGreenfield ? 'Greenfield' : 'Existing engagement'}. Buzz: ${a.public_intelligence.linkedin_job_postings.cloud_ai_roles} open roles.`} />
-            </div>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <Globe className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="text-sm font-medium text-white">What's happening in their world?</span>
-              <p className="text-xs text-muted mt-0.5">
-                {insights?.whats_happening || `${a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.`}
-              </p>
-              <ConnectionToggle text={`Buzz: Industry trends & news. Agenda: Welcome & Intelligence Briefing. Now: Frames urgency.`} />
-            </div>
-          </div>
+          <InsightItem
+            icon={Users} iconColor="text-orange-400"
+            title="Who should we focus on?"
+            summary={insights?.who_to_focus || (rankedPersonas.length > 0
+              ? rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ')
+              : 'Prioritize the CHRO and CFO for the workforce conversation.')}
+            detail={insights?.who_to_focus_detail}
+          />
+          <InsightItem
+            icon={MessageSquareText} iconColor="text-green-400"
+            title="What conversations should we drive?"
+            summary={insights?.what_conversations || `${a.signals[0] ? `Start with "${a.signals[0].label}". ` : ''}Ask where skills gaps are slowing down ${a.sfdc_data.account_plan_priority}.`}
+            detail={insights?.what_conversations_detail}
+          />
+          <InsightItem
+            icon={Target} iconColor="text-red-400"
+            title="Where should we start?"
+            summary={insights?.where_to_start || (isGreenfield ? 'Understand their workforce reality first — the assessment is a tool, the conversation is the value.' : 'Redesign how they develop people, starting from where adoption stalled.')}
+            detail={insights?.where_to_start_detail}
+          />
+          <InsightItem
+            icon={Globe} iconColor="text-blue-400"
+            title="What's happening in their world?"
+            summary={insights?.whats_happening || `${a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.`}
+            detail={insights?.whats_happening_detail}
+          />
         </div>
           ))}
 
