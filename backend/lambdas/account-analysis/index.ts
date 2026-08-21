@@ -17,8 +17,9 @@ function analysisCacheKey(accountData: any): string {
   const name = (accountData.customer_name || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '-');
   const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
   const planLen = (accountData.accountPlanText || '').length;
+  // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v2:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
