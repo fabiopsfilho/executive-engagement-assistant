@@ -89,11 +89,11 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults, chroSkillsResults] = await Promise.all([
       withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 3000, ''),
       withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 3000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`), 6000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyGlassdoorSearch(`${companyName} reviews culture training development`), 6000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`), 6000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`), 6000, ''),
-      withTimeout(tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`), 6000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`), 5000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyGlassdoorSearch(`${companyName} reviews culture training development`), 5000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`), 5000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`), 5000, ''),
+      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`), 5000, ''),
     ]);
 
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
@@ -178,7 +178,7 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
       CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 3000, temperature: 0.5 }
+      { maxTokens: 2300, temperature: 0.5 }
     );
 
     return success(result);
