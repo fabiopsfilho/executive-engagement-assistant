@@ -4,6 +4,7 @@ import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
+import { EXPERT_PERSONA } from '../shared/persona';
 
 interface AdvisorRequest {
   message: string;
@@ -129,7 +130,7 @@ ${capability ? `\nACTIVE CAPABILITY: ${capability}` : ''}`;
     });
 
     const response = await invokeClaudeText(
-      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
+      EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       messages,
       { maxTokens: 2048, temperature: 0.7 }
     );

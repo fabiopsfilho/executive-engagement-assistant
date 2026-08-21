@@ -6,6 +6,7 @@ import { success, error } from '../shared/response';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
+import { EXPERT_PERSONA } from '../shared/persona';
 import { tavilySearch, tavilyLinkedInSearch, tavilyGlassdoorSearch } from '../shared/tavily';
 
 const ddbClient = new DynamoDBClient({});
@@ -206,7 +207,7 @@ WRITING STYLE: Write like an Amazon 6-pager — concise, data-backed, no weasel 
 }`;
 
     const result = await invokeClaudeJSON<BuzzNowResponse>(
-      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
+      EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );

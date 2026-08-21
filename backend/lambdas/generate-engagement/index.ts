@@ -3,6 +3,7 @@ import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getEngagementKnowledge } from '../shared/mcp';
 import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
+import { EXPERT_PERSONA } from '../shared/persona';
 
 interface EngagementRequest {
   accountData: {
@@ -154,7 +155,7 @@ IMPORTANT: When generating conversation starters and recommended plays, referenc
 Generate the engagement plan. Remember: ground everything in the specific data above. Reference ${persona.name}'s own words and public activity. Make the narrative tell THEIR story, not ours.`;
 
     const result = await invokeClaudeJSON<EngagementPlanResponse>(
-      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
+      EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 2048, temperature: 0.7 }
     );

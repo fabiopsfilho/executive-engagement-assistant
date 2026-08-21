@@ -6,6 +6,7 @@ import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
+import { EXPERT_PERSONA } from '../shared/persona';
 
 const ddbClient = new DynamoDBClient({});
 const ddb = DynamoDBDocumentClient.from(ddbClient);
@@ -124,7 +125,7 @@ Return JSON with exactly these fields:
 }`;
 
     const result = await invokeClaudeJSON<AccountInsightsResponse>(
-      ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
+      EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
       { maxTokens: 1024, temperature: 0.7 }
     );
