@@ -116,12 +116,20 @@ ACCOUNT DATA:
 ${context}
 ${allContext ? `\nAWS T&C KNOWLEDGE & DOCUMENTATION:\n${allContext}` : ''}
 
+ATTENDEE vs. KNOWN-EXECUTIVE RULE (READ CAREFULLY):
+- REAL executives found in the Executive Social / public search data (with a name and ideally a LinkedIn URL) are GREAT intelligence. Use them freely BY NAME across all fields — their role, their public activity, what's happening in their world. This enriches the narrative.
+- BUT you must NEVER say or imply that any named executive "will attend", "is attending", "will be present", or is a "confirmed attendee" of the EBC — UNLESS their exact name is in the "Confirmed Attendees" list.
+- WHO_TO_FOCUS LOGIC:
+    * IF a Confirmed Attendees list IS provided: focus on THOSE attendees by name.
+    * IF NO Confirmed Attendees list: focus on the real key executives found online (name them, e.g. the CEO found on LinkedIn) as "the key people at this company to build a relationship with" and/or the priority ROLES (CHRO, CFO). Frame them as who matters / who to research and engage — NOT as confirmed session attendees. Add a short note that importing the attendee list will tailor this to who is actually in the room.
+- Never invent a name that is not in the provided data.
+
 Return JSON with exactly these fields:
 {
-  "who_to_focus": "Which executive ROLES to prioritize and WHY, based on the account profile and signals. If Confirmed Attendees are provided, reference them by name as attendees. If NOT, do two things: (1) recommend which roles to prioritize (e.g. CHRO, CFO), and (2) if real executives appear in the Executive Social/public data, mention them as 'worth researching before the session' — clearly NOT as confirmed attendees. Note that importing the attendee list will unlock attendee-specific guidance. NEVER invent a name or claim someone will attend.",
-  "what_conversations": "What strategic conversation angles to drive — frame around their business challenges, not our products",
-  "where_to_start": "A comprehensive strategic approach to cloud skills transformation and GenAI readiness for this company. Describe the methodology and engagement model. At the end you may note that AWS can support this through programs like Skills Guild, but lead with strategy.",
-  "whats_happening": "What's happening in their world (industry, hiring, sentiment) that creates urgency for workforce transformation NOW"
+  "who_to_focus": "Apply the WHO_TO_FOCUS LOGIC above. Name the real executives found online (e.g. the CEO from LinkedIn) as key people to engage/research, or the confirmed attendees if the list was imported. Never claim an un-imported person is attending.",
+  "what_conversations": "What strategic conversation angles to drive — grounded in the real company signals and named executives' public activity. Frame around their business challenges, not our products.",
+  "where_to_start": "A comprehensive strategic approach to cloud skills transformation and GenAI readiness for this company, grounded in their real situation. Methodology first (assessment → strategy → execution → measurement). At the end you may briefly note AWS can enable this (e.g. Skills Guild), but lead with strategy.",
+  "whats_happening": "What's actually happening in their world (industry, hiring, sentiment, named executives' public statements/activity found online) that creates urgency for workforce transformation NOW."
 }`;
 
     const result = await invokeClaudeJSON<AccountInsightsResponse>(
