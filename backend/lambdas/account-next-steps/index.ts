@@ -65,24 +65,18 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
 
 
-    // Fetch real-time intelligence from Tavily + AWS docs + Knowledge Base in parallel
+    // NOTE: We do NOT re-run online searches here — the intelligence Lambda already
+    // gathered LinkedIn/Glassdoor/news/executive data and it arrives in
+    // accountData.public_intelligence. Re-searching added ~15s and risked the 29s
+    // API Gateway timeout. We only fetch the lightweight AWS knowledge context.
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
-    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, databookResults] = await Promise.all([
+    const [mcpDocs, kbDocs] = await Promise.all([
       getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''),
       getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''),
-      tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`),
-      tavilyGlassdoorSearch(`${companyName} reviews culture training development`),
-      tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`),
-      tavilySearch(`${companyName} revenue earnings financial results 2025`),
     ]);
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
-    const onlineSearch = [
-      linkedinResults ? `LINKEDIN SEARCH RESULTS:\n${linkedinResults}` : '',
-      glassdoorResults ? `GLASSDOOR SEARCH RESULTS:\n${glassdoorResults}` : '',
-      newsResults ? `NEWS & TRANSFORMATION SEARCH:\n${newsResults}` : '',
-      databookResults ? `FINANCIAL/DATABOOK SEARCH:\n${databookResults}` : '',
-    ].filter(Boolean).join('\n\n');
+    const onlineSearch: string = '';
 
     // Build the context
     const pi = accountData.public_intelligence || {};
