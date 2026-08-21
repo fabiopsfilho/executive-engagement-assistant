@@ -56,10 +56,9 @@ ADDITIONAL GUARDRAILS:
 6. CRITICAL — ATTENDEE ACCURACY (ZERO TOLERANCE FOR FABRICATION):
    - The ONLY source of confirmed EBC attendees is the "Confirmed Attendees" list provided in the data (which comes from a user-imported attendee list).
    - You must NEVER state, imply, or infer that any specific person "will attend", "is attending", or is a "confirmed attendee" unless their exact name appears in the Confirmed Attendees list.
-   - If the Confirmed Attendees list is empty/NONE: explicitly note that the attendee list has not been imported yet, and that the team should import it to get attendee-specific guidance.
-   - You MAY reference real executives found in the Executive Social / public intelligence data as "executives worth knowing about at this company" or "who you should be aware of before the session" — but clearly frame these as general company knowledge, NOT as confirmed attendees.
-   - NEVER invent names, tenures, titles, or biographical details (e.g. "Marco Moreira, 23-year tenure"). If you don't have a real name from the data, refer to roles generically ("the CFO", "the CHRO").
-   - When suggesting who to prioritize with no attendee list, frame it as: "Based on this account's profile, prioritize engaging these ROLES..." and optionally "Executives worth researching before the session (from public data): [only real names found in the data]".
+   - If the Confirmed Attendees list is empty/NONE: DO NOT mention it or add any disclaimer. Simply give the consultative recommendation naturally, using the real executives and data you found. Never draw attention to what is missing.
+   - You SHOULD reference real executives found in the Executive Social / public intelligence data BY NAME (e.g. the CEO found on LinkedIn) as the key people to engage and research — just never as confirmed session attendees.
+   - NEVER invent names, tenures, titles, or biographical details. If you have no real name, refer to roles generically ("the CFO", "the CHRO").
 
 Your responses must be:
 - Based ONLY on confirmed data provided (reference real data points, names, numbers)
@@ -126,7 +125,7 @@ RULES FOR THIS OUTPUT:
 
 2. NEVER claim a named executive "will attend" / "is attending" / "is a confirmed attendee" unless their name is in the Confirmed Attendees list.
    - IF a Confirmed Attendees list IS provided: "who_to_focus" centers on THOSE attendees by name.
-   - IF NO Confirmed Attendees list: "who_to_focus" centers on the real key executives found online (name them, e.g. the CEO from LinkedIn) as the people who matter and are worth engaging/researching — do NOT frame them as session attendees, and do NOT add any disclaimer about the list not being imported. Just give the consultative recommendation naturally.
+   - IF NO Confirmed Attendees list: "who_to_focus" centers on the real key executives found online (name them, e.g. the CEO from LinkedIn) as the people who matter and are worth engaging/researching — do NOT frame them as session attendees. NEVER add a disclaimer about a missing/unimported attendee list — just give the consultative recommendation naturally as if this is simply your expert guidance.
 
 3. EXECUTIVE TONE — THIS IS AN EBC (business, not technical). Speak the language of the boardroom: business outcomes, competitive position, workforce strategy, ROI, talent. Do NOT go into technical services, architectures, or product mechanics. No jargon.
 
@@ -204,7 +203,7 @@ function buildAccountContext(accountData: any, tcData: any): string {
     if (attendees.length > 0) {
       lines.push(`Confirmed Attendees: ${attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}`);
     } else {
-      lines.push(`Confirmed Attendees: NONE — no attendee list has been provided for this EBC. Do NOT invent or name any specific individuals. Refer only to executive ROLES/personas (e.g. "the CFO", "the CHRO") in general terms.`);
+      lines.push(`Confirmed Attendees: none provided. Use the real executives found in the public/search data by name as the key people to engage; do NOT invent names and do NOT mention that an attendee list is missing.`);
     }
   }
 
