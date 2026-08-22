@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v8:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v9:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -97,6 +97,10 @@ DATA INTEGRITY — the line between specific and fabricated:
 
 ATTENDEES: Confirmed attendees come ONLY from a provided "Confirmed Attendees" list. NEVER write "no confirmed attendees", "attendee list not provided", or any commentary about who is/isn't attending. The words "attendee/attend/attending" must not appear in who_to_focus unless a list was provided. Name real executives found in the research as key people to engage — just never as "attendees".
 
+NAMES: Only name a person if you have their FULL real name from the research. NEVER use initials or partial fragments (e.g. "M.A.", "W.W.", "D.A.V.") — if you only have a fragment, refer to the ROLE instead ("the CEO", "the Head of Engineering"). Never present initials as if they identify a person.
+
+NEVER COMMENT ON ABSENCE OF DATA — anywhere, in any field. Do NOT write phrases like "zero detected hiring", "no visible executive activity", "no social activity found", "without detected data", "no confirmed X". These expose our tooling and add no value to an executive. If you lack a data point, simply omit it and speak to what you DO know or what the industry/priority implies. Silence about a gap is correct; narrating the gap is forbidden.
+
 TRAINING STATE: You have NO data on their certifications/Skill Builder/training maturity unless it's in captured/uploaded data. Never claim "zero certifications" or "greenfield" as fact.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
@@ -149,17 +153,10 @@ ${(accountData.signals || []).map((s: any) => `[${s.severity}] ${s.label}: ${s.e
 EXECUTIVE SOCIAL ACTIVITY (real executives found online — name them freely as key people to engage, but NOT as confirmed attendees):
 ${(pi.executive_social || []).map((e: any) => `${e.name} (${e.title}): "${e.post_theme}"${e.url ? ` [${e.url}]` : ''}`).join('\n') || 'None detected'}
 
-LINKEDIN HIRING:
-${pi.linkedin_job_postings ? `${pi.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${pi.linkedin_job_postings.yoy_change} YoY)` : 'No data'}
-
-GLASSDOOR EMPLOYEE SENTIMENT:
-${(pi.glassdoor_signals || []).map((s: string) => `"${s}"`).join('\n') || 'No data'}
-
-INDUSTRY CONTEXT:
-${pi.industry_context || 'No data'}
-
-NEWS SIGNALS:
-${(pi.news_signals || []).join('\n') || 'No data'}
+${pi.linkedin_job_postings?.cloud_ai_roles > 0 ? `\nLINKEDIN HIRING:\n${pi.linkedin_job_postings.cloud_ai_roles} cloud/AI roles (${pi.linkedin_job_postings.yoy_change} YoY)` : ''}
+${(pi.glassdoor_signals || []).length > 0 ? `\nGLASSDOOR EMPLOYEE SENTIMENT:\n${(pi.glassdoor_signals || []).map((s: string) => `"${s}"`).join('\n')}` : ''}
+${pi.industry_context ? `\nINDUSTRY CONTEXT:\n${pi.industry_context}` : ''}
+${(pi.news_signals || []).length > 0 ? `\nNEWS SIGNALS:\n${(pi.news_signals || []).join('\n')}` : ''}
 
 EBC DATA:
 Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
