@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v10:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v11:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -229,7 +229,55 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
       { maxTokens: 3500, temperature: 0.3 }
     );
 
-    return result;
+    return sanitizeAnalysis(result);
+}
+
+/**
+ * Deterministic safety net: strip any sentence that narrates a data gap or mentions
+ * attendee presence/absence. The model is instructed not to write these, but this
+ * guarantees they never reach the UI regardless of model behavior.
+ */
+function sanitizeAnalysis(r: UnifiedAnalysisResponse): UnifiedAnalysisResponse {
+  const banned = [
+    /without (confirmed |detected |named |visible )?[^.]*?(attendee|executive|leadership|data|hiring|social activity)[^.]*?[.,]/gi,
+    /no (confirmed |detected |named |visible )?(attendees?|executives?|social activity|data|hiring)[^.]*?[.,]/gi,
+    /(attendee list (is )?(not )?(provided|listed|available)|no attendee list)[^.]*?[.,]/gi,
+    /(since|as|because|given) (there are|we have|there is) no [^.]*?(attendee|executive|data|hiring)[^.]*?[.,]/gi,
+    /based on (the )?(limited|available|thin|sparse) (search results|data|information)[^.]*?[.,]/gi,
+    /the search (results )?(did not|didn't|do not|don't) [^.]*?[.,]/gi,
+    /zero (detected |visible )?(hiring|cloud\/ai roles|certifications)[^.]*?[.,]/gi,
+  ];
+  const clean = (s: string | undefined): string => {
+    if (!s) return s || '';
+    let out = s;
+    for (const re of banned) out = out.replace(re, '');
+    // Collapse whitespace, fix leading punctuation/conjunctions left behind, capitalize.
+    out = out.replace(/\s{2,}/g, ' ').replace(/^\s*[,.;:]\s*/, '').replace(/^\s*(and|but|however|although|while)\s+/i, '').trim();
+    if (out) out = out.charAt(0).toUpperCase() + out.slice(1);
+    return out;
+  };
+  const cleanArr = (arr: string[] | undefined): string[] => (arr || []).map(clean).filter(x => x.length > 3);
+
+  return {
+    ...r,
+    who_to_focus: clean(r.who_to_focus),
+    who_to_focus_detail: clean(r.who_to_focus_detail),
+    what_conversations: clean(r.what_conversations),
+    what_conversations_detail: clean(r.what_conversations_detail),
+    where_to_start: clean(r.where_to_start),
+    where_to_start_detail: clean(r.where_to_start_detail),
+    whats_happening: clean(r.whats_happening),
+    whats_happening_detail: clean(r.whats_happening_detail),
+    buzz_summary: clean(r.buzz_summary),
+    buzz_tc_opportunity: clean(r.buzz_tc_opportunity),
+    now_focus: clean(r.now_focus),
+    now_opening_move: clean(r.now_opening_move),
+    now_initiatives: cleanArr(r.now_initiatives),
+    now_key_asks: cleanArr(r.now_key_asks),
+    next_steps: cleanArr(r.next_steps),
+    key_asks: cleanArr(r.key_asks),
+    buzz_executive_insights: cleanArr(r.buzz_executive_insights),
+  };
 }
 
 /**
