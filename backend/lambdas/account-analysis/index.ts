@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v5:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v6:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -71,11 +71,13 @@ ATTENDEE RULE:
 - Never invent a person, tenure, or biography.
 
 FORMAT:
-- Each Approach field is a SHORT executive summary (1-2 sentences, plain prose, no markdown). The matching "_detail" field holds 2-3 sentences of expanded executive-level reasoning (shown when the user clicks "More detail").
+- Each Approach field is a SHORT executive summary (1-2 sentences, plain prose, no markdown). The matching "_detail" field holds 1-3 sentences of expanded reasoning — but ONLY expand using facts actually present in the data. If there isn't enough real data to expand, keep the detail short or make it identical to the summary. NEVER pad the detail with invented company descriptions, made-up markets/sectors, or assumed executive names/titles.
 - next_steps and key_asks: exactly 4 each, one concise sentence per item.
 - now_initiatives: exactly 4, one sentence each. buzz why_this_matters: 2 sentences max.
 - buzz_hiring_analysis.roles: only real roles found in search (title + url).
 - Empty arrays are fine when no real data exists — never fill with speculation.
+
+CRITICAL — DO NOT DESCRIBE WHAT THE COMPANY DOES unless that description appears verbatim in the provided data/search results. Do NOT invent their product, business model, market sectors, or customer base. Do NOT name or assume specific executive titles (CTO, COO, VP of Product, etc.) as accountable individuals unless those exact people/titles appear in the Executive Social data or Confirmed Attendees. When you lack specifics, speak in general terms about the workforce transformation opportunity — never invent specifics to sound authoritative.
 
 Return ONLY valid JSON.`;
 
@@ -90,7 +92,9 @@ DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NE
 
 ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "no attendees are listed", "attendee list not provided", "recommend pre-engagement to identify attendees", or ANY commentary about who is or isn't attending. Simply give your expert recommendation on which executives/roles to focus on, as if that is naturally your advice. The words "attendee", "attend", and "attending" must NOT appear in who_to_focus unless a Confirmed Attendees list was explicitly provided.
 
-ABSOLUTE RULE ON TRAINING/CERTIFICATION STATE: You do NOT have data on the customer's certifications, Skill Builder usage, training maturity, or activation rates unless it is explicitly present in the captured/uploaded account data. NEVER state "zero certifications", "no prior AWS engagement", "greenfield", or any claim about their current training state based on assumption. If no training data is present, simply focus on the workforce transformation opportunity without characterizing their current certification/training status as a fact.`;
+ABSOLUTE RULE ON TRAINING/CERTIFICATION STATE: You do NOT have data on the customer's certifications, Skill Builder usage, training maturity, or activation rates unless it is explicitly present in the captured/uploaded account data. NEVER state "zero certifications", "no prior AWS engagement", "greenfield", or any claim about their current training state based on assumption. If no training data is present, simply focus on the workforce transformation opportunity without characterizing their current certification/training status as a fact.
+
+ABSOLUTE RULE ON COMPANY DESCRIPTION & EXECUTIVES: Do NOT describe what the company does, its products, markets, or customer base unless that appears in the provided data/search results. Do NOT name or assume executive titles (CTO, COO, VP of Product, etc.) as accountable people unless those exact people appear in the Executive Social data or Confirmed Attendees. If you only know the company name and industry, keep recommendations general — do NOT invent specifics to sound authoritative. Fabricating a company's business model or its executives is a critical failure.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
@@ -195,7 +199,7 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
       CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 3500, temperature: 0.5 }
+      { maxTokens: 3500, temperature: 0.3 }
     );
 
     return result;
