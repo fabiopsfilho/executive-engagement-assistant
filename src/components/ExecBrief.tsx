@@ -149,6 +149,10 @@ export function ExecBrief({ account, onEngagePersona, tcData, analysis, analysis
             tc_state: tcState,
             signals_summary: signalsSummary,
             public_intelligence_summary: piSummary,
+            // Full imported data set so the agenda (esp. the Skills Session) leverages everything.
+            accountPlanText: (a as any).accountPlanText || undefined,
+            externalDocs: (a as any).externalDocs || undefined,
+            analysis: analysis || undefined,
           },
           format === 'ebc' ? 'ebc' : 'training-session',
           undefined,

@@ -244,6 +244,10 @@ export async function generateAgenda(
     tc_state: string;
     signals_summary: string;
     public_intelligence_summary: string;
+    // Full imported data set so agendas leverage everything the rest of the app uses.
+    accountPlanText?: string;
+    externalDocs?: { name: string; text: string }[];
+    analysis?: UnifiedAnalysisResponse | null;
   },
   format: 'ebc' | 'training-session',
   persona?: { name: string; title: string; persona: string },
