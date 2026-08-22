@@ -39,21 +39,36 @@ ${ANTI_FABRICATION_POLICY}
 
 THIS IS THE ACTUAL PITCH. These two slides ARE the pitch the AWS team will put on screen and speak to in front of C-level executives. They synthesize EVERYTHING the advisor generated (Approach, Buzz, Now, Next Steps, Key Asks) into the single, sharp story to tell this customer.
 
-C-LEVEL BAR — MIND-BLOWING, NOT DETAILED:
-- These are for CEOs/CFOs/CDOs. They must be INSIGHTFUL and provocative — the kind of slide that makes an executive stop and think "how did they see that about us?" — NOT a dense working document.
-- LIGHT ON DETAIL. Few words, high impact. Each bullet is a punchy, board-ready statement, not a paragraph. No process minutiae, no jargon, no product mechanics.
-- Lead with insight and business consequence (competitive position, growth, risk, ROI), not activities.
+C-LEVEL BAR — INSIGHTFUL AND PRESCRIPTIVE:
+- These are for CEOs/CFOs/CDOs. They must be INSIGHTFUL and provocative — the kind of slide that makes an executive think "how did they see that about us?"
+- Board-ready one-liners, not paragraphs. But NOT vague — a bullet like "governance-first capability design" is a FAILURE. Be concrete and prescriptive.
+- Lead with insight and business consequence (competitive position, growth, risk, ROI), not filler activities.
 
-UNIQUENESS: The slides must be unmistakably about THIS company — their real situation, drivers, named executives, and opportunities from the data. If these slides could belong to another company, they are wrong. No reusable templates or canned program names.
+UNIQUENESS: The slides must be unmistakably about THIS company — their real situation, drivers, named teams/executives, and opportunities from the data. If these slides could belong to another company, they are wrong. No reusable templates.
 
-SLIDE STRUCTURE (AT MOST 2 slides, never more):
-- Slide 1 = "WHERE THEY ARE / WHY NOW" — their distinctive situation and the urgent, non-obvious insight. Ground it in their real drivers, trends, executives, and internal opportunities. This is the "we understand your world" slide that earns the right to advise.
-- Slide 2 = "HOW AWS HELPS YOU WIN + THE RETURN" — the recommended approach AND, explicitly, HOW AWS helps this customer based on our lessons learned and best practices, framed to a measurable RETURN/ROI. This slide MUST:
-    • State the AWS approach for THEIR specific situation (drawn from the analysis' recommended approach — not a generic program).
-    • Explicitly connect it to AWS's proven track record / lessons learned and a RETURN the executive cares about (revenue enablement, speed-to-value, risk reduction, cost, retention) — cite a relevant proof point (e.g. AWS enterprise programs ~234% ROI, 65% pilot-to-production; Forrester 229% ROI; BCG: AI leaders have 13x more AI-skilled workers) where it sharpens the ROI case, but only where it fits.
-    • End on a clear, confident call to action / the ask.
-- Each slide: a sharp TITLE (max ~8 words), an optional one-line SUBTITLE, 3-5 SHORT bullets (board-ready one-liners, no markdown), and an optional FOOTER (the single sharpest proof point or the call to action).
-- NEVER invent people, numbers, or company facts not present in the provided analysis/data. The proof-point statistics are your own expert knowledge and may be cited. Never claim someone attends unless listed as a confirmed attendee.
+SLIDE STRUCTURE (EXACTLY 2 slides — one customer-intelligence slide, one prescriptive-approach slide):
+
+── SLIDE 1 — "WHAT WE KNOW ABOUT YOU" (customer intelligence) ──
+The "we understand your world" slide that earns the right to advise. Ground it entirely in the REAL data about this company:
+  • Their specific business, market position, and competitive dynamics (e.g. named competitors, the market they play in).
+  • Their real teams, named executives, and the internal opportunities/priorities from the captured/document data (e.g. a specific engineering or platform team, a specific initiative).
+  • The urgent, non-obvious insight — why the capability gap matters NOW for THEIR business.
+This slide is about THEM, not about AWS. It proves we did our homework.
+
+── SLIDE 2 — "OUR PRESCRIPTIVE APPROACH: HOW WE HELP YOU" (this is where you MUST be specific and prescriptive) ──
+This slide answers, concretely: "What would we actually DO with you, based on our lessons learned?" It is NOT a vague 'capability program.' You MUST name and describe the ACTUAL AWS T&C mechanisms from your expert playbook, tailored to THIS customer's situation. Draw specifically from:
+  • THE SKILLS GUILD — describe what a Guild looks like for them (the Excitement → Enablement → Advocacy model; a coalition of internal champions; office hours; a community that sustains adoption beyond training). Say concretely what it is and does for their teams.
+  • THE PROGRAM STRUCTURE — the three-tier curriculum (Foundation → Applied → Embedded) and the learning-audience segments (Executive, Manager, Enterprise-foundation, Role/Practitioner, Advanced/Builder + reinforcement). Map it to THEIR real roles (e.g. their platform-engineering team, their data team, their frontline).
+  • ROLE-BASED LEARNING PATHS — name relevant paths (e.g. AI Practitioner → ML Engineer → Gen AI Developer) tied to their actual roles, not generic literacy.
+  • MANAGER ACTIVATION — because training doesn't stick without it (88% of managers at AI-mature orgs role-model AI vs 25% at laggards).
+  • PERFORMANCE-BASED CREDENTIALS — the stackable micro-credential ladder that proves capability (work-product credentials, manager/peer validation), not completion certificates.
+  • THE MEASUREMENT CHAIN — Capability → Adoption → Workflow → Business outcome, with a 90-180 day proof point / phased pilot.
+  • THE RETURN — connect to a measurable ROI the executive cares about, citing a relevant proof point (AWS enterprise programs: 234% ROI, 65% pilot-to-production, 85% participation; Forrester 229% ROI; BCG: AI leaders have 13x more AI-skilled workers). Cite the ONE that fits.
+Pick the 3-5 of these that fit THIS customer best and make each bullet concrete and prescriptive. End the slide (footer) on the clear call to action / the ask.
+
+FORMAT:
+- Each slide: a sharp TITLE (max ~8 words), a one-line SUBTITLE, 3-5 bullets (board-ready, concrete — prescriptive on slide 2), and a FOOTER (proof point or the call to action).
+- NEVER invent people, numbers, or company facts not present in the provided analysis/data. The proof-point statistics and the T&C mechanisms above are YOUR expert knowledge and SHOULD be used. Never claim someone attends unless listed as a confirmed attendee.
 
 Return ONLY valid JSON of the exact shape:
 {
@@ -97,14 +112,18 @@ ${analysisContext}
 ${accountData.accountPlanText ? `\nINTERNAL AWS / SALESFORCE DATA (authoritative — real opportunities, spend, stakeholders):\n${String(accountData.accountPlanText).slice(0, 6000)}` : ''}
 ${docs.length > 0 ? `\nUPLOADED DOCUMENTS (drivers, trends, executive intelligence):\n${docs.map((d: any) => `--- ${d.name} ---\n${String(d.text || '').slice(0, 4000)}`).join('\n\n')}` : ''}`;
 
-    const userMessage = `Create the MAX 2-slide C-LEVEL pitch for the conversation with ${accountData.customer_name || 'this customer'}. This IS the pitch we will present. Synthesize the whole analysis below into the sharpest possible story — insightful and mind-blowing, LIGHT on detail, board-ready one-liners only. Make it unmistakably about ${accountData.customer_name || 'this company'} (never generic). Slide 1 = their situation + the non-obvious insight. Slide 2 = HOW AWS helps them win based on our lessons learned/best practices, tied to a concrete RETURN/ROI the executive cares about, ending on the ask.
+    const userMessage = `Create the EXACTLY 2-slide C-LEVEL pitch for the conversation with ${accountData.customer_name || 'this customer'}. This IS the pitch we will present. Make it unmistakably about ${accountData.customer_name || 'this company'} (never generic).
+
+SLIDE 1 = WHAT WE KNOW ABOUT THEM: their specific business, competitive dynamics (named competitors/market), their real teams and named executives, the internal opportunities/priorities from the data, and the non-obvious insight on why their capability gap matters now. This slide is about THEM.
+
+SLIDE 2 = OUR PRESCRIPTIVE APPROACH: concretely, what we would DO with them based on our lessons learned — name the actual mechanisms (what their Skills Guild looks like, the Foundation→Applied→Embedded program mapped to their real roles, role-based learning paths, manager activation, performance-based credentials, the Capability→Adoption→Workflow→Business measurement chain with a 90-180 day proof point) and tie it to a concrete ROI. This slide must be prescriptive and specific, NOT vague. End on the ask.
 
 ${context}`;
 
     const result = await invokeClaudeJSON<SlidesResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 1600, temperature: 0.5 }
+      { maxTokens: 2200, temperature: 0.5 }
     );
 
     // Hard guarantee: never more than 2 slides, always at least 1 with bullets.
