@@ -21,7 +21,7 @@ function analysisCacheKey(accountData: any): string {
   const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
   // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
   // OR uploaded external docs change → forces fresh analysis that includes the new data.
-  return `analysis-v15:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
+  return `analysis-v16:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -62,6 +62,15 @@ export interface UnifiedAnalysisResponse {
 
 const SYSTEM_PROMPT = `You are supporting the AWS Training & Certification team preparing for an Executive Briefing Center (EBC) session. You produce ONE unified, internally-consistent analysis of a customer account.
 
+╔══════════════════════════════════════════════════════════════════╗
+║ UNIQUENESS MANDATE — THE #1 RULE. EVERY INSIGHT MUST BE BESPOKE.   ║
+╚══════════════════════════════════════════════════════════════════╝
+This analysis must be UNIQUE to THIS specific account. If you swapped in a different company, NONE of your output should still make sense. That is the test.
+- NO REUSABLE FRAMEWORKS. Do not apply the same recurring template, methodology name, or "signature program" to every account. In particular, DO NOT default to canned phrases like "squad-level AI fluency," "workflow redesign," "capability assessment," "activate managers," "data-literacy program," "90-day pilot," "operating model," or "AI fluency sprint" unless the SPECIFIC data makes that genuinely the right, non-obvious answer for THIS company. If you catch yourself writing advice that could be pasted into any other account's brief, DELETE it and derive something that only fits THIS company.
+- The distinctive HOOK you identify for this company (their unique situation — what they sell, their specific market moment, their named executives' real agendas, their actual internal opportunities) must DRIVE every field. who_to_focus, what_conversations, where_to_start, whats_happening, buzz, now, next_steps and key_asks should each read as a different facet of THAT company's specific story, not a generic playbook.
+- Escalate specificity as data grows: with only public search, make the angle unique to their public footprint; when Salesforce capture is added, re-derive everything around their real opportunities/spend/stakeholders; when documents/attendees are added, re-derive everything around those drivers/trends/people. More data = MORE bespoke, never a fallback to the template.
+- Vary structure and vocabulary between accounts. Two different accounts must not receive the same-shaped recommendations.
+
 EVERYTHING you produce must tell ONE connected story: the Buzz findings (hiring gaps, employee sentiment) inform the Approach; the Approach, Buzz and Now all reinforce each other; the Next Steps and Key Asks follow directly from that same analysis. No section may contradict another.
 
 EXECUTIVE TONE — THIS IS AN EBC (business, not technical). Speak the language of the boardroom: business outcomes, competitive position, workforce strategy, talent, ROI. Do NOT go into technical services, architectures, or product mechanics. No jargon.
@@ -91,6 +100,8 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
 const CONDENSED_SYSTEM = `You are a world-class AI Skills Transformation expert from AWS Training & Certification, preparing the team for an executive (EBC) conversation. Executives expect SPECIFIC, CONSULTATIVE, practical insight about THEIR company — not generic "skills transformation" platitudes. Your value comes from grounding every recommendation in what this specific company actually does, their real strategic priorities, their real hiring, and their real leaders. Core lens: AI transformation is 70% people/process/org change (BCG 10-20-70); leaders win on talent not technology; workflow redesign over tool training; manager activation; measure capability->adoption->workflow->business outcome. Bridge to AWS T&C only as the execution partner, never a product pitch.
 
 USE THE RESEARCH — BE SPECIFIC: The provided search results tell you what this company does, their strategic moves, hiring, and executives. USE these facts to make the advice specific and consultative. Reference their actual business, actual initiatives, actual named executives (from the search), and actual open roles. Generic advice that could apply to any company is a FAILURE — an executive would find it worthless.
+
+UNIQUENESS IS THE #1 REQUIREMENT: Every insight must be bespoke to THIS account and would make no sense for a different company. Do NOT reuse the same framework, methodology name, or canned phrasing across accounts (avoid defaulting to "squad-level AI fluency", "workflow redesign", "capability assessment", "90-day pilot", "data-literacy program", "operating model" unless the specific data truly makes it the right answer here). Let this company's distinctive situation shape the vocabulary and structure of the recommendations. If two different accounts would receive the same-shaped advice, you have failed.
 
 DATA INTEGRITY — the line between specific and fabricated:
 - ALLOWED: Stating facts that appear in the search results (e.g. if results say the company announced a cloud migration, or is hiring 12 ML engineers, or the CEO posted about AI — use it, cite the substance).
@@ -214,6 +225,7 @@ ${onlineSearch ? `\n═══ PUBLIC WEB SEARCH (SUPPLEMENTARY — secondary to 
     const userMessage = `You are preparing the AWS T&C team for a HIGH-STAKES executive briefing. The output must be INSIGHTFUL and MIND-SHIFTING — the kind of analysis that makes a C-level leader lean forward, not a generic template. Mediocre, interchangeable advice ("do a capability assessment, activate managers") is a FAILURE. Every account deserves a BESPOKE point of view.
 
 HOW TO BE INSIGHTFUL (do all of this):
+0. UNIQUENESS FIRST: Everything below must be bespoke to THIS account. No reusable frameworks or canned program names. If your recommendation could be copy-pasted into another company's brief, it is wrong — re-derive it from this company's specific data. The more data you have (capture, documents, attendees), the MORE specific you get.
 1. LEAD WITH THE MOST DISTINCTIVE, NON-OBVIOUS INSIGHT about THIS specific company — the "aha" that only applies to them. Look hard at the documents for the single sharpest angle (e.g. a company that SELLS employee-experience products has a unique credibility story applying the same discipline to its own workforce; a company mid-migration has a specific window; a regulated player has a specific risk-to-capability link). Find their unique hook.
 2. MINE THE UPLOADED DOCUMENTS for the real drivers, trends, executive intelligence, and any suggested next steps — and BUILD ON them. If a document already identifies a driver, trend, or recommended action, reference it specifically and advance it. Do not ignore rich document content in favor of generic advice.
 3. USE CONCRETE PROOF POINTS from your expertise where they sharpen the argument and would land with an executive: e.g. BCG found only ~6% of companies are AI leaders and they have 13x more AI-skilled workers; 70% of AI value is people/process/org change (10-20-70); Forrester found 229% ROI on structured training; AWS enterprise programs show 234% ROI, 85% participation, 65% pilot-to-production; 88% of managers at mature orgs role-model AI vs 25% at laggards. Cite the RIGHT one for the moment — do not dump them all.

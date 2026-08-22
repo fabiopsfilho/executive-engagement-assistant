@@ -37,15 +37,23 @@ ${EXPERT_PERSONA}
 
 ${ANTI_FABRICATION_POLICY}
 
-SLIDE DESIGN RULES:
-- Produce AT MOST 2 slides. One slide is fine if that is enough. NEVER more than 2.
-- Slide 1 = "Where they are / why now" — the customer's situation, the distinctive insight, the urgency. Ground it in their real drivers, trends, executives, and internal opportunities from the data.
-- Slide 2 = "Where to go together / what's next" — the recommended approach and the concrete next steps / asks. May reference how AWS T&C enables it, at a business (not product) level.
-- Each slide: a sharp TITLE (max ~8 words), an optional one-line SUBTITLE, 3-5 BULLETS (each one concise line, boardroom language, no markdown), and an optional FOOTER (a punchy proof point or call-to-action).
-- Executive tone: business outcomes, competitive position, workforce strategy, ROI. No technical jargon, no product mechanics.
-- Be SPECIFIC to THIS company using the analysis and data provided. Generic slides that could apply to any company are a failure.
-- You MAY cite the proof-point statistics from your expert knowledge (e.g. BCG 10-20-70, ~6% AI leaders with 13x more AI-skilled workers, Forrester 229% ROI, AWS 234% ROI) where they sharpen a point — but only where relevant, never dumped.
-- NEVER invent people, numbers, or company facts not present in the provided analysis/data. Never claim someone attends unless they are listed as a confirmed attendee.
+THIS IS THE ACTUAL PITCH. These two slides ARE the pitch the AWS team will put on screen and speak to in front of C-level executives. They synthesize EVERYTHING the advisor generated (Approach, Buzz, Now, Next Steps, Key Asks) into the single, sharp story to tell this customer.
+
+C-LEVEL BAR — MIND-BLOWING, NOT DETAILED:
+- These are for CEOs/CFOs/CDOs. They must be INSIGHTFUL and provocative — the kind of slide that makes an executive stop and think "how did they see that about us?" — NOT a dense working document.
+- LIGHT ON DETAIL. Few words, high impact. Each bullet is a punchy, board-ready statement, not a paragraph. No process minutiae, no jargon, no product mechanics.
+- Lead with insight and business consequence (competitive position, growth, risk, ROI), not activities.
+
+UNIQUENESS: The slides must be unmistakably about THIS company — their real situation, drivers, named executives, and opportunities from the data. If these slides could belong to another company, they are wrong. No reusable templates or canned program names.
+
+SLIDE STRUCTURE (AT MOST 2 slides, never more):
+- Slide 1 = "WHERE THEY ARE / WHY NOW" — their distinctive situation and the urgent, non-obvious insight. Ground it in their real drivers, trends, executives, and internal opportunities. This is the "we understand your world" slide that earns the right to advise.
+- Slide 2 = "HOW AWS HELPS YOU WIN + THE RETURN" — the recommended approach AND, explicitly, HOW AWS helps this customer based on our lessons learned and best practices, framed to a measurable RETURN/ROI. This slide MUST:
+    • State the AWS approach for THEIR specific situation (drawn from the analysis' recommended approach — not a generic program).
+    • Explicitly connect it to AWS's proven track record / lessons learned and a RETURN the executive cares about (revenue enablement, speed-to-value, risk reduction, cost, retention) — cite a relevant proof point (e.g. AWS enterprise programs ~234% ROI, 65% pilot-to-production; Forrester 229% ROI; BCG: AI leaders have 13x more AI-skilled workers) where it sharpens the ROI case, but only where it fits.
+    • End on a clear, confident call to action / the ask.
+- Each slide: a sharp TITLE (max ~8 words), an optional one-line SUBTITLE, 3-5 SHORT bullets (board-ready one-liners, no markdown), and an optional FOOTER (the single sharpest proof point or the call to action).
+- NEVER invent people, numbers, or company facts not present in the provided analysis/data. The proof-point statistics are your own expert knowledge and may be cited. Never claim someone attends unless listed as a confirmed attendee.
 
 Return ONLY valid JSON of the exact shape:
 {
@@ -89,14 +97,14 @@ ${analysisContext}
 ${accountData.accountPlanText ? `\nINTERNAL AWS / SALESFORCE DATA (authoritative — real opportunities, spend, stakeholders):\n${String(accountData.accountPlanText).slice(0, 6000)}` : ''}
 ${docs.length > 0 ? `\nUPLOADED DOCUMENTS (drivers, trends, executive intelligence):\n${docs.map((d: any) => `--- ${d.name} ---\n${String(d.text || '').slice(0, 4000)}`).join('\n\n')}` : ''}`;
 
-    const userMessage = `Create the MAX 2-slide executive support deck for the conversation with ${accountData.customer_name || 'this customer'}. Ground everything in the analysis and data below — be specific and consultative, never generic. Combine the internal Salesforce data, the uploaded documents, and the confirmed attendees into a coherent story.
+    const userMessage = `Create the MAX 2-slide C-LEVEL pitch for the conversation with ${accountData.customer_name || 'this customer'}. This IS the pitch we will present. Synthesize the whole analysis below into the sharpest possible story — insightful and mind-blowing, LIGHT on detail, board-ready one-liners only. Make it unmistakably about ${accountData.customer_name || 'this company'} (never generic). Slide 1 = their situation + the non-obvious insight. Slide 2 = HOW AWS helps them win based on our lessons learned/best practices, tied to a concrete RETURN/ROI the executive cares about, ending on the ask.
 
 ${context}`;
 
     const result = await invokeClaudeJSON<SlidesResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 1600, temperature: 0.4 }
+      { maxTokens: 1600, temperature: 0.5 }
     );
 
     // Hard guarantee: never more than 2 slides, always at least 1 with bullets.

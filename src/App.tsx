@@ -10,6 +10,7 @@ import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
 import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, generateSlides, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse, type SlidesResponse } from './services/api';
 import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
+import { exportSlidesToPPTX, exportSlidesToPDF } from './services/slideExport';
 
 type MainTab = 'brief' | 'summary' | 'demo';
 
@@ -627,9 +628,15 @@ export default function App() {
               <div className="flex items-center justify-between px-5 pt-4 pb-2">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2"><Presentation className="w-4 h-4 text-emerald-400" /> Conversation slides</h3>
                 <div className="flex items-center gap-1">
-                  {slides && !slidesLoading && (
-                    <button onClick={() => { setSlides(null); setSlidesLoading(true); generateSlides(account, analysis).then(setSlides).catch(err => console.error('Slide regen failed:', err)).finally(() => setSlidesLoading(false)); }}
-                      className="text-[10px] text-emerald-400 px-2 py-1 rounded-lg active:bg-dark-700" title="Regenerate">↻ Regenerate</button>
+                  {slides && slides.slides.length > 0 && !slidesLoading && (
+                    <>
+                      <button onClick={() => exportSlidesToPPTX(slides, account.customer_name).catch(err => console.error('PPTX export failed:', err))}
+                        className="text-[10px] text-slate-300 border border-dark-600 px-2 py-1 rounded-lg active:bg-dark-700" title="Download PowerPoint">⬇ PPTX</button>
+                      <button onClick={() => exportSlidesToPDF(slides, account.customer_name).catch(err => console.error('PDF export failed:', err))}
+                        className="text-[10px] text-slate-300 border border-dark-600 px-2 py-1 rounded-lg active:bg-dark-700" title="Download PDF">⬇ PDF</button>
+                      <button onClick={() => { setSlides(null); setSlidesLoading(true); generateSlides(account, analysis).then(setSlides).catch(err => console.error('Slide regen failed:', err)).finally(() => setSlidesLoading(false)); }}
+                        className="text-[10px] text-emerald-400 px-2 py-1 rounded-lg active:bg-dark-700" title="Regenerate">↻</button>
+                    </>
                   )}
                   <button onClick={() => setShowSlides(false)} className="p-2 rounded-lg active:bg-dark-700"><span className="text-muted text-lg">✕</span></button>
                 </div>
