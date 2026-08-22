@@ -21,7 +21,7 @@ function analysisCacheKey(accountData: any): string {
   const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
   // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
   // OR uploaded external docs change → forces fresh analysis that includes the new data.
-  return `analysis-v12:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
+  return `analysis-v13:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -199,37 +199,46 @@ Themes: ${(accountData.ebc_data?.themes || []).join(', ')}${attendees.length > 0
 ${accountData.accountPlanText ? `═══ CAPTURED SALESFORCE / ACCOUNT SUMMARY / BRIEF DATA ═══
 This is REAL, INTERNAL account data (from Salesforce or an uploaded brief) and is your PRIMARY, MOST-TRUSTED source. It outranks the public web search below. Analyze EVERY section of it — account plan, opportunities, pipeline, AWS spend, engagement history, contacts/stakeholders, notes, priorities — and let it drive the Approach, Next Steps, Key Asks, Buzz and Now. Where this data names real people, priorities, opportunities, or numbers, use them specifically. Treat the public web search only as supplementary color.
 ${accountData.accountPlanText.slice(0, 14000)}` : ''}
-${(accountData.externalDocs || []).length > 0 ? `\n═══ UPLOADED EXTERNAL DOCUMENTS (Databook, briefs, supporting data) ═══
-These are REAL documents the user uploaded and MUST be considered in every section of the analysis, combined with all other data. Treat them as trusted primary data alongside the Salesforce capture.
-${(accountData.externalDocs || []).map((d: any) => `--- Document: ${d.name} ---\n${(d.text || '').slice(0, 8000)}`).join('\n\n')}` : ''}
+${(accountData.externalDocs || []).length > 0 ? `\n═══ UPLOADED EXTERNAL DOCUMENTS (Databook, account brief, intelligence reports) — RICHEST SOURCE ═══
+These are REAL documents the user uploaded and are your RICHEST, most-trusted intelligence. MINE THEM DEEPLY for: business drivers, market/industry trends, strategic priorities, executive intelligence (named leaders, their agendas, quotes, priorities), financials/spend, competitive dynamics, and any SUGGESTED NEXT STEPS or recommendations the documents themselves contain. You MUST weave these specifics into every section — Approach, Next Steps, Key Asks, Buzz, Now. When a document already suggests next steps or names a driver/trend/executive priority, build on it explicitly rather than inventing generic advice. These specifics are what make the analysis genuinely consultative.
+${(accountData.externalDocs || []).map((d: any) => `--- Document: ${d.name} ---\n${(d.text || '').slice(0, 10000)}`).join('\n\n')}` : ''}
 ${awsContext ? `\nAWS T&C KNOWLEDGE BASE:\n${awsContext.slice(0, 2500)}` : ''}
 ${onlineSearch ? `\n═══ PUBLIC WEB SEARCH (SUPPLEMENTARY — secondary to the captured data above) ═══\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
-    const userMessage = `Produce ONE unified, internally-consistent account analysis. Ground everything in the real data below. Reference real executives (e.g. the CEO found online) by name where relevant. Never fabricate people or claim anyone is a confirmed attendee unless they are in the Confirmed Attendees list.
+    const userMessage = `You are preparing the AWS T&C team for a HIGH-STAKES executive briefing. The output must be INSIGHTFUL and MIND-SHIFTING — the kind of analysis that makes a C-level leader lean forward, not a generic template. Mediocre, interchangeable advice ("do a capability assessment, activate managers") is a FAILURE. Every account deserves a BESPOKE point of view.
+
+HOW TO BE INSIGHTFUL (do all of this):
+1. LEAD WITH THE MOST DISTINCTIVE, NON-OBVIOUS INSIGHT about THIS specific company — the "aha" that only applies to them. Look hard at the documents for the single sharpest angle (e.g. a company that SELLS employee-experience products has a unique credibility story applying the same discipline to its own workforce; a company mid-migration has a specific window; a regulated player has a specific risk-to-capability link). Find their unique hook.
+2. MINE THE UPLOADED DOCUMENTS for the real drivers, trends, executive intelligence, and any suggested next steps — and BUILD ON them. If a document already identifies a driver, trend, or recommended action, reference it specifically and advance it. Do not ignore rich document content in favor of generic advice.
+3. USE CONCRETE PROOF POINTS from your expertise where they sharpen the argument and would land with an executive: e.g. BCG found only ~6% of companies are AI leaders and they have 13x more AI-skilled workers; 70% of AI value is people/process/org change (10-20-70); Forrester found 229% ROI on structured training; AWS enterprise programs show 234% ROI, 85% participation, 65% pilot-to-production; 88% of managers at mature orgs role-model AI vs 25% at laggards. Cite the RIGHT one for the moment — do not dump them all.
+4. AVOID REPETITION across sections. Do not anchor every field on the same one person or one fact. Each section should advance a different part of the argument.
+5. BE SPECIFIC AND BOLD in recommendations — tie each to THIS company's actual drivers/trends/products/initiatives from the data, not a reusable checklist.
+
+INTEGRITY (unchanged): Only use facts present in the data. Never invent people, numbers, or company descriptions. The proof-point STATISTICS above are your own expert knowledge and may always be cited. Never claim anyone is a confirmed attendee unless in the Confirmed Attendees list. Never narrate data gaps.
 
 ${context}
 
 Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_initiatives):
 {
-  "who_to_focus": "1-2 sentence summary: who to focus on (real executives by name) and why.",
-  "who_to_focus_detail": "2-3 sentences expanding on each key person's role, public activity, and how to approach them.",
-  "what_conversations": "1-2 sentence summary: the strategic conversation angle to drive.",
-  "what_conversations_detail": "2-3 sentences expanding it, referencing named executives' activity and real challenges.",
-  "where_to_start": "1-2 sentence summary: the recommended strategic approach (methodology, not products).",
-  "where_to_start_detail": "2-3 sentences: assessment -> strategy -> execution -> measurement. May briefly note AWS can enable this at the end.",
-  "whats_happening": "1-2 sentence summary: what's happening in their world creating urgency now.",
-  "whats_happening_detail": "2-3 sentences on industry, hiring, sentiment, and named executives' public statements.",
-  "buzz_summary": "2-3 sentence synthesis of what's happening at this company.",
-  "buzz_executive_insights": ["One insight per REAL executive found — empty array if none. Never invent."],
-  "buzz_hiring_analysis": { "roles": [{"title": "Role", "url": "https://..."}], "why_this_matters": "Concise paragraph on the capability gap the hiring signals." },
-  "buzz_sentiment_analysis": { "signals": ["real employee signal"], "why_this_matters": "Concise paragraph on learning culture." },
-  "buzz_tc_opportunity": "The workforce development APPROACH (methodology, not products) that addresses the gaps.",
-  "now_focus": "The single most important workforce capability issue right now, grounded in hiring + sentiment.",
-  "now_initiatives": ["4 initiatives, each tracing to a concrete signal."],
-  "now_key_asks": ["4 consultative discovery questions grounded in the data."],
-  "now_opening_move": "How to open — reference a specific signal; may name a real executive; never claim attendance.",
-  "next_steps": ["4 concise consultative next steps grounded in the data."],
-  "key_asks": ["4 concise discovery-oriented questions/commitments."]
+  "who_to_focus": "1-2 sentences: which real executive(s)/role(s) to focus on and the SPECIFIC reason tied to their agenda/priorities from the data.",
+  "who_to_focus_detail": "2-3 sentences: what specifically drives this person (from the documents), and the sharpest angle to engage them — not generic.",
+  "what_conversations": "1-2 sentences: the ONE bold, distinctive conversation angle for THIS company — ideally the non-obvious insight/hook.",
+  "what_conversations_detail": "2-3 sentences developing that angle with their real drivers/trends/products and a relevant proof point.",
+  "where_to_start": "1-2 sentences: the recommended strategic approach, tied to their specific situation (not a generic assessment→activate template).",
+  "where_to_start_detail": "2-3 sentences making it concrete to their actual workflows/initiatives; may end with how AWS enables it.",
+  "whats_happening": "1-2 sentences: the most important real dynamic in their world creating urgency now.",
+  "whats_happening_detail": "2-3 sentences citing real drivers, trends, financials, and executive priorities from the documents.",
+  "buzz_summary": "2-3 sentence sharp synthesis of what's really happening at this company.",
+  "buzz_executive_insights": ["One insight per REAL executive found in the data — what drives them and how to approach. Empty array if none. Never invent."],
+  "buzz_hiring_analysis": { "roles": [{"title": "Role", "url": "https://..."}], "why_this_matters": "What the hiring/skills signals reveal about their capability gap." },
+  "buzz_sentiment_analysis": { "signals": ["real employee signal from data"], "why_this_matters": "What it means for their learning culture and readiness." },
+  "buzz_tc_opportunity": "The distinctive workforce-development APPROACH for THIS company (methodology tied to their drivers, not products).",
+  "now_focus": "The single most important capability issue right now — the sharp, specific insight.",
+  "now_initiatives": ["4 bold initiatives, each tied to a specific driver/trend/workflow from the data."],
+  "now_key_asks": ["4 consultative discovery questions that prove you understand their specific situation."],
+  "now_opening_move": "A specific, compelling opening — reference their distinctive situation and a proof point; may name a real executive; never claim attendance.",
+  "next_steps": ["4 specific next steps that build on the documents' drivers/trends/suggested actions."],
+  "key_asks": ["4 discovery-oriented questions/commitments grounded in their specifics."]
 }`;
 
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
