@@ -1,10 +1,29 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { invokeClaudeJSON } from '../shared/bedrock';
 import { success, error } from '../shared/response';
 import { getTCStrategyContext } from '../shared/knowledge-base';
 import { getTCProductKnowledge } from '../shared/mcp';
 import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 import { EXPERT_PERSONA } from '../shared/persona';
+
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const lambdaClient = new LambdaClient({});
+const CACHE_TABLE = process.env.INTELLIGENCE_CACHE_TABLE!;
+
+/** Stable cache key from the inputs that affect the agenda. */
+function agendaCacheKey(request: AgendaRequest): string {
+  const c: any = request.accountContext || {};
+  const name = (c.customer_name || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const planLen = (c.accountPlanText || '').length;
+  const docs = c.externalDocs || [];
+  const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
+  const hasAnalysis = c.analysis ? 'a1' : 'a0';
+  const notesLen = (request.userNotes || []).join('|').length;
+  return `agenda-v2:${request.format}:${name}:plan${planLen}:docs${docsSig}:${hasAnalysis}:n${notesLen}`;
+}
 
 interface AgendaRequest {
   accountContext: {
@@ -118,26 +137,21 @@ Return JSON:
   "preparation": ["Prep item 1", "Prep item 2"]
 }`;
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-  try {
-    if (!event.body) {
-      return error(400, 'Request body is required');
-    }
-
-    const request: AgendaRequest = JSON.parse(event.body);
+/** Core generation — runs the (slow) Bedrock call. Used by the async worker. */
+async function generateAgendaResult(request: AgendaRequest): Promise<AgendaResponse> {
     const { accountContext, format, persona, userNotes } = request;
 
-    if (!accountContext || !format) {
-      return error(400, 'accountContext and format are required');
-    }
-
-    // Retrieve relevant T&C strategy content from Knowledge Base + AWS Docs MCP
+    // Retrieve relevant T&C strategy content from Knowledge Base + AWS Docs MCP.
+    // These hit external services (esp. the MCP knowledge server), so bound them with a
+    // short timeout — the prompt is already rich with real customer data (capture + docs +
+    // analysis), so we must never let these optional lookups push us past API Gateway's 29s.
+    const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+      Promise.race([p, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))]);
     const primaryPersona = accountContext.attendees?.[0]?.persona || 'CTO';
     const [kbContext, mcpContext] = await Promise.all([
-      getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes).catch(() => ''),
-      getTCProductKnowledge(accountContext.industry, accountContext.ebc_themes).catch(() => ''),
+      withTimeout(getTCStrategyContext(accountContext.industry, primaryPersona, accountContext.ebc_themes).catch(() => ''), 5000, ''),
+      withTimeout(getTCProductKnowledge(accountContext.industry, accountContext.ebc_themes).catch(() => ''), 5000, ''),
     ]);
-    const allContext = [kbContext, mcpContext].filter(Boolean).join('\n\n');
 
     // Compact context from the full imported data set (capture + documents + unified analysis).
     const a: any = accountContext as any;
@@ -194,13 +208,75 @@ ${mcpContext ? `\nAWS DOCUMENTATION:\n${mcpContext}` : ''}
 
 Use the T&C strategy reference material to recommend specific plays, frameworks, and approaches that are documented in our materials.`;
 
+    // Generous token budget — the worker runs off the API Gateway request path, so there's
+    // no 29s constraint, and this ensures the trailing fields (principles, preparation) aren't clipped.
     const result = await invokeClaudeJSON<AgendaResponse>(
       EXPERT_PERSONA + '\n' + ANTI_FABRICATION_POLICY + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 3072, temperature: 0.6 }
+      { maxTokens: 5000, temperature: 0.6 }
     );
 
-    return success(result);
+    return result;
+}
+
+/**
+ * Async orchestration handler (mirrors account-analysis).
+ * - Worker mode ({ __worker: true }): runs generation and writes to the cache table.
+ *   Never hits API Gateway, so the slow Bedrock call has no 29s limit.
+ * - API mode (from the frontend): returns the cached result if ready; otherwise kicks off
+ *   the worker asynchronously and returns { status: 'processing' }. The frontend polls.
+ */
+export async function handler(event: any): Promise<APIGatewayProxyResult | void> {
+  // ── Worker mode (async self-invocation) ──
+  if (event && event.__worker === true) {
+    const { request, cacheKey } = event;
+    try {
+      const result = await generateAgendaResult(request);
+      await ddb.send(new PutCommand({
+        TableName: CACHE_TABLE,
+        Item: { cacheKey, status: 'ready', data: result, ttl: Math.floor(Date.now() / 1000) + 86400, createdAt: new Date().toISOString() },
+      }));
+    } catch (err) {
+      console.error('Worker agenda generation failed:', err);
+      await ddb.send(new PutCommand({
+        TableName: CACHE_TABLE,
+        Item: { cacheKey, status: 'error', ttl: Math.floor(Date.now() / 1000) + 600, createdAt: new Date().toISOString() },
+      })).catch(() => {});
+    }
+    return;
+  }
+
+  // ── API mode (from API Gateway / frontend) ──
+  try {
+    if (!event.body) return error(400, 'Request body is required');
+    const request: AgendaRequest = JSON.parse(event.body);
+    const { accountContext, format, refresh } = request as AgendaRequest & { refresh?: boolean };
+    if (!accountContext || !format) return error(400, 'accountContext and format are required');
+
+    const cacheKey = agendaCacheKey(request);
+
+    const cached = await ddb.send(new GetCommand({ TableName: CACHE_TABLE, Key: { cacheKey } })).catch(() => null);
+    const item = cached?.Item;
+
+    if (!refresh && item?.status === 'ready' && item.data) {
+      return success({ status: 'ready', ...item.data });
+    }
+    if (item?.status === 'processing' && item.startedAt && (Date.now() - item.startedAt) < 90000) {
+      return success({ status: 'processing' });
+    }
+
+    // Mark processing, then kick off the worker asynchronously.
+    await ddb.send(new PutCommand({
+      TableName: CACHE_TABLE,
+      Item: { cacheKey, status: 'processing', startedAt: Date.now(), ttl: Math.floor(Date.now() / 1000) + 600 },
+    }));
+    await lambdaClient.send(new InvokeCommand({
+      FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME!,
+      InvocationType: 'Event',
+      Payload: Buffer.from(JSON.stringify({ __worker: true, request, cacheKey })),
+    }));
+
+    return success({ status: 'processing' });
   } catch (err) {
     console.error('Error generating agenda:', err);
     return error(500, 'Failed to generate agenda');

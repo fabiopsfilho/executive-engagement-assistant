@@ -251,14 +251,28 @@ export async function generateAgenda(
   },
   format: 'ebc' | 'training-session',
   persona?: { name: string; title: string; persona: string },
-  userNotes?: string[]
+  userNotes?: string[],
+  opts?: { refresh?: boolean; maxWaitMs?: number }
 ): Promise<AgendaResponse> {
-  return post<AgendaResponse>('/accounts/default/agenda', {
-    accountContext,
-    format,
-    persona,
-    userNotes,
+  const pollInterval = 4000;
+  const maxWait = opts?.maxWaitMs ?? 120000;
+  const started = Date.now();
+
+  // The backend runs generation asynchronously (worker Lambda) to avoid API Gateway's 29s
+  // limit, so the first call kicks off the job and we poll until the result is ready.
+  let res = await post<{ status?: string } & Partial<AgendaResponse>>('/accounts/default/agenda', {
+    accountContext, format, persona, userNotes, refresh: opts?.refresh || false,
   });
+
+  while (res.status === 'processing') {
+    if (Date.now() - started > maxWait) throw new Error('Agenda generation timed out');
+    await new Promise(r => setTimeout(r, pollInterval));
+    res = await post<{ status?: string } & Partial<AgendaResponse>>('/accounts/default/agenda', {
+      accountContext, format, persona, userNotes, refresh: false,
+    });
+  }
+
+  return res as AgendaResponse;
 }
 
 // ─── Pitch Deck Generation ───────────────────────────────────────────────────

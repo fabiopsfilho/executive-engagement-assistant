@@ -122,8 +122,8 @@ class EngagementAssistantStack extends cdk.Stack {
       entry: path.join(__dirname, '../lambdas/generate-agenda/index.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_20_X,
-      timeout: cdk.Duration.seconds(60),
-      memorySize: 512,
+      timeout: cdk.Duration.seconds(120),
+      memorySize: 1024,
       environment: sharedEnv,
     });
 
@@ -258,6 +258,14 @@ class EngagementAssistantStack extends cdk.Stack {
       effect: iam.Effect.ALLOW,
       actions: ['lambda:InvokeFunction'],
       resources: [`arn:aws:lambda:${this.region}:${this.account}:function:engagement-assistant-account-analysis`],
+    }));
+
+    // Same async worker pattern for the agenda Lambda — its enriched prompt (capture + docs +
+    // analysis) makes generation exceed API Gateway's 29s limit, so it self-invokes a worker.
+    agendaFn.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['lambda:InvokeFunction'],
+      resources: [`arn:aws:lambda:${this.region}:${this.account}:function:engagement-assistant-agenda`],
     }));
 
     // ─── API Gateway ────────────────────────────────────────────────────
