@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v4:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v5:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -33,11 +33,15 @@ function analysisCacheKey(accountData: any): string {
  */
 
 export interface UnifiedAnalysisResponse {
-  // Approach (concise executive summaries)
+  // Approach (concise executive summaries + expandable detail)
   who_to_focus: string;
+  who_to_focus_detail: string;
   what_conversations: string;
+  what_conversations_detail: string;
   where_to_start: string;
+  where_to_start_detail: string;
   whats_happening: string;
+  whats_happening_detail: string;
   // Buzz
   buzz_summary: string;
   buzz_executive_insights: string[];
@@ -66,8 +70,8 @@ ATTENDEE RULE:
 - If it is empty: "who_to_focus" centers on the REAL executives found online (name them, e.g. the CEO from LinkedIn) as the key people to engage and research. Do NOT call them attendees, do NOT claim they will attend, and do NOT add any disclaimer about a missing/unimported list — just give the recommendation naturally.
 - Never invent a person, tenure, or biography.
 
-FORMAT (BE CONCISE — this keeps the response fast and complete):
-- Each Approach field: 2 tight executive sentences max.
+FORMAT:
+- Each Approach field is a SHORT executive summary (1-2 sentences, plain prose, no markdown). The matching "_detail" field holds 2-3 sentences of expanded executive-level reasoning (shown when the user clicks "More detail").
 - next_steps and key_asks: exactly 4 each, one concise sentence per item.
 - now_initiatives: exactly 4, one sentence each. buzz why_this_matters: 2 sentences max.
 - buzz_hiring_analysis.roles: only real roles found in search (title + url).
@@ -167,10 +171,14 @@ ${context}
 
 Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_initiatives):
 {
-  "who_to_focus": "2 tight sentences: who to focus on (real executives by name, or confirmed attendees if provided) and why.",
-  "what_conversations": "2 tight sentences: the strategic conversation angle to drive, grounded in real signals.",
-  "where_to_start": "2 tight sentences: the recommended strategic approach (methodology, not products).",
-  "whats_happening": "2 tight sentences: what's happening in their world creating urgency now.",
+  "who_to_focus": "1-2 sentence summary: who to focus on (real executives by name) and why.",
+  "who_to_focus_detail": "2-3 sentences expanding on each key person's role, public activity, and how to approach them.",
+  "what_conversations": "1-2 sentence summary: the strategic conversation angle to drive.",
+  "what_conversations_detail": "2-3 sentences expanding it, referencing named executives' activity and real challenges.",
+  "where_to_start": "1-2 sentence summary: the recommended strategic approach (methodology, not products).",
+  "where_to_start_detail": "2-3 sentences: assessment -> strategy -> execution -> measurement. May briefly note AWS can enable this at the end.",
+  "whats_happening": "1-2 sentence summary: what's happening in their world creating urgency now.",
+  "whats_happening_detail": "2-3 sentences on industry, hiring, sentiment, and named executives' public statements.",
   "buzz_summary": "2-3 sentence synthesis of what's happening at this company.",
   "buzz_executive_insights": ["One insight per REAL executive found — empty array if none. Never invent."],
   "buzz_hiring_analysis": { "roles": [{"title": "Role", "url": "https://..."}], "why_this_matters": "Concise paragraph on the capability gap the hiring signals." },
@@ -187,7 +195,7 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
       CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 2300, temperature: 0.5 }
+      { maxTokens: 3500, temperature: 0.5 }
     );
 
     return result;

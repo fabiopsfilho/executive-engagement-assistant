@@ -318,21 +318,25 @@ export function ExecBrief({ account, onEngagePersona, tcData, analysis, analysis
             summary={insights?.who_to_focus || (rankedPersonas.length > 0
               ? rankedPersonas.map(att => att.name + ' (' + att.persona + ')').join(', ')
               : 'Prioritize the CHRO and CFO for the workforce conversation.')}
+            detail={insights?.who_to_focus_detail}
           />
           <InsightItem
             icon={MessageSquareText} iconColor="text-green-400"
             title="What conversations should we drive?"
             summary={insights?.what_conversations || `${a.signals[0] ? `Start with "${a.signals[0].label}". ` : ''}Ask where skills gaps are slowing down ${a.sfdc_data.account_plan_priority}.`}
+            detail={insights?.what_conversations_detail}
           />
           <InsightItem
             icon={Target} iconColor="text-red-400"
             title="Where should we start?"
             summary={insights?.where_to_start || 'Understand their workforce reality first — the assessment is a tool, the conversation is the value.'}
+            detail={insights?.where_to_start_detail}
           />
           <InsightItem
             icon={Globe} iconColor="text-blue-400"
             title="What's happening in their world?"
             summary={insights?.whats_happening || `${a.public_intelligence.industry_context.split(';')[0].split('.')[0]}.`}
+            detail={insights?.whats_happening_detail}
           />
         </div>
           ))}
