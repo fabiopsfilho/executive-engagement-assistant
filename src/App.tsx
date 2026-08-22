@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, FileText, BookOpen, Zap, Megaphone, Loader2, Upload, Database } from 'lucide-react';
+import { ArrowLeft, FileText, BookOpen, Zap, Megaphone, Loader2, Upload, Database, Presentation } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
 import { AccountSelector } from './components/AccountSelector';
@@ -8,7 +8,7 @@ import { SummaryView } from './components/SummaryView';
 import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
-import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse } from './services/api';
+import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, generateSlides, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse, type SlidesResponse } from './services/api';
 import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
 
 type MainTab = 'brief' | 'summary' | 'demo';
@@ -20,6 +20,11 @@ export default function App() {
   const [showScore, setShowScore] = useState(false);
   const [showPersonaPicker, setShowPersonaPicker] = useState(false);
   const [insightPopup, setInsightPopup] = useState<'now' | 'buzz' | null>(null);
+  // Presentation slides (max 2) generated on demand to support the customer conversation.
+  const [showSlides, setShowSlides] = useState(false);
+  const [slides, setSlides] = useState<SlidesResponse | null>(null);
+  const [slidesLoading, setSlidesLoading] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [tcData, setTcData] = useState<TCAccountSummary | null>(null);
   // Single unified analysis powers Approach, Buzz, Now, Next Steps, Key Asks — all consistent.
@@ -54,10 +59,25 @@ export default function App() {
     if (!acct || !isBackendAvailable()) return;
     setAnalysisLoading(true);
     setAnalysis(null);
+    setSlides(null); // new analysis → invalidate any cached slides so the deck stays consistent
     generateUnifiedAnalysis(acct, tc, { refresh })
       .then(result => setAnalysis(result))
       .catch(err => console.error('Unified analysis failed:', err))
       .finally(() => setAnalysisLoading(false));
+  };
+
+  // Generate the max 2-slide executive support deck from the current unified analysis.
+  const openSlides = () => {
+    if (!account) return;
+    setShowSlides(true);
+    setSlideIndex(0);
+    // If we already have slides for this analysis, keep them; otherwise generate.
+    if (slides || !isBackendAvailable()) return;
+    setSlidesLoading(true);
+    generateSlides(account, analysis)
+      .then(result => setSlides(result))
+      .catch(err => console.error('Slide generation failed:', err))
+      .finally(() => setSlidesLoading(false));
   };
 
   // Handle attendee CSV upload
@@ -399,6 +419,12 @@ export default function App() {
               <Megaphone className="w-4 h-4" />
               <span className="text-[9px] font-medium">Buzz</span>
             </button>
+            <button onClick={openSlides}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 ${showSlides ? 'text-emerald-400' : 'text-muted'}`}
+              title="Generate a 2-slide view to support the customer conversation">
+              <Presentation className="w-4 h-4" />
+              <span className="text-[9px] font-medium">Slides</span>
+            </button>
           </div>
         </header>
 
@@ -588,6 +614,76 @@ export default function App() {
                   ) : (
                     <p className="text-sm text-slate-500 text-center py-8">Click to analyze</p>
                   )
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Slides popup — max 2-slide executive support deck */}
+        {showSlides && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowSlides(false)}>
+            <div className="bg-dark-800 border border-dark-600 rounded-b-2xl w-full max-w-[430px] md:max-w-[760px] max-h-[85vh] overflow-y-auto animate-fade-in" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2"><Presentation className="w-4 h-4 text-emerald-400" /> Conversation slides</h3>
+                <div className="flex items-center gap-1">
+                  {slides && !slidesLoading && (
+                    <button onClick={() => { setSlides(null); setSlidesLoading(true); generateSlides(account, analysis).then(setSlides).catch(err => console.error('Slide regen failed:', err)).finally(() => setSlidesLoading(false)); }}
+                      className="text-[10px] text-emerald-400 px-2 py-1 rounded-lg active:bg-dark-700" title="Regenerate">↻ Regenerate</button>
+                  )}
+                  <button onClick={() => setShowSlides(false)} className="p-2 rounded-lg active:bg-dark-700"><span className="text-muted text-lg">✕</span></button>
+                </div>
+              </div>
+              <div className="px-5 pb-5">
+                {slidesLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                    <span className="text-sm text-slate-400">Building your slides...</span>
+                  </div>
+                ) : slides && slides.slides.length > 0 ? (
+                  <div className="space-y-4">
+                    {slides.deck_title && (
+                      <p className="text-[11px] uppercase tracking-wide text-emerald-400/80 font-semibold">{slides.deck_title}</p>
+                    )}
+                    {/* Current slide (16:9-ish card) */}
+                    {(() => {
+                      const s = slides.slides[Math.min(slideIndex, slides.slides.length - 1)];
+                      return (
+                        <div className="bg-gradient-to-br from-dark-700 to-dark-800 border border-dark-600 rounded-xl p-5 min-h-[260px] flex flex-col">
+                          <div className="border-b border-dark-600 pb-3 mb-3">
+                            <h4 className="text-base md:text-lg font-bold text-white leading-snug">{s.title}</h4>
+                            {s.subtitle && <p className="text-xs text-slate-400 mt-1">{s.subtitle}</p>}
+                          </div>
+                          <ul className="space-y-2.5 flex-1">
+                            {s.bullets.map((b, i) => (
+                              <li key={i} className="flex items-start gap-2.5">
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                <span className="text-sm text-slate-200 leading-relaxed">{b}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {s.footer && (
+                            <div className="mt-3 pt-3 border-t border-dark-600">
+                              <p className="text-xs text-emerald-300 font-medium leading-relaxed">{s.footer}</p>
+                            </div>
+                          )}
+                          <div className="mt-3 text-right"><span className="text-[10px] text-muted">Slide {Math.min(slideIndex, slides.slides.length - 1) + 1} of {slides.slides.length}</span></div>
+                        </div>
+                      );
+                    })()}
+                    {/* Slide nav (only if 2 slides) */}
+                    {slides.slides.length > 1 && (
+                      <div className="flex items-center justify-center gap-2">
+                        {slides.slides.map((_, i) => (
+                          <button key={i} onClick={() => setSlideIndex(i)}
+                            className={`h-2 rounded-full transition-all ${i === Math.min(slideIndex, slides.slides.length - 1) ? 'w-6 bg-emerald-400' : 'w-2 bg-dark-600'}`}
+                            aria-label={`Go to slide ${i + 1}`} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 text-center py-12">No slides yet. Close and reopen to generate.</p>
                 )}
               </div>
             </div>

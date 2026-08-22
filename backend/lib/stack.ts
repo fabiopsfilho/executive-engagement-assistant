@@ -229,8 +229,19 @@ class EngagementAssistantStack extends cdk.Stack {
       environment: sharedEnv,
     });
 
+    // 14. Generate Slides (max 2-slide executive support deck from the unified analysis)
+    const generateSlidesFn = new NodejsFunction(this, 'GenerateSlidesFn', {
+      functionName: 'engagement-assistant-generate-slides',
+      entry: path.join(__dirname, '../lambdas/generate-slides/index.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 512,
+      environment: sharedEnv,
+    });
+
     // Grant permissions
-    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn, personaIntelFn, accountAnalysisFn];
+    const allFunctions = [generateEngagementFn, advisorChatFn, rolePlayFn, intelligenceFn, agendaFn, pitchFn, ebcDataFn, tcDataFn, accountInsightsFn, accountBuzzFn, accountNextStepsFn, personaIntelFn, accountAnalysisFn, generateSlidesFn];
     for (const fn of allFunctions) {
       fn.addToRolePolicy(bedrockPolicy);
       accountsTable.grantReadWriteData(fn);
@@ -323,6 +334,10 @@ class EngagementAssistantStack extends cdk.Stack {
     // POST /accounts/{accountId}/analysis (unified: Approach + Buzz + Now + Next Steps + Key Asks)
     const analysis = account.addResource('analysis');
     analysis.addMethod('POST', new apigateway.LambdaIntegration(accountAnalysisFn));
+
+    // POST /accounts/{accountId}/slides
+    const slides = account.addResource('slides');
+    slides.addMethod('POST', new apigateway.LambdaIntegration(generateSlidesFn));
 
     // POST /accounts/{accountId}/persona-intel
     const personaIntel = account.addResource('persona-intel');

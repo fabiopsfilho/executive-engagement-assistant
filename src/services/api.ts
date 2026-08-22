@@ -405,6 +405,31 @@ export async function generateUnifiedAnalysis(
   return res as UnifiedAnalysisResponse;
 }
 
+// ─── Presentation Slides (max 2-slide executive support deck) ────────────────
+
+export interface PresentationSlide {
+  title: string;
+  subtitle?: string;
+  bullets: string[];
+  footer?: string;
+}
+
+export interface SlidesResponse {
+  deck_title: string;
+  slides: PresentationSlide[];
+}
+
+/**
+ * Generates a MAX 2-slide executive support deck from the already-computed
+ * unified analysis (plus account context). Single fast call — no polling.
+ */
+export async function generateSlides(
+  accountData: unknown,
+  analysis?: UnifiedAnalysisResponse | null
+): Promise<SlidesResponse> {
+  return post<SlidesResponse>('/accounts/default/slides', { accountData, analysis });
+}
+
 // ─── Account Buzz/Now (AI-Generated) ─────────────────────────────────────────
 
 export interface BuzzNowResponse {
