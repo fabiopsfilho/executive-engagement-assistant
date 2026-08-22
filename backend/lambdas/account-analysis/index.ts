@@ -21,7 +21,7 @@ function analysisCacheKey(accountData: any): string {
   const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
   // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
   // OR uploaded external docs change → forces fresh analysis that includes the new data.
-  return `analysis-v16:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
+  return `analysis-v17:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -268,7 +268,7 @@ CRITICAL — MAKE NEXT STEPS & KEY ASKS DATA-DRIVEN AND DISTINCT:
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
       CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 3800, temperature: 0.45 }
+      { maxTokens: 5000, temperature: 0.45 }
     );
 
     return sanitizeAnalysis(result);
@@ -298,7 +298,20 @@ function sanitizeAnalysis(r: UnifiedAnalysisResponse): UnifiedAnalysisResponse {
     if (out) out = out.charAt(0).toUpperCase() + out.slice(1);
     return out;
   };
-  const cleanArr = (arr: string[] | undefined): string[] => (arr || []).map(clean).filter(x => x.length > 3);
+  // Detect an item that was clearly cut off mid-sentence (e.g. JSON truncated at max_tokens).
+  // Signals: an unbalanced "(", or it ends on a dangling word/connector with no closing punctuation.
+  const looksTruncated = (s: string): boolean => {
+    const t = s.trim();
+    if (!t) return true;
+    const opens = (t.match(/\(/g) || []).length;
+    const closes = (t.match(/\)/g) || []).length;
+    if (opens > closes) return true; // e.g. "...Consultant ("
+    // Ends on a connector/article/preposition with no terminal punctuation → mid-sentence cut.
+    if (/[a-z0-9,]$/i.test(t) && /\b(the|a|an|to|of|for|with|and|or|in|on|at|by|that|which|who|from|as|is|are|will|would|—|-)$/i.test(t)) return true;
+    return false;
+  };
+  const cleanArr = (arr: string[] | undefined): string[] =>
+    (arr || []).map(clean).filter(x => x.length > 3 && !looksTruncated(x));
 
   return {
     ...r,
