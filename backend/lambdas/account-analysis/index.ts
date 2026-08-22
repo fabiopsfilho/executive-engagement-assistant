@@ -21,7 +21,7 @@ function analysisCacheKey(accountData: any): string {
   const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
   // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
   // OR uploaded external docs change → forces fresh analysis that includes the new data.
-  return `analysis-v13:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
+  return `analysis-v14:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -196,11 +196,17 @@ Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
 Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}${attendees.length > 0 ? `\nConfirmed Attendees: ${attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}` : ''}
 
-${accountData.accountPlanText ? `═══ CAPTURED SALESFORCE / ACCOUNT SUMMARY / BRIEF DATA ═══
-This is REAL, INTERNAL account data (from Salesforce or an uploaded brief) and is your PRIMARY, MOST-TRUSTED source. It outranks the public web search below. Analyze EVERY section of it — account plan, opportunities, pipeline, AWS spend, engagement history, contacts/stakeholders, notes, priorities — and let it drive the Approach, Next Steps, Key Asks, Buzz and Now. Where this data names real people, priorities, opportunities, or numbers, use them specifically. Treat the public web search only as supplementary color.
+${(accountData.accountPlanText || (accountData.externalDocs || []).length > 0 || attendees.length > 0) ? `═══ HOW TO USE YOUR SOURCES — READ FIRST ═══
+You have up to three high-value sources. They are not competing versions of the truth — they are LAYERS that you MUST combine into one synthesized view. Do not analyze them in isolation; triangulate across them.
+  1. CAPTURED SALESFORCE DATA = our OWN INTERNAL AWS intelligence (what AWS already knows and owns about this account: opportunities, pipeline, spend, engagement history, stakeholders, priorities). This is the authoritative internal foundation. Ground the business reality here.
+  2. UPLOADED DOCUMENTS + ATTENDEE LIST = the DEPTH layer. Documents add the drivers, trends, executive intelligence and suggested next steps; the attendee list tells you exactly who is in the room. Together they deepen and sharpen the internal picture.
+  3. PUBLIC WEB SEARCH = supplementary color only, used to enrich — never to override the two internal sources above.
+SYNTHESIZE: connect an internal Salesforce fact (an open opportunity, a named stakeholder, AWS spend) to a document driver/trend and to a confirmed attendee's role, so every recommendation is grounded in the combined picture. When two sources reinforce each other, say so; that convergence is your strongest insight.
+` : ''}${accountData.accountPlanText ? `═══ CAPTURED SALESFORCE / ACCOUNT SUMMARY DATA (INTERNAL AWS INTELLIGENCE — AUTHORITATIVE) ═══
+This is REAL, INTERNAL AWS account data captured from Salesforce (or an uploaded brief) — it is what AWS already knows and owns about this customer, and is your authoritative internal foundation. It outranks the public web search. Analyze EVERY section — account plan, opportunities, pipeline, AWS spend, engagement history, contacts/stakeholders, notes, priorities — and let it drive the Approach, Next Steps, Key Asks, Buzz and Now. Where it names real people, priorities, opportunities, or numbers, use them specifically, and connect them to the documents and attendees below.
 ${accountData.accountPlanText.slice(0, 14000)}` : ''}
 ${(accountData.externalDocs || []).length > 0 ? `\n═══ UPLOADED EXTERNAL DOCUMENTS (Databook, account brief, intelligence reports) — RICHEST SOURCE ═══
-These are REAL documents the user uploaded and are your RICHEST, most-trusted intelligence. MINE THEM DEEPLY for: business drivers, market/industry trends, strategic priorities, executive intelligence (named leaders, their agendas, quotes, priorities), financials/spend, competitive dynamics, and any SUGGESTED NEXT STEPS or recommendations the documents themselves contain. You MUST weave these specifics into every section — Approach, Next Steps, Key Asks, Buzz, Now. When a document already suggests next steps or names a driver/trend/executive priority, build on it explicitly rather than inventing generic advice. These specifics are what make the analysis genuinely consultative.
+These are REAL documents the user uploaded and are your RICHEST, most-trusted intelligence. MINE THEM DEEPLY for: business drivers, market/industry trends, strategic priorities, executive intelligence (named leaders, their agendas, quotes, priorities), financials/spend, competitive dynamics, and any SUGGESTED NEXT STEPS or recommendations the documents themselves contain. You MUST weave these specifics into every section — Approach, Next Steps, Key Asks, Buzz, Now. When a document already suggests next steps or names a driver/trend/executive priority, build on it explicitly rather than inventing generic advice. Cross-reference these document specifics with the internal Salesforce data above and the confirmed attendees below — where a document driver lines up with an internal opportunity or an attendee's role, connect them into one insight. These specifics are what make the analysis genuinely consultative.
 ${(accountData.externalDocs || []).map((d: any) => `--- Document: ${d.name} ---\n${(d.text || '').slice(0, 10000)}`).join('\n\n')}` : ''}
 ${awsContext ? `\nAWS T&C KNOWLEDGE BASE:\n${awsContext.slice(0, 2500)}` : ''}
 ${onlineSearch ? `\n═══ PUBLIC WEB SEARCH (SUPPLEMENTARY — secondary to the captured data above) ═══\n${onlineSearch.slice(0, 3000)}` : ''}`;
@@ -213,6 +219,7 @@ HOW TO BE INSIGHTFUL (do all of this):
 3. USE CONCRETE PROOF POINTS from your expertise where they sharpen the argument and would land with an executive: e.g. BCG found only ~6% of companies are AI leaders and they have 13x more AI-skilled workers; 70% of AI value is people/process/org change (10-20-70); Forrester found 229% ROI on structured training; AWS enterprise programs show 234% ROI, 85% participation, 65% pilot-to-production; 88% of managers at mature orgs role-model AI vs 25% at laggards. Cite the RIGHT one for the moment — do not dump them all.
 4. AVOID REPETITION across sections. Do not anchor every field on the same one person or one fact. Each section should advance a different part of the argument.
 5. BE SPECIFIC AND BOLD in recommendations — tie each to THIS company's actual drivers/trends/products/initiatives from the data, not a reusable checklist.
+6. COMBINE THE INTERNAL SOURCES. When present, weave together (a) the captured Salesforce data — our internal AWS view of opportunities, spend, stakeholders and history, (b) the uploaded documents — drivers, trends, executive intelligence and their suggested next steps, and (c) the confirmed attendee list — who is actually in the room. The sharpest insights come from connecting these: e.g. an open internal opportunity that maps to a document-identified driver and is owned by a confirmed attendee. Never treat them as separate silos; the combined picture is the whole point.
 
 INTEGRITY (unchanged): Only use facts present in the data. Never invent people, numbers, or company descriptions. The proof-point STATISTICS above are your own expert knowledge and may always be cited. Never claim anyone is a confirmed attendee unless in the Confirmed Attendees list. Never narrate data gaps.
 
