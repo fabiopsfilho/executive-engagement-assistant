@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v7:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v8:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -77,7 +77,7 @@ FORMAT:
 - buzz_hiring_analysis.roles: only real roles found in search (title + url).
 - Empty arrays are fine when no real data exists — never fill with speculation.
 
-CRITICAL — DO NOT DESCRIBE OR CHARACTERIZE THE COMPANY. Never write claims like "a world leader in X", "a leading provider of Y", "operates across A/B/C sectors", or any statement about their products, business model, market position, or customer base — even if a search snippet hints at it. A single search snippet is NOT enough to authoritatively describe a company; do not amplify it. Refer to the company ONLY by its name and its stated industry (e.g. "Financial Services"). Do NOT name or assume executive titles (CTO, COO, VP of Product, etc.) as accountable individuals unless those exact people appear in the Executive Social data or Confirmed Attendees. When you lack specifics, speak in general terms about the workforce transformation opportunity. Inventing a company description is a critical failure.
+BE SPECIFIC USING THE RESEARCH: Reference this company's actual business, strategic initiatives, hiring, and named executives AS FOUND in the search results. That specificity is what makes this consultative. But only state what the research actually supports — if the research is thin, ground the advice in their industry + stated priority and recommend discovery questions, rather than inventing company facts or executive names. Do NOT amplify a single vague snippet into a bold claim like "world leader in X"; state what's actually supported, at the confidence the evidence warrants.
 
 Return ONLY valid JSON.`;
 
@@ -86,44 +86,45 @@ const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
 
 // Condensed persona + guardrails for this high-volume unified call, to keep the
 // prompt small enough that generation completes within API Gateway's 29s limit.
-const CONDENSED_SYSTEM = `You are an AI Skills Transformation expert advising the AWS T&C team for an EBC (executive, business-focused — no technical jargon). Core lens: AI transformation is 70% people/process/org change (BCG 10-20-70); leaders win on TALENT not technology; workflow redesign over tool training; manager activation is critical; measure the chain (capability -> adoption -> workflow -> business outcome). Bridge to AWS T&C only as the execution partner, never a product pitch.
+const CONDENSED_SYSTEM = `You are a world-class AI Skills Transformation expert from AWS Training & Certification, preparing the team for an executive (EBC) conversation. Executives expect SPECIFIC, CONSULTATIVE, practical insight about THEIR company — not generic "skills transformation" platitudes. Your value comes from grounding every recommendation in what this specific company actually does, their real strategic priorities, their real hiring, and their real leaders. Core lens: AI transformation is 70% people/process/org change (BCG 10-20-70); leaders win on talent not technology; workflow redesign over tool training; manager activation; measure capability->adoption->workflow->business outcome. Bridge to AWS T&C only as the execution partner, never a product pitch.
 
-DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from a provided "Confirmed Attendees" list — never claim anyone attends unless explicitly listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees.
+USE THE RESEARCH — BE SPECIFIC: The provided search results tell you what this company does, their strategic moves, hiring, and executives. USE these facts to make the advice specific and consultative. Reference their actual business, actual initiatives, actual named executives (from the search), and actual open roles. Generic advice that could apply to any company is a FAILURE — an executive would find it worthless.
 
-ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "no attendees are listed", "attendee list not provided", "recommend pre-engagement to identify attendees", or ANY commentary about who is or isn't attending. Simply give your expert recommendation on which executives/roles to focus on, as if that is naturally your advice. The words "attendee", "attend", and "attending" must NOT appear in who_to_focus unless a Confirmed Attendees list was explicitly provided.
+DATA INTEGRITY — the line between specific and fabricated:
+- ALLOWED: Stating facts that appear in the search results (e.g. if results say the company announced a cloud migration, or is hiring 12 ML engineers, or the CEO posted about AI — use it, cite the substance).
+- FORBIDDEN: Inventing facts not in the results. Do NOT invent what the company does if the search didn't reveal it. Do NOT invent executive names/titles as accountable people unless a real person appears in the EXECUTIVE LEADERSHIP search results or Confirmed Attendees. Do NOT invent numbers, quotes, or initiatives.
+- If the research genuinely returned little about this company, be honest and consultative: focus on what their INDUSTRY and stated PRIORITY imply for workforce transformation, and recommend specific discovery questions — but do not fabricate company specifics to fill the gap.
 
-ABSOLUTE RULE ON TRAINING/CERTIFICATION STATE: You do NOT have data on the customer's certifications, Skill Builder usage, training maturity, or activation rates unless it is explicitly present in the captured/uploaded account data. NEVER state "zero certifications", "no prior AWS engagement", "greenfield", or any claim about their current training state based on assumption. If no training data is present, simply focus on the workforce transformation opportunity without characterizing their current certification/training status as a fact.
+ATTENDEES: Confirmed attendees come ONLY from a provided "Confirmed Attendees" list. NEVER write "no confirmed attendees", "attendee list not provided", or any commentary about who is/isn't attending. The words "attendee/attend/attending" must not appear in who_to_focus unless a list was provided. Name real executives found in the research as key people to engage — just never as "attendees".
 
-ABSOLUTE RULE ON COMPANY DESCRIPTION & EXECUTIVES: NEVER characterize the company with claims like "world leader in X", "leading provider of Y", or descriptions of its products/markets/customers — not even from a search snippet (one snippet is not enough to describe a company authoritatively). Refer to the company only by name + stated industry. Do NOT name or assume executive titles (CTO, COO, VP, etc.) as accountable people unless those exact people appear in Executive Social data or Confirmed Attendees. Keep recommendations general when you lack verified specifics. Fabricating a company description or its executives is a critical failure.`;
+TRAINING STATE: You have NO data on their certifications/Skill Builder/training maturity unless it's in captured/uploaded data. Never claim "zero certifications" or "greenfield" as fact.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
-    const existingPi = accountData.public_intelligence || {};
-    // The intelligence Lambda usually already populated executive_social / hiring / glassdoor
-    // on the account. If so, we SKIP re-searching (saves ~6s and keeps us under 29s) and only
-    // do a light CHRO/skills search. If the account has no intelligence yet, we search fully.
-    const hasIntel = (existingPi.executive_social?.length > 0) ||
-      (existingPi.linkedin_job_postings?.cloud_ai_roles > 0) ||
-      (existingPi.glassdoor_signals?.length > 0);
 
-    const [mcpDocs, kbDocs, linkedinResults, glassdoorResults, newsResults, executiveResults, chroSkillsResults] = await Promise.all([
+    // ALWAYS research the company deeply — this is what makes the advice consultative and
+    // specific rather than generic. We search their actual business, strategy, initiatives,
+    // hiring, executives, and sentiment. (Async worker → no 29s limit, so we can search fully.)
+    const [mcpDocs, kbDocs, companyProfile, strategyNews, hiringResults, executiveResults, sentimentResults, skillsResults] = await Promise.all([
       withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 3000, ''),
       withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 3000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} jobs cloud AI engineer hiring`), 5000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyGlassdoorSearch(`${companyName} reviews culture training development`), 5000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} cloud AI digital transformation 2025 2026 news`), 5000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CFO CHRO executives`), 5000, ''),
-      hasIntel ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} CHRO HR skills transformation workforce development talent strategy`), 5000, ''),
+      withTimeout(tavilySearch(`What does ${companyName} do? business model, main products and services, size, markets`), 6000, ''),
+      withTimeout(tavilySearch(`${companyName} strategic priorities AI cloud digital transformation initiatives 2025 2026 announcements`), 6000, ''),
+      withTimeout(tavilyLinkedInSearch(`${companyName} hiring cloud AI data engineer roles`), 6000, ''),
+      withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CIO CHRO executive leadership`), 6000, ''),
+      withTimeout(tavilyGlassdoorSearch(`${companyName} employee reviews culture learning development`), 6000, ''),
+      withTimeout(tavilySearch(`${companyName} workforce skills talent AI upskilling training strategy`), 6000, ''),
     ]);
 
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
     const onlineSearch = [
-      linkedinResults ? `LINKEDIN JOB POSTINGS:\n${linkedinResults}` : '',
-      executiveResults ? `EXECUTIVE LINKEDIN PROFILES & POSTS:\n${executiveResults}` : '',
-      chroSkillsResults ? `CHRO / HR / SKILLS TRANSFORMATION PRACTICES:\n${chroSkillsResults}` : '',
-      glassdoorResults ? `GLASSDOOR EMPLOYEE REVIEWS:\n${glassdoorResults}` : '',
-      newsResults ? `COMPANY NEWS & TRANSFORMATION:\n${newsResults}` : '',
+      companyProfile ? `WHAT THE COMPANY DOES (business profile):\n${companyProfile}` : '',
+      strategyNews ? `STRATEGIC PRIORITIES & RECENT NEWS:\n${strategyNews}` : '',
+      hiringResults ? `HIRING / OPEN ROLES:\n${hiringResults}` : '',
+      executiveResults ? `EXECUTIVE LEADERSHIP (real people found online):\n${executiveResults}` : '',
+      sentimentResults ? `EMPLOYEE SENTIMENT:\n${sentimentResults}` : '',
+      skillsResults ? `WORKFORCE / SKILLS SIGNALS:\n${skillsResults}` : '',
     ].filter(Boolean).join('\n\n');
 
     const pi = accountData.public_intelligence || {};
