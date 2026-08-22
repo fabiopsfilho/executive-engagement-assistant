@@ -327,7 +327,7 @@ export function ExecBrief({ account, onEngagePersona, tcData, analysis, analysis
           <InsightItem
             icon={Target} iconColor="text-red-400"
             title="Where should we start?"
-            summary={insights?.where_to_start || (isGreenfield ? 'Understand their workforce reality first — the assessment is a tool, the conversation is the value.' : 'Redesign how they develop people, starting from where adoption stalled.')}
+            summary={insights?.where_to_start || 'Understand their workforce reality first — the assessment is a tool, the conversation is the value.'}
           />
           <InsightItem
             icon={Globe} iconColor="text-blue-400"

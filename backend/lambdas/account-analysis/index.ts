@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v3:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v4:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -84,7 +84,9 @@ const CONDENSED_SYSTEM = `You are an AI Skills Transformation expert advising th
 
 DATA INTEGRITY (zero tolerance): Ground everything in the real data provided. NEVER invent people, quotes, numbers, initiatives, or approaches. Confirmed attendees come ONLY from a provided "Confirmed Attendees" list — never claim anyone attends unless explicitly listed. You MAY name real executives found in the data (e.g. the CEO on LinkedIn) as key people to engage, but never as attendees.
 
-ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "no attendees are listed", "attendee list not provided", "recommend pre-engagement to identify attendees", or ANY commentary about who is or isn't attending. Simply give your expert recommendation on which executives/roles to focus on, as if that is naturally your advice. The words "attendee", "attend", and "attending" must NOT appear in who_to_focus unless a Confirmed Attendees list was explicitly provided.`;
+ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "no attendees are listed", "attendee list not provided", "recommend pre-engagement to identify attendees", or ANY commentary about who is or isn't attending. Simply give your expert recommendation on which executives/roles to focus on, as if that is naturally your advice. The words "attendee", "attend", and "attending" must NOT appear in who_to_focus unless a Confirmed Attendees list was explicitly provided.
+
+ABSOLUTE RULE ON TRAINING/CERTIFICATION STATE: You do NOT have data on the customer's certifications, Skill Builder usage, training maturity, or activation rates unless it is explicitly present in the captured/uploaded account data. NEVER state "zero certifications", "no prior AWS engagement", "greenfield", or any claim about their current training state based on assumption. If no training data is present, simply focus on the workforce transformation opportunity without characterizing their current certification/training status as a fact.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
@@ -124,16 +126,13 @@ STRATEGIC PRIORITY: ${accountData.sfdc_data?.account_plan_priority || 'Unknown'}
 SMGS PHASE: ${accountData.sfdc_data?.smgs_phase || 'Unknown'}
 T2K: ${accountData.sfdc_data?.t2k ? 'Yes' : 'No'}
 
-T&C STATE:
-${accountData.tc_current_state?.skill_builder ? `Skill Builder: ${accountData.tc_current_state.skill_builder_seats} seats, ${accountData.tc_current_state.activation_rate}% activation` : 'No Skill Builder (Greenfield)'}
-Certifications: ${accountData.tc_current_state?.certifications || 0}
-Prior Engagement: ${accountData.tc_current_state?.prior_engagement || 'None'}
-
-${tcData ? `T&C PIPELINE DATA:
+${tcData ? `T&C PIPELINE / OPPORTUNITY DATA (from the T&C opportunities file — this is a VIEW OF POTENTIAL, not current certification state):
 Pipeline: $${(tcData.totalPipeline || 0).toLocaleString()}
 Open Opportunities: ${tcData.openOpportunities || 0}
 Products: ${(tcData.products || []).join(', ')}
 Students: ${tcData.totalStudents || 0}` : ''}
+
+IMPORTANT — NO TRAINING/CERTIFICATION STATE DATA IS AVAILABLE unless it appears in the CAPTURED ACCOUNT / BRIEF DATA section below. You do NOT know how many certifications they have, whether they use Skill Builder, or their activation rates. NEVER state or imply anything about their certification counts, training maturity, or "greenfield/zero certifications" status. Do not describe them as a "greenfield opportunity" based on assumed-zero training data. Only discuss training state if it is explicitly present in the captured/uploaded data.
 
 SIGNALS:
 ${(accountData.signals || []).map((s: any) => `[${s.severity}] ${s.label}: ${s.evidence}`).join('\n') || 'None'}
