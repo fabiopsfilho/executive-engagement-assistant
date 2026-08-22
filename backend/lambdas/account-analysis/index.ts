@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v11:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v12:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -101,7 +101,9 @@ NAMES: Only name a person if you have their FULL real name from the research. NE
 
 NEVER COMMENT ON ABSENCE OF DATA — anywhere, in any field. Do NOT write phrases like "zero detected hiring", "no visible executive activity", "no social activity found", "without detected data", "no confirmed X". These expose our tooling and add no value to an executive. If you lack a data point, simply omit it and speak to what you DO know or what the industry/priority implies. Silence about a gap is correct; narrating the gap is forbidden.
 
-TRAINING STATE: You have NO data on their certifications/Skill Builder/training maturity unless it's in captured/uploaded data. Never claim "zero certifications" or "greenfield" as fact.`;
+TRAINING STATE: You have NO data on their certifications/Skill Builder/training maturity unless it's in captured/uploaded data. Never claim "zero certifications" or "greenfield" as fact.
+
+CAPTURED DATA IS PRIMARY: When a "CAPTURED SALESFORCE / ACCOUNT SUMMARY / BRIEF DATA" section is present, it is real internal data and your PRIMARY source — it outranks the public web search. Read every section of it and ground your recommendations in its specifics (real opportunities, real stakeholders, real spend, real priorities). This is what makes the analysis genuinely consultative.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
@@ -192,9 +194,11 @@ Date: ${accountData.ebc_data?.meeting_dates?.[0] || 'TBD'}
 Location: ${accountData.ebc_data?.location || 'TBD'}
 Themes: ${(accountData.ebc_data?.themes || []).join(', ')}${attendees.length > 0 ? `\nConfirmed Attendees: ${attendees.map((a: any) => `${a.name} (${a.title}, ${a.persona})`).join('; ')}` : ''}
 
-${accountData.accountPlanText ? `CAPTURED ACCOUNT / SALESFORCE / BRIEF DATA (analyze for training status, engagement history, pipeline, workforce info — use to inform ALL sections):\n${accountData.accountPlanText.slice(0, 6000)}` : ''}
+${accountData.accountPlanText ? `═══ CAPTURED SALESFORCE / ACCOUNT SUMMARY / BRIEF DATA ═══
+This is REAL, INTERNAL account data (from Salesforce or an uploaded brief) and is your PRIMARY, MOST-TRUSTED source. It outranks the public web search below. Analyze EVERY section of it — account plan, opportunities, pipeline, AWS spend, engagement history, contacts/stakeholders, notes, priorities — and let it drive the Approach, Next Steps, Key Asks, Buzz and Now. Where this data names real people, priorities, opportunities, or numbers, use them specifically. Treat the public web search only as supplementary color.
+${accountData.accountPlanText.slice(0, 14000)}` : ''}
 ${awsContext ? `\nAWS T&C KNOWLEDGE BASE:\n${awsContext.slice(0, 2500)}` : ''}
-${onlineSearch ? `\nREAL-TIME ONLINE SEARCH RESULTS:\n${onlineSearch.slice(0, 3000)}` : ''}`;
+${onlineSearch ? `\n═══ PUBLIC WEB SEARCH (SUPPLEMENTARY — secondary to the captured data above) ═══\n${onlineSearch.slice(0, 3000)}` : ''}`;
 
     const userMessage = `Produce ONE unified, internally-consistent account analysis. Ground everything in the real data below. Reference real executives (e.g. the CEO found online) by name where relevant. Never fabricate people or claim anyone is a confirmed attendee unless they are in the Confirmed Attendees list.
 
