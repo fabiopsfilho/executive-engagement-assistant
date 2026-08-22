@@ -105,47 +105,66 @@ export default function App() {
     e.target.value = '';
   };
 
+  // Read a single file into cleaned text (resolves to null if unusable).
+  const readDocumentFile = (file: File): Promise<{ name: string; text: string } | null> =>
+    new Promise((resolve) => {
+      const fileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let text = ev.target?.result as string;
+        if (!text) return resolve(null);
+        if (fileName.endsWith('.docx')) {
+          const matches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
+          text = matches.length > 0
+            ? matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ')
+            : text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+        } else if (!fileName.endsWith('.txt') && !fileName.endsWith('.csv')) {
+          text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+        }
+        resolve(text.length > 30 ? { name: fileName, text: text.slice(0, 15000) } : null);
+      };
+      reader.onerror = () => resolve(null);
+      if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) reader.readAsText(file);
+      else reader.readAsBinaryString(file);
+    });
+
   // Unified DOCUMENT upload — any supporting doc (account plan, briefing, Databook, etc.).
-  // Documents ACCUMULATE and persist for the account. Every upload re-runs the FULL unified
-  // analysis, reconsidering all uploaded docs + captured Salesforce data + public search
-  // together — regenerating Approach, Next Steps, Key Asks, Buzz, and Now.
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileName = file.name;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      let text = ev.target?.result as string;
-      if (!text) return;
-      if (fileName.endsWith('.docx')) {
-        const matches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
-        text = matches.length > 0
-          ? matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ')
-          : text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
-      } else if (!fileName.endsWith('.txt') && !fileName.endsWith('.csv')) {
-        text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
-      }
-      if (text.length > 30) {
-        const doc = { name: fileName, text: text.slice(0, 15000) };
-        setExternalDocs(prev => {
-          const next = [...prev.filter(d => d.name !== fileName), doc]; // replace if same filename re-uploaded
-          const updated = account ? { ...account, externalDocs: next } : null;
-          setAccount(p => p ? { ...p, externalDocs: next } : p);
-          // Reconsider everything with the new document included.
-          regenerateAnalysis(updated, tcData, true);
-          return next;
-        });
-        setAttendeeUploadMsg(`"${fileName}" added — regenerating full analysis with all documents...`);
-        setTimeout(() => setRefreshKey(k => k + 1), 100);
-        setTimeout(() => setAttendeeUploadMsg(null), 4000);
-      } else {
-        setAttendeeUploadMsg('Could not extract text from document.');
-        setTimeout(() => setAttendeeUploadMsg(null), 3000);
-      }
-    };
-    if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) reader.readAsText(file);
-    else reader.readAsBinaryString(file);
-    e.target.value = '';
+  // Supports selecting MULTIPLE files at once. Documents ACCUMULATE and persist for the
+  // account. After all selected files are parsed, re-runs the FULL unified analysis ONCE,
+  // reconsidering all uploaded docs + captured Salesforce data + public search together —
+  // regenerating Approach, Next Steps, Key Asks, Buzz, and Now.
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ''; // reset early so the same files can be re-selected later
+    if (files.length === 0) return;
+
+    setAttendeeUploadMsg(`Reading ${files.length} document${files.length > 1 ? 's' : ''}...`);
+    const parsed = (await Promise.all(files.map(readDocumentFile))).filter(
+      (d): d is { name: string; text: string } => d !== null
+    );
+
+    if (parsed.length === 0) {
+      setAttendeeUploadMsg('Could not extract text from the selected document(s).');
+      setTimeout(() => setAttendeeUploadMsg(null), 3000);
+      return;
+    }
+
+    setExternalDocs(prev => {
+      // Merge: replace any existing docs with the same filename, then append the new ones.
+      const parsedNames = new Set(parsed.map(d => d.name));
+      const next = [...prev.filter(d => !parsedNames.has(d.name)), ...parsed];
+      const updated = account ? { ...account, externalDocs: next } : null;
+      setAccount(p => p ? { ...p, externalDocs: next } : p);
+      // Reconsider everything with ALL documents included — a single regeneration.
+      regenerateAnalysis(updated, tcData, true);
+      return next;
+    });
+
+    const label = parsed.length === 1 ? `"${parsed[0].name}"` : `${parsed.length} documents`;
+    const skipped = files.length - parsed.length;
+    setAttendeeUploadMsg(`${label} added${skipped > 0 ? ` (${skipped} skipped)` : ''} — regenerating full analysis with all documents...`);
+    setTimeout(() => setRefreshKey(k => k + 1), 100);
+    setTimeout(() => setAttendeeUploadMsg(null), 4000);
   };
 
   // Check URL params for direct account selection (used by Chrome extension)
@@ -370,8 +389,8 @@ export default function App() {
               )}
             </button>
             {/* Upload Documents — any supporting doc (account plan, briefing, Databook...). Accumulates. */}
-            <input ref={externalDocInputRef} type="file" accept=".txt,.csv,.docx,.pdf,.xlsx" onChange={handleDocumentUpload} className="hidden" />
-            <button onClick={() => externalDocInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload documents (account plan, briefing, Databook, any supporting file)">
+            <input ref={externalDocInputRef} type="file" accept=".txt,.csv,.docx,.pdf,.xlsx" multiple onChange={handleDocumentUpload} className="hidden" />
+            <button onClick={() => externalDocInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload one or more documents (account plan, briefing, Databook, any supporting files) — you can select multiple at once">
               <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
                 <FileText className="w-4 h-4 text-slate-400" />
               </div>
