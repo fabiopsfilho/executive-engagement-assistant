@@ -21,7 +21,7 @@ function analysisCacheKey(accountData: any): string {
   const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
   // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
   // OR uploaded external docs change → forces fresh analysis that includes the new data.
-  return `analysis-v14:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
+  return `analysis-v15:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -244,14 +244,19 @@ Return JSON with exactly these fields (4 items each for next_steps/key_asks/now_
   "now_initiatives": ["4 bold initiatives, each tied to a specific driver/trend/workflow from the data."],
   "now_key_asks": ["4 consultative discovery questions that prove you understand their specific situation."],
   "now_opening_move": "A specific, compelling opening — reference their distinctive situation and a proof point; may name a real executive; never claim attendance.",
-  "next_steps": ["4 specific next steps that build on the documents' drivers/trends/suggested actions."],
-  "key_asks": ["4 discovery-oriented questions/commitments grounded in their specifics."]
-}`;
+  "next_steps": ["4 CONCRETE, SEQUENCED ACTIONS THE AWS TEAM WILL TAKE after this meeting — each names WHAT to do, WITH/FOR whom (a real person or role from the data), and the OUTCOME/ARTIFACT it produces (e.g. a workshop, a proposal, a pilot scope). Each must trace to a SPECIFIC fact in the captured Salesforce data or uploaded documents — quote or reference that fact. These are ACTIONS WE OWN, and must be DISTINCT from now_initiatives (which are strategic plays) and from key_asks (which are things we request from the customer)."],
+  "key_asks": ["4 SPECIFIC THINGS TO SECURE FROM THE CUSTOMER — a commitment, a decision, access to a person, or an answer to a pointed question — each tied to a named opportunity/driver/stakeholder from the data. These are things WE REQUEST FROM THEM (not actions we take), and must be DISTINCT from now_key_asks and from next_steps. Frame each as 'Secure/Confirm/Get access to/Get their view on ...' grounded in a real specific."]
+}
+
+CRITICAL — MAKE NEXT STEPS & KEY ASKS DATA-DRIVEN AND DISTINCT:
+- next_steps and key_asks MUST visibly reflect the NEWEST captured data and uploaded documents. If a document names a driver, an initiative, a suggested action, or a person — the steps/asks must reference it specifically. Do NOT produce generic, reusable steps that would read the same for any company.
+- next_steps (actions WE take) and key_asks (things WE request from THEM) must NOT overlap with each other, and must NOT merely restate now_initiatives / now_key_asks. Each of the four lists serves a different purpose — keep them clearly differentiated.
+- Reference specific names, numbers, opportunities, or document facts in the steps/asks so it is obvious they were generated from THIS account's actual current data.`;
 
     const result = await invokeClaudeJSON<UnifiedAnalysisResponse>(
       CONDENSED_SYSTEM + '\n\n' + SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 3500, temperature: 0.3 }
+      { maxTokens: 3800, temperature: 0.45 }
     );
 
     return sanitizeAnalysis(result);
