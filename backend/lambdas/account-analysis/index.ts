@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v9:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v10:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -106,29 +106,58 @@ TRAINING STATE: You have NO data on their certifications/Skill Builder/training 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
     const companyName = accountData.customer_name || 'Unknown';
+    const geo = (accountData.geo || 'NAMER').toUpperCase();
+
+    // Region/language-aware terms. Many non-US companies (e.g. Brazilian) have a mostly
+    // local-language web presence, so we localize the "what does the company do" and
+    // "strategy/news" queries to surface real, specific data.
+    const localeMap: Record<string, { lang: string; profileQ: string; strategyQ: string }> = {
+      LATAM: {
+        lang: 'Portuguese/Spanish',
+        profileQ: `O que faz a empresa ${companyName}? modelo de negócio, produtos, serviços, tamanho, mercado (What does ${companyName} do)`,
+        strategyQ: `${companyName} estratégia transformação digital nuvem inteligência artificial IA prioridades 2025 2026 notícias`,
+      },
+      EMEA: {
+        lang: 'local European language / English',
+        profileQ: `What does ${companyName} do? business model, products, services, markets (include local-language sources)`,
+        strategyQ: `${companyName} digital transformation cloud AI strategy priorities 2025 2026 news (include local-language sources)`,
+      },
+      APJ: {
+        lang: 'local Asian language / English',
+        profileQ: `What does ${companyName} do? business model, products, services, markets (include local-language sources)`,
+        strategyQ: `${companyName} digital transformation cloud AI strategy priorities 2025 2026 news (include local-language sources)`,
+      },
+      NAMER: {
+        lang: 'English',
+        profileQ: `What does ${companyName} do? business model, main products and services, size, markets`,
+        strategyQ: `${companyName} strategic priorities AI cloud digital transformation initiatives 2025 2026 announcements`,
+      },
+    };
+    const locale = localeMap[geo] || localeMap.NAMER;
 
     // ALWAYS research the company deeply — this is what makes the advice consultative and
-    // specific rather than generic. We search their actual business, strategy, initiatives,
-    // hiring, executives, and sentiment. (Async worker → no 29s limit, so we can search fully.)
-    const [mcpDocs, kbDocs, companyProfile, strategyNews, hiringResults, executiveResults, sentimentResults, skillsResults] = await Promise.all([
+    // specific rather than generic. Region-aware so non-US accounts surface real data.
+    // (Async worker → no 29s limit, so we can search fully.)
+    const [mcpDocs, kbDocs, companyProfile, companyProfileEn, strategyNews, hiringResults, executiveResults, sentimentResults] = await Promise.all([
       withTimeout(getTCProductKnowledge(industry, ['workforce transformation', 'talent development']).catch(() => ''), 3000, ''),
       withTimeout(getTCStrategyContext(industry, 'CTO', accountData.ebc_data?.themes || []).catch(() => ''), 3000, ''),
-      withTimeout(tavilySearch(`What does ${companyName} do? business model, main products and services, size, markets`), 6000, ''),
-      withTimeout(tavilySearch(`${companyName} strategic priorities AI cloud digital transformation initiatives 2025 2026 announcements`), 6000, ''),
+      withTimeout(tavilySearch(locale.profileQ), 6000, ''),
+      // Always also try an English profile search so we get both local and global coverage.
+      geo === 'NAMER' ? Promise.resolve('') : withTimeout(tavilySearch(`${companyName} company profile industry ${industry} what they do`), 6000, ''),
+      withTimeout(tavilySearch(locale.strategyQ), 6000, ''),
       withTimeout(tavilyLinkedInSearch(`${companyName} hiring cloud AI data engineer roles`), 6000, ''),
-      withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CIO CHRO executive leadership`), 6000, ''),
+      withTimeout(tavilyLinkedInSearch(`${companyName} CEO CTO CIO CHRO executive leadership team`), 6000, ''),
       withTimeout(tavilyGlassdoorSearch(`${companyName} employee reviews culture learning development`), 6000, ''),
-      withTimeout(tavilySearch(`${companyName} workforce skills talent AI upskilling training strategy`), 6000, ''),
     ]);
 
     const awsContext = [mcpDocs, kbDocs].filter(Boolean).join('\n\n');
     const onlineSearch = [
-      companyProfile ? `WHAT THE COMPANY DOES (business profile):\n${companyProfile}` : '',
+      companyProfile ? `WHAT THE COMPANY DOES (business profile, ${locale.lang} sources):\n${companyProfile}` : '',
+      companyProfileEn ? `COMPANY PROFILE (English sources):\n${companyProfileEn}` : '',
       strategyNews ? `STRATEGIC PRIORITIES & RECENT NEWS:\n${strategyNews}` : '',
       hiringResults ? `HIRING / OPEN ROLES:\n${hiringResults}` : '',
       executiveResults ? `EXECUTIVE LEADERSHIP (real people found online):\n${executiveResults}` : '',
       sentimentResults ? `EMPLOYEE SENTIMENT:\n${sentimentResults}` : '',
-      skillsResults ? `WORKFORCE / SKILLS SIGNALS:\n${skillsResults}` : '',
     ].filter(Boolean).join('\n\n');
 
     const pi = accountData.public_intelligence || {};
