@@ -19,7 +19,7 @@ function analysisCacheKey(accountData: any): string {
   const planLen = (accountData.accountPlanText || '').length;
   // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
   // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v6:${name}:att${attendeeCount}:plan${planLen}`;
+  return `analysis-v7:${name}:att${attendeeCount}:plan${planLen}`;
 }
 
 /**
@@ -77,7 +77,7 @@ FORMAT:
 - buzz_hiring_analysis.roles: only real roles found in search (title + url).
 - Empty arrays are fine when no real data exists — never fill with speculation.
 
-CRITICAL — DO NOT DESCRIBE WHAT THE COMPANY DOES unless that description appears verbatim in the provided data/search results. Do NOT invent their product, business model, market sectors, or customer base. Do NOT name or assume specific executive titles (CTO, COO, VP of Product, etc.) as accountable individuals unless those exact people/titles appear in the Executive Social data or Confirmed Attendees. When you lack specifics, speak in general terms about the workforce transformation opportunity — never invent specifics to sound authoritative.
+CRITICAL — DO NOT DESCRIBE OR CHARACTERIZE THE COMPANY. Never write claims like "a world leader in X", "a leading provider of Y", "operates across A/B/C sectors", or any statement about their products, business model, market position, or customer base — even if a search snippet hints at it. A single search snippet is NOT enough to authoritatively describe a company; do not amplify it. Refer to the company ONLY by its name and its stated industry (e.g. "Financial Services"). Do NOT name or assume executive titles (CTO, COO, VP of Product, etc.) as accountable individuals unless those exact people appear in the Executive Social data or Confirmed Attendees. When you lack specifics, speak in general terms about the workforce transformation opportunity. Inventing a company description is a critical failure.
 
 Return ONLY valid JSON.`;
 
@@ -94,7 +94,7 @@ ABSOLUTE RULE ON ATTENDEES: NEVER write phrases like "no confirmed attendees", "
 
 ABSOLUTE RULE ON TRAINING/CERTIFICATION STATE: You do NOT have data on the customer's certifications, Skill Builder usage, training maturity, or activation rates unless it is explicitly present in the captured/uploaded account data. NEVER state "zero certifications", "no prior AWS engagement", "greenfield", or any claim about their current training state based on assumption. If no training data is present, simply focus on the workforce transformation opportunity without characterizing their current certification/training status as a fact.
 
-ABSOLUTE RULE ON COMPANY DESCRIPTION & EXECUTIVES: Do NOT describe what the company does, its products, markets, or customer base unless that appears in the provided data/search results. Do NOT name or assume executive titles (CTO, COO, VP of Product, etc.) as accountable people unless those exact people appear in the Executive Social data or Confirmed Attendees. If you only know the company name and industry, keep recommendations general — do NOT invent specifics to sound authoritative. Fabricating a company's business model or its executives is a critical failure.`;
+ABSOLUTE RULE ON COMPANY DESCRIPTION & EXECUTIVES: NEVER characterize the company with claims like "world leader in X", "leading provider of Y", or descriptions of its products/markets/customers — not even from a search snippet (one snippet is not enough to describe a company authoritatively). Refer to the company only by name + stated industry. Do NOT name or assume executive titles (CTO, COO, VP, etc.) as accountable people unless those exact people appear in Executive Social data or Confirmed Attendees. Keep recommendations general when you lack verified specifics. Fabricating a company description or its executives is a critical failure.`;
 
 async function generateAnalysis(accountData: any, tcData: any): Promise<UnifiedAnalysisResponse> {
     const industry = accountData.industry || 'Technology';
