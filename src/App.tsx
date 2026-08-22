@@ -29,7 +29,7 @@ export default function App() {
   const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [, setAccountPlanText] = useState<string>('');
-  const [accountPlanName, setAccountPlanName] = useState<string>('');
+  const [, setAccountPlanName] = useState<string>('');
   const [externalDocs, setExternalDocs] = useState<{ name: string; text: string }[]>([]);
   const externalDocInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +46,6 @@ export default function App() {
     now_key_asks: analysis.now_key_asks,
     now_opening_move: analysis.now_opening_move,
   } : null;
-  const accountPlanInputRef = useRef<HTMLInputElement>(null);
 
   // Central regeneration: runs the single unified analysis. Called on account load
   // AND whenever new data arrives (attendee import, brief/plan upload, Salesforce capture)
@@ -85,58 +84,11 @@ export default function App() {
     e.target.value = '';
   };
 
-  // Handle account plan document upload
-  const handleAccountPlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fileName = file.name;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      let text = ev.target?.result as string;
-      if (!text) return;
-
-      // For binary formats (DOCX, PDF), try to extract readable text
-      if (fileName.endsWith('.docx')) {
-        // Extract text between XML tags
-        const matches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
-        text = matches.length > 0
-          ? matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ')
-          : text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
-      } else if (!fileName.endsWith('.txt') && !fileName.endsWith('.csv')) {
-        // Generic binary — extract printable characters
-        text = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g, '\n').trim();
-      }
-
-      if (text.length > 50) {
-        const planText = text.slice(0, 15000);
-        setAccountPlanText(planText);
-        setAccountPlanName(fileName);
-        const updated = account ? { ...account, accountPlanText: planText } : null;
-        setAccount(prev => prev ? { ...prev, accountPlanText: planText } : prev);
-        setAttendeeUploadMsg(`Account plan "${fileName}" loaded — regenerating insights...`);
-        // New data → regenerate the full unified analysis
-        regenerateAnalysis(updated, tcData, true);
-        setTimeout(() => setRefreshKey(k => k + 1), 100);
-        setTimeout(() => setAttendeeUploadMsg(null), 4000);
-      } else {
-        setAttendeeUploadMsg('Could not extract text from document.');
-        setTimeout(() => setAttendeeUploadMsg(null), 3000);
-      }
-    };
-
-    // Read as text for txt/csv, as binary string for others
-    if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
-      reader.readAsText(file);
-    } else {
-      reader.readAsBinaryString(file);
-    }
-    e.target.value = '';
-  };
-
-  // Handle EXTERNAL document upload (Databook exports, briefs, any supporting doc).
-  // These ACCUMULATE and persist — every uploaded doc is always included in all future analysis.
-  const handleExternalDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Unified DOCUMENT upload — any supporting doc (account plan, briefing, Databook, etc.).
+  // Documents ACCUMULATE and persist for the account. Every upload re-runs the FULL unified
+  // analysis, reconsidering all uploaded docs + captured Salesforce data + public search
+  // together — regenerating Approach, Next Steps, Key Asks, Buzz, and Now.
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const fileName = file.name;
@@ -156,13 +108,13 @@ export default function App() {
         const doc = { name: fileName, text: text.slice(0, 15000) };
         setExternalDocs(prev => {
           const next = [...prev.filter(d => d.name !== fileName), doc]; // replace if same filename re-uploaded
-          // Attach the accumulated docs to the account and regenerate the full analysis.
           const updated = account ? { ...account, externalDocs: next } : null;
           setAccount(p => p ? { ...p, externalDocs: next } : p);
+          // Reconsider everything with the new document included.
           regenerateAnalysis(updated, tcData, true);
           return next;
         });
-        setAttendeeUploadMsg(`"${fileName}" added — regenerating analysis with all uploaded docs...`);
+        setAttendeeUploadMsg(`"${fileName}" added — regenerating full analysis with all documents...`);
         setTimeout(() => setRefreshKey(k => k + 1), 100);
         setTimeout(() => setAttendeeUploadMsg(null), 4000);
       } else {
@@ -396,24 +348,13 @@ export default function App() {
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 text-white text-[8px] flex items-center justify-center font-bold">{uploadedAttendees.length}</span>
               )}
             </button>
-            {/* Upload Account Plan */}
-            <input ref={accountPlanInputRef} type="file" accept=".txt,.csv,.docx,.pdf" onChange={handleAccountPlanUpload} className="hidden" />
-            <button onClick={() => accountPlanInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload Account Plan">
+            {/* Upload Documents — any supporting doc (account plan, briefing, Databook...). Accumulates. */}
+            <input ref={externalDocInputRef} type="file" accept=".txt,.csv,.docx,.pdf,.xlsx" onChange={handleDocumentUpload} className="hidden" />
+            <button onClick={() => externalDocInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload documents (account plan, briefing, Databook, any supporting file)">
               <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
                 <FileText className="w-4 h-4 text-slate-400" />
               </div>
-              <span className="text-[8px] text-muted mt-0.5">Plan</span>
-              {accountPlanName && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-500 text-white text-[8px] flex items-center justify-center font-bold">✓</span>
-              )}
-            </button>
-            {/* Upload External Docs (Databook, etc.) — accumulate & always considered */}
-            <input ref={externalDocInputRef} type="file" accept=".txt,.csv,.docx,.pdf,.xlsx" onChange={handleExternalDocUpload} className="hidden" />
-            <button onClick={() => externalDocInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload External Data (Databook, briefs, etc.)">
-              <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
-                <Database className="w-4 h-4 text-slate-400" />
-              </div>
-              <span className="text-[8px] text-muted mt-0.5">Docs</span>
+              <span className="text-[8px] text-muted mt-0.5">Documents</span>
               {externalDocs.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[8px] flex items-center justify-center font-bold">{externalDocs.length}</span>
               )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, Check, Sparkles, ArrowRight, Globe, Users, MessageSquareText, Target, Search, CheckCircle2, Loader2 } from 'lucide-react';
+import { Copy, Check, Sparkles, ArrowRight, Globe, Users, MessageSquareText, Target, CheckCircle2, Loader2 } from 'lucide-react';
 import type { Account } from '../types';
 import { engagementPlans } from '../data/engagementPlans';
 import { generateAgenda, generateTrainingSessionAgenda } from '../data/agendas';
@@ -38,21 +38,6 @@ function InsightItem({ icon: Icon, iconColor, title, summary, detail }: { icon: 
     </div>
   );
 }
-
-function ConnectionToggle({ text }: { text: string }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span className="inline-block">
-      <button onClick={() => setShow(!show)} className="p-0.5 rounded active:bg-dark-600 ml-1 align-middle">
-        <Search className={`w-3 h-3 ${show ? 'text-purple-400' : 'text-dark-600'}`} />
-      </button>
-      {show && <span className="block mt-1 text-[10px] text-purple-400/80 pl-2 border-l-2 border-purple-500/30 leading-relaxed">🔗 {text}</span>}
-    </span>
-  );
-}
-
-
-
 
 function SayThisSection({ bestStarter, allStarters, followUps }: { account: Account; bestStarter: string; allStarters: string[]; followUps?: string[] }) {
   const [expanded, setExpanded] = useState(false);
@@ -123,7 +108,6 @@ export function ExecBrief({ account, onEngagePersona, tcData, analysis, analysis
   const [heroTab, setHeroTab] = useState<'approach' | 'next-steps' | 'key-asks'>('approach');
   const [aiAgenda, setAiAgenda] = useState<any | null>(null);
   const [agendaLoading, setAgendaLoading] = useState<'ebc' | 'training' | false>(false);
-  const isGreenfield = !a.tc_current_state.skill_builder;
 
   // All insights come from the single unified analysis passed in by the parent.
   const insights = analysis;
