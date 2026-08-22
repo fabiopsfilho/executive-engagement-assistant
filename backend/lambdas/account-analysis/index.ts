@@ -17,9 +17,11 @@ function analysisCacheKey(accountData: any): string {
   const name = (accountData.customer_name || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '-');
   const attendeeCount = accountData.ebc_data?.attendees?.length || 0;
   const planLen = (accountData.accountPlanText || '').length;
-  // Version prefix (v2) invalidates any stale cached analyses from earlier prompt versions.
-  // Key changes when attendees or captured/plan data change → forces fresh analysis.
-  return `analysis-v12:${name}:att${attendeeCount}:plan${planLen}`;
+  const docs = accountData.externalDocs || [];
+  const docsSig = docs.length + '-' + docs.reduce((n: number, d: any) => n + (d.text || '').length, 0);
+  // Version prefix invalidates stale caches. Key changes when attendees, captured/plan data,
+  // OR uploaded external docs change → forces fresh analysis that includes the new data.
+  return `analysis-v12:${name}:att${attendeeCount}:plan${planLen}:docs${docsSig}`;
 }
 
 /**
@@ -197,6 +199,9 @@ Themes: ${(accountData.ebc_data?.themes || []).join(', ')}${attendees.length > 0
 ${accountData.accountPlanText ? `═══ CAPTURED SALESFORCE / ACCOUNT SUMMARY / BRIEF DATA ═══
 This is REAL, INTERNAL account data (from Salesforce or an uploaded brief) and is your PRIMARY, MOST-TRUSTED source. It outranks the public web search below. Analyze EVERY section of it — account plan, opportunities, pipeline, AWS spend, engagement history, contacts/stakeholders, notes, priorities — and let it drive the Approach, Next Steps, Key Asks, Buzz and Now. Where this data names real people, priorities, opportunities, or numbers, use them specifically. Treat the public web search only as supplementary color.
 ${accountData.accountPlanText.slice(0, 14000)}` : ''}
+${(accountData.externalDocs || []).length > 0 ? `\n═══ UPLOADED EXTERNAL DOCUMENTS (Databook, briefs, supporting data) ═══
+These are REAL documents the user uploaded and MUST be considered in every section of the analysis, combined with all other data. Treat them as trusted primary data alongside the Salesforce capture.
+${(accountData.externalDocs || []).map((d: any) => `--- Document: ${d.name} ---\n${(d.text || '').slice(0, 8000)}`).join('\n\n')}` : ''}
 ${awsContext ? `\nAWS T&C KNOWLEDGE BASE:\n${awsContext.slice(0, 2500)}` : ''}
 ${onlineSearch ? `\n═══ PUBLIC WEB SEARCH (SUPPLEMENTARY — secondary to the captured data above) ═══\n${onlineSearch.slice(0, 3000)}` : ''}`;
 

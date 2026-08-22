@@ -11,6 +11,9 @@ export interface Account {
   geo: string;
   sfdcAccountId?: string;
   accountPlanText?: string;
+  // Accumulated external documents (Databook exports, briefs, etc.) — persist across
+  // the session and are always included in every analysis going forward.
+  externalDocs?: { name: string; text: string }[];
   aws_spend: {
     current_year: number;
     prior_year: number;
