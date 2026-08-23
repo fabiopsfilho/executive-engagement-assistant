@@ -423,23 +423,32 @@ export async function generateUnifiedAnalysis(
   return res as UnifiedAnalysisResponse;
 }
 
-// ─── Presentation Slides (max 2-slide executive support deck) ────────────────
+// ─── Presentation Slides (conversational 2-3 slide executive deck) ───────────
 
 export interface PresentationSlide {
   title: string;
   subtitle?: string;
-  bullets: string[];
+  insight: string;          // the single big idea for the slide
+  bullets: string[];        // 2-3 short talking points max
+  visual: string;           // suggested trend/graphic to anchor the point
+  talking_point: string;    // the question/provocation that drives the conversation
   footer?: string;
+}
+
+export interface AppendixItem {
+  heading: string;
+  detail: string;
 }
 
 export interface SlidesResponse {
   deck_title: string;
   slides: PresentationSlide[];
+  appendix: AppendixItem[];  // "read more" detail kept OFF the main slides
 }
 
 /**
- * Generates a MAX 2-slide executive support deck from the already-computed
- * unified analysis (plus account context). Single fast call — no polling.
+ * Generates a conversational 2-3 slide executive deck (plus an appendix) from
+ * the already-computed unified analysis and documents. Single fast call — no polling.
  */
 export async function generateSlides(
   accountData: unknown,

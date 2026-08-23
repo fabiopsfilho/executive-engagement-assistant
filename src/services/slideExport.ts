@@ -13,8 +13,10 @@ function safeFileName(s: string): string {
 }
 
 /**
- * Export the 2-slide deck as a real PowerPoint (.pptx) file.
- * Dynamically imports pptxgenjs so it never bloats the initial bundle.
+ * Export the conversational deck as a real PowerPoint (.pptx) file.
+ * Each content slide leads with the big insight, shows the sparse bullets, a
+ * suggested-visual placeholder, and the talking point. Dense detail is placed on
+ * a final Appendix slide. Dynamically imports pptxgenjs so it never bloats the bundle.
  */
 export async function exportSlidesToPPTX(deck: SlidesResponse, accountName: string): Promise<void> {
   const PptxGenJS = (await import('pptxgenjs')).default;
@@ -36,37 +38,69 @@ export async function exportSlidesToPPTX(deck: SlidesResponse, accountName: stri
 
     // Title
     slide.addText(s.title || '', {
-      x: 0.6, y: 0.75, w: 12.1, h: 1.0, fontSize: 30, color: WHITE, bold: true, valign: 'top',
+      x: 0.6, y: 0.75, w: 12.1, h: 0.9, fontSize: 30, color: WHITE, bold: true, valign: 'top',
     });
 
     // Subtitle
-    let bulletsTop = 1.9;
+    let y = 1.7;
     if (s.subtitle) {
       slide.addText(s.subtitle, {
-        x: 0.6, y: 1.75, w: 12.1, h: 0.5, fontSize: 15, color: MUTED, italic: true, valign: 'top',
+        x: 0.6, y, w: 12.1, h: 0.45, fontSize: 15, color: MUTED, italic: true, valign: 'top',
       });
-      bulletsTop = 2.4;
+      y += 0.5;
     }
 
     // Accent divider
-    slide.addShape(pptx.ShapeType.rect, { x: 0.6, y: bulletsTop - 0.15, w: 2.2, h: 0.04, fill: { color: ACCENT } });
+    slide.addShape(pptx.ShapeType.rect, { x: 0.6, y, w: 2.2, h: 0.04, fill: { color: ACCENT } });
+    y += 0.25;
 
-    // Bullets
+    // The single big insight (the headline idea for the slide)
+    if (s.insight) {
+      slide.addText(s.insight, {
+        x: 0.6, y, w: 7.4, h: 1.0, fontSize: 19, color: WHITE, bold: true, valign: 'top', lineSpacingMultiple: 1.05,
+      });
+      y += 1.1;
+    }
+
+    // Sparse bullets (left column)
     const bullets = (s.bullets || []).map(b => ({
       text: b,
-      options: { bullet: { code: '2022', indent: 18 }, color: TEXT, fontSize: 17, paraSpaceAfter: 12 },
+      options: { bullet: { code: '2022', indent: 18 }, color: TEXT, fontSize: 16, paraSpaceAfter: 10 },
     }));
     if (bullets.length) {
       slide.addText(bullets as any, {
-        x: 0.7, y: bulletsTop, w: 12.0, h: s.footer ? 4.0 : 4.6, valign: 'top', lineSpacingMultiple: 1.1,
+        x: 0.7, y, w: 7.3, h: 2.4, valign: 'top', lineSpacingMultiple: 1.1,
       });
     }
 
-    // Footer (proof point / CTA) in an accent band
+    // Right column: suggested visual placeholder (a card describing the graphic to draw)
+    if (s.visual) {
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 8.4, y: 2.1, w: 4.3, h: 2.6, fill: { color: CARD }, line: { color: ACCENT, width: 1, dashType: 'dash' },
+      });
+      slide.addText('SUGGESTED VISUAL', {
+        x: 8.6, y: 2.25, w: 3.9, h: 0.3, fontSize: 10, color: ACCENT, bold: true, charSpacing: 1,
+      });
+      slide.addText(s.visual, {
+        x: 8.6, y: 2.6, w: 3.9, h: 2.0, fontSize: 13, color: TEXT, valign: 'top', lineSpacingMultiple: 1.1,
+      });
+    }
+
+    // Talking point band (drives the conversation)
+    if (s.talking_point) {
+      slide.addShape(pptx.ShapeType.rect, { x: 0.6, y: 5.35, w: 12.1, h: 0.85, fill: { color: '0E1A14' }, line: { color: ACCENT, width: 1 } });
+      slide.addText([
+        { text: 'ASK THEM:  ', options: { color: ACCENT, bold: true, fontSize: 13 } },
+        { text: s.talking_point, options: { color: TEXT, italic: true, fontSize: 13 } },
+      ] as any, {
+        x: 0.8, y: 5.35, w: 11.7, h: 0.85, valign: 'middle', lineSpacingMultiple: 1.05,
+      });
+    }
+
+    // Footer (proof point / CTA)
     if (s.footer) {
-      slide.addShape(pptx.ShapeType.rect, { x: 0.6, y: 6.35, w: 12.1, h: 0.75, fill: { color: CARD }, line: { color: ACCENT, width: 1 } });
       slide.addText(s.footer, {
-        x: 0.8, y: 6.35, w: 11.7, h: 0.75, fontSize: 14, color: ACCENT, bold: true, valign: 'middle',
+        x: 0.6, y: 6.4, w: 11.0, h: 0.6, fontSize: 13, color: ACCENT, bold: true, valign: 'middle',
       });
     }
 
@@ -76,12 +110,34 @@ export async function exportSlidesToPPTX(deck: SlidesResponse, accountName: stri
     });
   });
 
+  // Appendix slide — the dense "read more" detail kept off the main slides.
+  if (deck.appendix && deck.appendix.length > 0) {
+    const slide = pptx.addSlide();
+    slide.background = { color: BG };
+    slide.addText('APPENDIX', {
+      x: 0.6, y: 0.35, w: 12.1, h: 0.35, fontSize: 11, color: ACCENT, bold: true, charSpacing: 1,
+    });
+    slide.addText('Read more — supporting detail & proof points', {
+      x: 0.6, y: 0.75, w: 12.1, h: 0.7, fontSize: 24, color: WHITE, bold: true, valign: 'top',
+    });
+    slide.addShape(pptx.ShapeType.rect, { x: 0.6, y: 1.55, w: 2.2, h: 0.04, fill: { color: ACCENT } });
+
+    const items: any[] = [];
+    deck.appendix.forEach(a => {
+      items.push({ text: a.heading, options: { color: ACCENT, bold: true, fontSize: 14, paraSpaceBefore: 8, paraSpaceAfter: 2 } });
+      items.push({ text: a.detail, options: { color: TEXT, fontSize: 12.5, paraSpaceAfter: 6 } });
+    });
+    slide.addText(items as any, {
+      x: 0.7, y: 1.85, w: 12.0, h: 5.2, valign: 'top', lineSpacingMultiple: 1.05,
+    });
+  }
+
   await pptx.writeFile({ fileName: `${safeFileName(accountName)}-exec-slides.pptx` });
 }
 
 /**
- * Export the 2-slide deck as a PDF (one landscape page per slide).
- * Dynamically imports jspdf.
+ * Export the conversational deck as a PDF (one landscape page per slide, plus an
+ * appendix page). Dynamically imports jspdf.
  */
 export async function exportSlidesToPDF(deck: SlidesResponse, accountName: string): Promise<void> {
   const { jsPDF } = await import('jspdf');
@@ -109,49 +165,96 @@ export async function exportSlidesToPDF(deck: SlidesResponse, accountName: strin
 
     // Title
     doc.setTextColor(...hex(WHITE));
-    doc.setFontSize(26);
+    doc.setFontSize(24);
     const titleLines = doc.splitTextToSize(s.title || '', W - 2 * M);
-    doc.text(titleLines, M, M + 44);
-    let y = M + 44 + titleLines.length * 30;
+    doc.text(titleLines, M, M + 40);
+    let y = M + 40 + titleLines.length * 26;
 
     // Subtitle
     if (s.subtitle) {
       doc.setTextColor(...hex(MUTED));
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(13);
+      doc.setFontSize(12);
       const subLines = doc.splitTextToSize(s.subtitle, W - 2 * M);
-      doc.text(subLines, M, y + 4);
-      y += subLines.length * 18 + 6;
+      doc.text(subLines, M, y + 2);
+      y += subLines.length * 16 + 4;
     }
 
     // Accent divider
     doc.setFillColor(...hex(ACCENT));
     doc.rect(M, y, 120, 3, 'F');
-    y += 24;
+    y += 22;
 
-    // Bullets
+    // Big insight
+    if (s.insight) {
+      doc.setTextColor(...hex(WHITE));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      const insLines = doc.splitTextToSize(s.insight, W - 2 * M - 220);
+      doc.text(insLines, M, y);
+      y += insLines.length * 20 + 8;
+    }
+
+    // Bullets (left column)
+    const colW = W - 2 * M - 220; // leave room for the visual card on the right
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     (s.bullets || []).forEach(b => {
-      const lines = doc.splitTextToSize(b, W - 2 * M - 18);
-      // bullet dot
+      const lines = doc.splitTextToSize(b, colW - 18);
       doc.setFillColor(...hex(ACCENT));
       doc.circle(M + 4, y - 4, 2.5, 'F');
       doc.setTextColor(...hex(TEXT));
       doc.text(lines, M + 18, y);
-      y += lines.length * 18 + 10;
+      y += lines.length * 16 + 8;
     });
 
-    // Footer band
-    if (s.footer) {
-      const fh = 46;
+    // Suggested visual card (right column)
+    if (s.visual) {
+      const cardX = W - M - 200;
+      const cardY = M + 90;
+      const cardW = 200;
+      const cardH = 150;
       doc.setFillColor(...hex(CARD));
-      doc.rect(M, H - M - fh, W - 2 * M, fh, 'F');
+      doc.setDrawColor(...hex(ACCENT));
+      doc.setLineDashPattern([3, 2], 0);
+      doc.rect(cardX, cardY, cardW, cardH, 'FD');
+      doc.setLineDashPattern([], 0);
       doc.setTextColor(...hex(ACCENT));
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      const fLines = doc.splitTextToSize(s.footer, W - 2 * M - 24);
-      doc.text(fLines, M + 12, H - M - fh + 20);
+      doc.setFontSize(9);
+      doc.text('SUGGESTED VISUAL', cardX + 10, cardY + 16);
+      doc.setTextColor(...hex(TEXT));
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      const vLines = doc.splitTextToSize(s.visual, cardW - 20);
+      doc.text(vLines, cardX + 10, cardY + 34);
+    }
+
+    // Talking point band
+    if (s.talking_point) {
+      const bh = 44;
+      const by = H - M - bh - (s.footer ? 26 : 0);
+      doc.setFillColor(14, 26, 20);
+      doc.setDrawColor(...hex(ACCENT));
+      doc.setLineWidth(1);
+      doc.rect(M, by, W - 2 * M, bh, 'FD');
+      doc.setTextColor(...hex(ACCENT));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('ASK THEM:', M + 12, by + 18);
+      doc.setTextColor(...hex(TEXT));
+      doc.setFont('helvetica', 'italic');
+      const tLines = doc.splitTextToSize(s.talking_point, W - 2 * M - 90);
+      doc.text(tLines, M + 78, by + 18);
+    }
+
+    // Footer
+    if (s.footer) {
+      doc.setTextColor(...hex(ACCENT));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      const fLines = doc.splitTextToSize(s.footer, W - 2 * M);
+      doc.text(fLines, M, H - M - 4);
     }
 
     // Slide number
@@ -160,6 +263,40 @@ export async function exportSlidesToPDF(deck: SlidesResponse, accountName: strin
     doc.setFontSize(9);
     doc.text(`${idx + 1} / ${deck.slides.length}`, W - M, M + 6, { align: 'right' });
   });
+
+  // Appendix page
+  if (deck.appendix && deck.appendix.length > 0) {
+    doc.addPage();
+    doc.setFillColor(...hex(BG));
+    doc.rect(0, 0, W, H, 'F');
+    doc.setTextColor(...hex(ACCENT));
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('APPENDIX', M, M + 6);
+    doc.setTextColor(...hex(WHITE));
+    doc.setFontSize(22);
+    doc.text('Read more — supporting detail & proof points', M, M + 40);
+    doc.setFillColor(...hex(ACCENT));
+    doc.rect(M, M + 52, 120, 3, 'F');
+
+    let y = M + 78;
+    doc.setLineWidth(1);
+    deck.appendix.forEach(a => {
+      if (y > H - M - 40) { doc.addPage(); doc.setFillColor(...hex(BG)); doc.rect(0, 0, W, H, 'F'); y = M + 20; }
+      doc.setTextColor(...hex(ACCENT));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      const hLines = doc.splitTextToSize(a.heading, W - 2 * M);
+      doc.text(hLines, M, y);
+      y += hLines.length * 16 + 2;
+      doc.setTextColor(...hex(TEXT));
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      const dLines = doc.splitTextToSize(a.detail, W - 2 * M);
+      doc.text(dLines, M, y);
+      y += dLines.length * 15 + 12;
+    });
+  }
 
   doc.save(`${safeFileName(accountName)}-exec-slides.pdf`);
 }

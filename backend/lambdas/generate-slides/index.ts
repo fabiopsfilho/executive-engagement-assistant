@@ -7,85 +7,95 @@ import { ANTI_FABRICATION_POLICY } from '../shared/guardrails';
 /**
  * GENERATE PRESENTATION SLIDES
  *
- * Produces a tight, 2-3 slide executive presentation to support articulating
- * the customer discussion. It works from the SAME unified analysis the rest of
- * the app already computed (Approach + Buzz + Now + Next Steps + Key Asks) plus
- * the account context, and leverages EVERY section of it, so the slides stay
- * perfectly consistent with everything else the user sees. This is a single,
- * fast Bedrock call (no data gathering), so it returns within the API GW limit.
+ * Produces a tight, conversational 2-3 slide executive deck to DRIVE a live
+ * C-level conversation — not a dense read-out. Each slide leads with ONE big
+ * insight, offers a suggested trend/graphic to anchor the discussion, and ends
+ * with a question that opens dialogue. All the supporting detail is pushed to a
+ * separate APPENDIX so the main slides stay sparse and provocative.
+ *
+ * It works from the SAME unified analysis the rest of the app already computed
+ * (Approach + Buzz + Now + Next Steps + Key Asks) plus the account context and
+ * the uploaded documents, and leverages EVERY section, so the deck stays
+ * consistent with everything else and reflects any newly added documents.
+ * This is a single, fast Bedrock call (no data gathering).
  */
 
-export interface SlideBullet {
-  text: string;
+export interface Slide {
+  title: string;            // Sharp headline (max ~8 words)
+  subtitle?: string;        // One-line framing under the title
+  insight: string;          // THE single big idea for this slide (one strong sentence)
+  bullets: string[];        // 2-3 short talking points MAX (board-ready, not paragraphs)
+  visual: string;           // Suggested trend/graphic to put on the slide (chart/diagram description)
+  talking_point: string;    // The question / provocation that drives the conversation
+  footer?: string;          // Optional proof point / call to action
 }
 
-export interface Slide {
-  title: string;        // Slide headline
-  subtitle?: string;    // Optional one-line framing under the title
-  bullets: string[];    // 3-5 concise talking points
-  footer?: string;      // Optional punch line / proof point / call to action
+export interface AppendixItem {
+  heading: string;          // What the detail is about
+  detail: string;           // The dense supporting detail we deliberately kept OFF the main slides
 }
 
 export interface SlidesResponse {
-  deck_title: string;   // Overall title for the deck
-  slides: Slide[];      // 2-3 slides, never more than 3
+  deck_title: string;       // Overall title for the deck
+  slides: Slide[];          // 2-3 conversational slides, never more than 3
+  appendix: AppendixItem[]; // The "read more" detail (numbers, mechanisms, methodology)
 }
 
-const SYSTEM_PROMPT = `You create a MAXIMUM TWO-SLIDE executive presentation that an AWS Training & Certification team can put on screen to support a live customer conversation. This is a talking-support aid, NOT a full deck.
+const SYSTEM_PROMPT = `You create a SHORT, CONVERSATIONAL executive slide deck (2-3 slides) that an AWS Training & Certification team puts on screen to DRIVE a live conversation with C-level executives. These slides are a conversation catalyst, NOT a document to be read.
 
 ${EXPERT_PERSONA}
 
 ${ANTI_FABRICATION_POLICY}
 
-THIS IS THE ACTUAL PITCH. These two slides ARE the pitch the AWS team will put on screen and speak to in front of C-level executives. They synthesize EVERYTHING the advisor generated (Approach, Buzz, Now, Next Steps, Key Asks) into the single, sharp story to tell this customer.
+THE JOB OF THESE SLIDES: Provoke thinking and open dialogue. An executive should look at a slide and think "how did they see that about us?" and immediately want to respond. The AWS team speaks to the slide; the slide does not speak for them. Dense slides are a FAILURE.
 
-C-LEVEL BAR — INSIGHTFUL AND PRESCRIPTIVE:
-- These are for CEOs/CFOs/CDOs. They must be INSIGHTFUL and provocative — the kind of slide that makes an executive think "how did they see that about us?"
-- Board-ready one-liners, not paragraphs. But NOT vague — a bullet like "governance-first capability design" is a FAILURE. Be concrete and prescriptive.
-- Lead with insight and business consequence (competitive position, growth, risk, ROI), not filler activities.
+CONVERSATIONAL / NOT DENSE — hard rules:
+- Each slide leads with ONE big insight (a single strong sentence). Not five points competing for attention.
+- MAX 2-3 short bullets per slide. Each bullet is a board-ready phrase, never a paragraph, never a run-on.
+- Every slide includes a SUGGESTED VISUAL — a trend line, comparison, gap chart, or simple diagram that anchors the point (e.g. "Gap chart: 13% AI-skilled workers at leaders vs 1% at laggards"). Describe the graphic so it can be drawn. Prefer a trend or a gap the executive will feel.
+- Every slide includes a TALKING POINT — the open question or provocation the presenter uses to turn the slide into a two-way conversation (e.g. "Where in your platform org would a 6-week capability sprint change a real number this quarter?").
+- ALL the dense detail — full statistics, methodology, the mechanics of the mechanisms, extra proof points — goes into the APPENDIX, never on the main slides. The appendix is the "read more."
 
-UNIQUENESS: The slides must be unmistakably about THIS company — their real situation, drivers, named teams/executives, and opportunities from the data. If these slides could belong to another company, they are wrong. No reusable templates.
+INSIGHTFUL AND PRESCRIPTIVE, NOT VAGUE: A bullet like "governance-first capability design" is a FAILURE. Be concrete, specific to this customer, and prescriptive. Lead with business consequence (competitive position, growth, risk, ROI).
 
-LEVERAGE THE WHOLE ANALYSIS: The slides MUST draw on EVERY section of the unified analysis provided — Approach (who/what/where/why-now), Buzz (executive insights, hiring signal, employee sentiment), Now (focus, initiatives, opening move), Next Steps, and Key Asks. Do not ignore a section. Slide 1 pulls from Approach + Buzz; Slide 2 pulls from Approach (where-to-start) + the T&C playbook; Slide 3 pulls from Now + Next Steps + Key Asks.
+UNIQUENESS: The deck must be unmistakably about THIS company — their real situation, named teams/executives, competitors, and opportunities from the data. If it could belong to another company, it is wrong. When new documents are provided, the deck MUST reflect what is new in them — never recycle a prior framing.
+
+LEVERAGE THE WHOLE ANALYSIS + THE DOCUMENTS: Draw on EVERY section of the unified analysis (Approach, Buzz, Now, Next Steps, Key Asks) AND the uploaded documents and captured Salesforce data. Do not ignore a section or the documents.
 
 SLIDE STRUCTURE (2 OR 3 slides — prefer 3 when there is enough real material):
 
-── SLIDE 1 — "WHAT WE KNOW ABOUT YOU" (customer intelligence: Approach + Buzz) ──
-The "we understand your world" slide that earns the right to advise. Ground it entirely in the REAL data about this company:
-  • Their specific business, market position, and competitive dynamics (named competitors, the market they play in).
-  • Their real teams, named executives (from Approach + Buzz executive insights), and the internal opportunities/priorities from the captured/document data (e.g. a specific engineering or platform team, a specific initiative).
-  • The real signals from Buzz — hiring moves, employee sentiment, what's being said — and the urgent, non-obvious insight on why the capability gap matters NOW.
-This slide is about THEM, not about AWS. It proves we did our homework.
+── SLIDE 1 — "WHAT WE SEE ABOUT YOU" (customer intelligence: Approach + Buzz + documents) ──
+The insight that earns the right to advise. ONE non-obvious observation about THEIR world: their market position and competitive dynamics (named competitors/market), a real team or executive, a Buzz signal (hiring, sentiment), and why the capability gap matters NOW. Visual: a trend or gap that makes their situation visible. Talking point: a question that gets them talking about their own reality.
 
-── SLIDE 2 — "OUR PRESCRIPTIVE APPROACH: HOW WE HELP YOU" (this is where you MUST be specific and prescriptive) ──
-This slide answers, concretely: "What would we actually DO with you, based on our lessons learned?" It is NOT a vague 'capability program.' You MUST name and describe the ACTUAL AWS T&C mechanisms from your expert playbook, tailored to THIS customer's situation. Draw specifically from:
-  • THE SKILLS GUILD — describe what a Guild looks like for them (the Excitement → Enablement → Advocacy model; a coalition of internal champions; office hours; a community that sustains adoption beyond training). Say concretely what it is and does for their teams.
-  • THE PROGRAM STRUCTURE — the three-tier curriculum (Foundation → Applied → Embedded) and the learning-audience segments (Executive, Manager, Enterprise-foundation, Role/Practitioner, Advanced/Builder + reinforcement). Map it to THEIR real roles (e.g. their platform-engineering team, their data team, their frontline).
-  • ROLE-BASED LEARNING PATHS — name relevant paths (e.g. AI Practitioner → ML Engineer → Gen AI Developer) tied to their actual roles, not generic literacy.
-  • MANAGER ACTIVATION — because training doesn't stick without it (88% of managers at AI-mature orgs role-model AI vs 25% at laggards).
-  • PERFORMANCE-BASED CREDENTIALS — the stackable micro-credential ladder that proves capability (work-product credentials, manager/peer validation), not completion certificates.
-  • THE MEASUREMENT CHAIN — Capability → Adoption → Workflow → Business outcome, with a 90-180 day proof point / phased pilot.
-  • THE RETURN — connect to a measurable ROI the executive cares about, citing a relevant proof point (AWS enterprise programs: 234% ROI, 65% pilot-to-production, 85% participation; Forrester 229% ROI; BCG: AI leaders have 13x more AI-skilled workers). Cite the ONE that fits.
-Pick the 3-5 of these that fit THIS customer best and make each bullet concrete and prescriptive.
+── SLIDE 2 — "WHAT GREAT LOOKS LIKE / HOW WE HELP" (prescriptive approach) ──
+ONE clear picture of the path, prescriptive but not dense. Name the ACTUAL AWS T&C mechanism that fits THIS customer best (the Skills Guild — Excitement→Enablement→Advocacy; the Foundation→Applied→Embedded curriculum mapped to their real roles; a role-based path like AI Practitioner→ML Engineer→Gen AI Developer; manager activation; performance-based credentials; the Capability→Adoption→Workflow→Business measurement chain). Put ONE mechanism forward as the headline move; keep the mechanics in the appendix. Visual: a simple maturity/tiered diagram or the measurement chain. Talking point: a question about where to start with them.
 
-── SLIDE 3 — "WHAT WE DO NEXT + THE RETURN" (Now + Next Steps + Key Asks) ──
-The action slide that turns the approach into momentum. Draw directly from the analysis' Now, Next Steps and Key Asks:
-  • The immediate focus and the first concrete moves (a phased pilot / first mission with a 90-180 day proof point) — from Now initiatives and Next Steps.
-  • The specific asks/commitments to secure from the customer (sponsorship, access, the first workflow to baseline) — from Key Asks.
-  • The measurable RETURN framed to what these executives care about, citing the ONE most relevant proof point (AWS enterprise programs: 234% ROI, 65% pilot-to-production, 85% participation; Forrester 229% ROI; BCG: AI leaders have 13x more AI-skilled workers).
-  • Footer = the single clear call to action / the ask that closes the meeting.
+── SLIDE 3 — "THE FIRST MOVE + THE RETURN" (Now + Next Steps + Key Asks) ──
+The momentum slide. The immediate first mission (a phased pilot with a 90-180 day proof point — from Now + Next Steps), the specific commitment to secure (from Key Asks), and ONE relevant ROI proof point. Visual: a simple ROI/impact bar or a 90-180 day timeline. Footer = the single clear ask that closes the meeting. Talking point: a question that gets a yes to the first step.
 If there is not enough distinct material for a strong third slide, fold this into Slide 2 and produce 2 slides — never pad.
 
-FORMAT:
-- Produce 2 OR 3 slides (prefer 3 when the analysis is rich). Never more than 3, never fewer than 2.
-- Each slide: a sharp TITLE (max ~8 words), a one-line SUBTITLE, 3-5 bullets (board-ready, concrete — prescriptive on slides 2 and 3), and a FOOTER (proof point or the call to action).
-- NEVER invent people, numbers, or company facts not present in the provided analysis/data. The proof-point statistics and the T&C mechanisms above are YOUR expert knowledge and SHOULD be used. Never claim someone attends unless listed as a confirmed attendee.
+APPENDIX (3-6 items): This is where the detail lives. Move here: the full proof-point statistics with attribution (AWS enterprise 234% ROI / 65% pilot-to-production / 85% participation; Forrester 229% ROI; BCG AI leaders 13x more AI-skilled workers, 88% vs 25% manager role-modeling, 10-20-70), the mechanics of the recommended mechanism, the measurement methodology (baseline→target→proof), and any supporting document/Salesforce detail. Each appendix item is a heading + a concise detail paragraph. Cite proof points ONLY in the appendix and only where relevant — never invent numbers.
+
+RULES:
+- NEVER invent people, numbers, or company facts not present in the provided analysis/data. The proof-point statistics and the T&C mechanisms are YOUR expert knowledge and SHOULD be used (in the appendix). Never claim someone attends unless listed as a confirmed attendee.
+- Keep the main slides sparse. If you are tempted to add a 4th bullet, move it to the appendix.
 
 Return ONLY valid JSON of the exact shape:
 {
   "deck_title": "string",
   "slides": [
-    { "title": "string", "subtitle": "string", "bullets": ["string", "string", "string"], "footer": "string" }
+    {
+      "title": "string",
+      "subtitle": "string",
+      "insight": "string",
+      "bullets": ["string", "string"],
+      "visual": "string",
+      "talking_point": "string",
+      "footer": "string"
+    }
+  ],
+  "appendix": [
+    { "heading": "string", "detail": "string" }
   ]
 }`;
 
@@ -135,36 +145,46 @@ ${attendees.length > 0 ? `CONFIRMED ATTENDEES: ${attendees.map((a: any) => `${a.
 
 ${analysisContext}
 ${accountData.accountPlanText ? `\nINTERNAL AWS / SALESFORCE DATA (authoritative — real opportunities, spend, stakeholders):\n${String(accountData.accountPlanText).slice(0, 6000)}` : ''}
-${docs.length > 0 ? `\nUPLOADED DOCUMENTS (drivers, trends, executive intelligence):\n${docs.map((d: any) => `--- ${d.name} ---\n${String(d.text || '').slice(0, 4000)}`).join('\n\n')}` : ''}`;
+${docs.length > 0 ? `\nUPLOADED DOCUMENTS (drivers, trends, executive intelligence — reflect any NEW documents here):\n${docs.map((d: any) => `--- ${d.name} ---\n${String(d.text || '').slice(0, 4000)}`).join('\n\n')}` : ''}`;
 
-    const userMessage = `Create a 3-slide C-LEVEL pitch (2 if there truly isn't enough material for 3) for the conversation with ${accountData.customer_name || 'this customer'}. This IS the pitch we will present. Make it unmistakably about ${accountData.customer_name || 'this company'} (never generic). Leverage EVERY section of the analysis below — Approach, Buzz, Now, Next Steps, Key Asks — do not drop any.
+    const userMessage = `Create a SHORT, CONVERSATIONAL C-level deck (3 slides, or 2 if there truly isn't enough material) for the conversation with ${accountData.customer_name || 'this customer'}. This is a conversation catalyst — sparse and provocative, NOT a dense read-out. Make it unmistakably about ${accountData.customer_name || 'this company'}. If new documents are present below, the deck MUST reflect what is new in them. Leverage EVERY section of the analysis — Approach, Buzz, Now, Next Steps, Key Asks — plus the documents and Salesforce data.
 
-SLIDE 1 = WHAT WE KNOW ABOUT THEM (from Approach + Buzz): their specific business, competitive dynamics (named competitors/market), their real teams and named executives, the internal opportunities/priorities, the Buzz signals (hiring, sentiment), and the non-obvious insight on why their capability gap matters now.
+Each slide: ONE big insight, MAX 2-3 short bullets, a SUGGESTED VISUAL (trend/gap/diagram), and a TALKING POINT (the question that drives the conversation). Push all dense detail (full stats, mechanism mechanics, methodology) into the APPENDIX.
 
-SLIDE 2 = OUR PRESCRIPTIVE APPROACH: concretely, what we would DO with them based on our lessons learned — name the actual mechanisms (what their Skills Guild looks like, the Foundation→Applied→Embedded program mapped to their real roles, role-based learning paths, manager activation, performance-based credentials, the Capability→Adoption→Workflow→Business measurement chain). Prescriptive and specific, NOT vague.
-
-SLIDE 3 = WHAT WE DO NEXT + THE RETURN (from Now + Next Steps + Key Asks): the phased first mission with a 90-180 day proof point, the specific asks/commitments to secure, and the measurable ROI. End on the clear ask.
+SLIDE 1 = WHAT WE SEE ABOUT THEM (Approach + Buzz + docs): one non-obvious insight about their world — competitive dynamics, real teams/executives, Buzz signals, why the gap matters now.
+SLIDE 2 = WHAT GREAT LOOKS LIKE / HOW WE HELP: one prescriptive headline move naming the actual T&C mechanism that fits them; mechanics go to the appendix.
+SLIDE 3 = FIRST MOVE + RETURN (Now + Next Steps + Key Asks): the phased first mission with a 90-180 day proof point, the commitment to secure, one relevant ROI proof; footer = the closing ask.
 
 ${context}`;
 
     const result = await invokeClaudeJSON<SlidesResponse>(
       SYSTEM_PROMPT,
       [{ role: 'user', content: userMessage }],
-      { maxTokens: 2200, temperature: 0.5 }
+      { maxTokens: 2800, temperature: 0.5 }
     );
 
-    // Hard guarantee: never more than 3 slides, always at least 1 with bullets.
+    // Hard guarantee: never more than 3 slides, always at least 1 with content; keep slides sparse.
     const slides = Array.isArray(result?.slides) ? result.slides.slice(0, 3) : [];
     const clean: SlidesResponse = {
       deck_title: result?.deck_title || `${accountData.customer_name || 'Account'} — Executive Conversation`,
       slides: slides
-        .filter(s => s && (s.title || (s.bullets && s.bullets.length > 0)))
+        .filter(s => s && (s.title || s.insight || (s.bullets && s.bullets.length > 0)))
         .map(s => ({
           title: s.title || '',
           subtitle: s.subtitle || undefined,
-          bullets: (s.bullets || []).filter(b => typeof b === 'string' && b.trim().length > 2).slice(0, 5),
+          insight: s.insight || '',
+          // Keep the main slide sparse: at most 3 short bullets.
+          bullets: (s.bullets || []).filter(b => typeof b === 'string' && b.trim().length > 2).slice(0, 3),
+          visual: s.visual || '',
+          talking_point: s.talking_point || '',
           footer: s.footer || undefined,
         })),
+      appendix: Array.isArray(result?.appendix)
+        ? result.appendix
+            .filter(a => a && (a.heading || a.detail))
+            .map(a => ({ heading: a.heading || '', detail: a.detail || '' }))
+            .slice(0, 6)
+        : [],
     };
 
     return success(clean);

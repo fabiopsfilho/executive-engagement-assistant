@@ -671,7 +671,7 @@ export default function App() {
                     {slides.deck_title && (
                       <p className="text-[11px] uppercase tracking-wide text-emerald-400/80 font-semibold">{slides.deck_title}</p>
                     )}
-                    {/* Current slide (16:9-ish card) */}
+                    {/* Current slide (16:9-ish card) — conversational, insight-led */}
                     {(() => {
                       const s = slides.slides[Math.min(slideIndex, slides.slides.length - 1)];
                       return (
@@ -680,6 +680,10 @@ export default function App() {
                             <h4 className="text-base md:text-lg font-bold text-white leading-snug">{s.title}</h4>
                             {s.subtitle && <p className="text-xs text-slate-400 mt-1">{s.subtitle}</p>}
                           </div>
+                          {/* The single big idea */}
+                          {s.insight && (
+                            <p className="text-sm md:text-[15px] text-white font-semibold leading-relaxed mb-3">{s.insight}</p>
+                          )}
                           <ul className="space-y-2.5 flex-1">
                             {s.bullets.map((b, i) => (
                               <li key={i} className="flex items-start gap-2.5">
@@ -688,6 +692,20 @@ export default function App() {
                               </li>
                             ))}
                           </ul>
+                          {/* Suggested visual to anchor the point */}
+                          {s.visual && (
+                            <div className="mt-3 flex items-start gap-2 rounded-lg bg-dark-900/50 border border-dashed border-emerald-500/30 px-3 py-2">
+                              <span className="text-[10px] uppercase tracking-wide text-emerald-400/80 font-semibold shrink-0 mt-0.5">Visual</span>
+                              <span className="text-xs text-slate-300 leading-relaxed">{s.visual}</span>
+                            </div>
+                          )}
+                          {/* Conversation-driving talking point */}
+                          {s.talking_point && (
+                            <div className="mt-2 flex items-start gap-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20 px-3 py-2">
+                              <span className="text-[10px] uppercase tracking-wide text-emerald-400/80 font-semibold shrink-0 mt-0.5">Ask them</span>
+                              <span className="text-xs text-emerald-100/90 italic leading-relaxed">{s.talking_point}</span>
+                            </div>
+                          )}
                           {s.footer && (
                             <div className="mt-3 pt-3 border-t border-dark-600">
                               <p className="text-xs text-emerald-300 font-medium leading-relaxed">{s.footer}</p>
@@ -697,7 +715,7 @@ export default function App() {
                         </div>
                       );
                     })()}
-                    {/* Slide nav (only if 2 slides) */}
+                    {/* Slide nav */}
                     {slides.slides.length > 1 && (
                       <div className="flex items-center justify-center gap-2">
                         {slides.slides.map((_, i) => (
@@ -706,6 +724,22 @@ export default function App() {
                             aria-label={`Go to slide ${i + 1}`} />
                         ))}
                       </div>
+                    )}
+                    {/* Appendix — the "read more" detail kept off the main slides */}
+                    {slides.appendix && slides.appendix.length > 0 && (
+                      <details className="rounded-xl border border-dark-600 bg-dark-900/40 px-4 py-3">
+                        <summary className="cursor-pointer text-[11px] uppercase tracking-wide text-slate-400 font-semibold select-none">
+                          Appendix · read more ({slides.appendix.length})
+                        </summary>
+                        <div className="mt-3 space-y-3">
+                          {slides.appendix.map((a, i) => (
+                            <div key={i}>
+                              <p className="text-xs font-semibold text-slate-200">{a.heading}</p>
+                              <p className="text-xs text-slate-400 leading-relaxed mt-0.5">{a.detail}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
                     )}
                   </div>
                 ) : (
