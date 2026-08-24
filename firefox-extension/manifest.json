@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "AWS T&C Executive Engagement Advisor",
+  "version": "1.0.0",
+  "description": "Get AI-powered T&C engagement insights for any Salesforce account",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tc-engagement-advisor@aws.amazon.com",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": ["activeTab", "storage", "tabs", "scripting"],
+  "host_permissions": ["http://localhost:5173/*", "https://*.amplifyapp.com/*"],
+  "sidebar_action": {
+    "default_title": "T&C Engagement Advisor",
+    "default_panel": "sidebar.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "action": {
+    "default_title": "T&C Engagement Advisor",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.lightning.force.com/*", "https://*.salesforce.com/*", "https://*.my.salesforce.com/*"],
+      "js": ["browser-polyfill.js", "content.js"]
+    }
+  ],
+  "background": {
+    "scripts": ["browser-polyfill.js", "background.js"]
+  }
+}

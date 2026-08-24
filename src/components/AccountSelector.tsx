@@ -1,8 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Search, Building2, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { Search, Building2, MapPin, Calendar, Loader2, ArrowRight, Sparkles } from 'lucide-react';
 import type { Account } from '../types';
 import { parseEBCCsv, ebcRecordsToAccounts } from '../services/csvParser';
 import { isBackendAvailable, loadEBCDataFromS3 } from '../services/api';
+
+/**
+ * Build a minimal Account from just a customer name. Used by the standalone
+ * browser interface so a user can type ANY customer (even one without a
+ * scheduled EBC agenda) and still get the full AI experience — the backend
+ * enriches everything from the name + industry via Bedrock/search.
+ */
+export function blankAccountFromName(name: string, industry = 'Unknown'): Account {
+  const clean = name.trim();
+  return {
+    customer_name: clean,
+    industry,
+    segment: 'Enterprise',
+    geo: 'NAMER',
+    externalDocs: [],
+    aws_spend: { current_year: 0, prior_year: 0, ppa: 'None' },
+    sfdc_data: { open_opps: 0, t2k: false, account_plan_priority: '', smgs_phase: 'Greenfield' },
+    ebc_data: { ebc_id: '', meeting_dates: [], themes: [], attendees: [], location: '', requestor: '' },
+    tc_current_state: {
+      skill_builder: false, skill_builder_seats: 0, activation_rate: 0,
+      certifications: 0, prior_engagement: '', renewal_date: '',
+    },
+    public_intelligence: {
+      earnings_call_signals: [], linkedin_job_postings: { cloud_ai_roles: 0, yoy_change: '' },
+      executive_social: [], glassdoor_signals: [], industry_context: '', news_signals: [],
+    },
+    tc_opportunity_score: 0,
+    signals: [],
+  };
+}
 
 function AccountCard({ account, onSelect }: { account: Account; onSelect: (a: Account) => void }) {
   const nextEbc = account.ebc_data.meeting_dates[0];
@@ -179,25 +209,57 @@ export function AccountSelector({ accounts, onSelect }: { accounts: Account[]; o
         </div>
       )}
 
-      {/* No agenda found for URL-specified account */}
+      {/* No scheduled agenda for the requested account — offer to continue anyway
+          with just the name (the standalone experience works for any customer). */}
       {noAgendaAccount && !loading && (
         <div className="text-center py-8 px-4">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-dark-800 border border-dark-600 flex items-center justify-center">
-            <Calendar className="w-7 h-7 text-muted" />
+            <Sparkles className="w-7 h-7 text-purple-400" />
           </div>
-          <h3 className="text-base font-semibold text-white mb-2">{noAgendaAccount}</h3>
-          <p className="text-sm text-muted">No executive agenda scheduled for this account.</p>
+          <h3 className="text-base font-semibold text-white mb-1">{noAgendaAccount}</h3>
+          <p className="text-sm text-muted mb-5">No scheduled EBC agenda — but you can still build the full engagement story from the name.</p>
+          <button
+            onClick={() => onSelect(blankAccountFromName(noAgendaAccount))}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-sm font-medium">
+            Continue with {noAgendaAccount} <ArrowRight className="w-4 h-4" />
+          </button>
+          <div className="mt-4">
+            <button onClick={() => setNoAgendaAccount(null)} className="text-xs text-muted underline">
+              or browse the account list
+            </button>
+          </div>
         </div>
       )}
 
       {!loading && !noAgendaAccount && (
         <>
-          {/* Search */}
+          {/* Search — also doubles as free-text customer entry */}
           <div className="relative mb-3">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-            <input type="text" placeholder="Search accounts..." value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder="Search or type any customer name..." value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => {
+                // Enter on a non-matching name → proceed with that name directly.
+                if (e.key === 'Enter' && search.trim().length > 1 && filtered.length === 0) {
+                  onSelect(blankAccountFromName(search.trim()));
+                }
+              }}
               className="w-full pl-10 pr-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-muted text-sm focus:outline-none focus:border-purple-500/50" />
           </div>
+
+          {/* Free-text customer: if the typed name doesn't match any scheduled
+              account, let the user proceed with just the name (works for any customer). */}
+          {search.trim().length > 1 && filtered.length === 0 && (
+            <button
+              onClick={() => onSelect(blankAccountFromName(search.trim()))}
+              className="w-full flex items-center justify-between gap-3 mb-4 p-4 bg-purple-600/10 border border-purple-500/30 rounded-xl active:bg-purple-600/20 text-left">
+              <span className="flex items-center gap-2 min-w-0">
+                <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                <span className="text-sm text-white truncate">Build engagement story for <span className="font-semibold">"{search.trim()}"</span></span>
+              </span>
+              <ArrowRight className="w-4 h-4 text-purple-400 shrink-0" />
+            </button>
+          )}
 
           {/* Filters */}
           <div className="flex gap-2 mb-4">

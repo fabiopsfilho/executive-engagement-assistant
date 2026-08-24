@@ -1,0 +1,151 @@
+/* global browser */
+// Content script that runs on Salesforce pages. Detects the current account name
+// and can capture page text. Uses the promise-based `browser.*` namespace (Firefox).
+
+function detectAccountName() {
+  // Method 1: Page title (Salesforce sets it to "Account Name | Salesforce")
+  const title = document.title;
+  if (title && title.includes('|')) {
+    const name = title.split('|')[0].trim();
+    if (name && name.length > 2 && name.length < 100 && name !== 'Home') {
+      return name;
+    }
+  }
+
+  // Method 2: Account name in the record header (Salesforce Lightning structures)
+  const headerEl = document.querySelector('div.entityNameTitle') ||
+    document.querySelector('h1 span') ||
+    document.querySelector('records-entity-label') ||
+    document.querySelector('.slds-page-header__name-title span') ||
+    document.querySelector('slot[name="primaryField"] lightning-formatted-text');
+
+  if (headerEl) {
+    const text = headerEl.textContent.trim();
+    if (text && text.length > 2 && text.length < 100) {
+      return text;
+    }
+  }
+
+  // Method 3: "Account" type indicator followed by name
+  const recordHeader = document.querySelector('records-lwc-highlights-panel');
+  if (recordHeader) {
+    const nameEl = recordHeader.querySelector('lightning-formatted-text') ||
+      recordHeader.querySelector('span[class*="field"]');
+    if (nameEl) {
+      return nameEl.textContent.trim();
+    }
+  }
+
+  // Method 4: URL-based detection for account pages
+  if (window.location.pathname.includes('/Account/')) {
+    const cleanTitle = title.replace(/\s*\|.*$/, '').replace(/\s*-\s*Salesforce.*$/, '').trim();
+    if (cleanTitle && cleanTitle.length > 2) return cleanTitle;
+  }
+
+  return null;
+}
+
+function sendAccountToExtension(accountName) {
+  if (accountName) {
+    browser.runtime.sendMessage({
+      type: 'ACCOUNT_DETECTED',
+      accountName: accountName,
+      url: window.location.href,
+    }).catch(() => {});
+  }
+}
+
+// Floating action button to open the sidebar (click is a user gesture, which
+// Firefox requires for sidebarAction.open()).
+function createFloatingButton() {
+  if (document.getElementById('tc-advisor-fab')) return;
+
+  const fab = document.createElement('div');
+  fab.id = 'tc-advisor-fab';
+  fab.innerHTML = '<img src="https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com/brain.svg" width="28" height="28" style="border-radius:50%;" />';
+  fab.style.cssText = `
+    position: fixed;
+    right: 12px;
+    top: 35%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 99999;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+  `;
+  fab.addEventListener('mouseenter', () => {
+    fab.style.transform = 'translateY(-50%) scale(1.1)';
+    fab.style.boxShadow = '0 6px 16px rgba(124, 58, 237, 0.6)';
+  });
+  fab.addEventListener('mouseleave', () => {
+    fab.style.transform = 'translateY(-50%) scale(1)';
+    fab.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.4)';
+  });
+  fab.addEventListener('click', () => {
+    // Open the sidebar directly from this user gesture when possible; also notify
+    // the background script as a fallback path.
+    if (typeof browser !== 'undefined' && browser.sidebarAction && browser.sidebarAction.open) {
+      browser.sidebarAction.open().catch(() => {});
+    }
+    browser.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' }).catch(() => {});
+  });
+  fab.title = 'T&C Engagement Advisor';
+  document.body.appendChild(fab);
+}
+
+function checkForAccount() {
+  const accountName = detectAccountName();
+  sendAccountToExtension(accountName);
+}
+
+// Salesforce renders slowly — retry a few times.
+setTimeout(checkForAccount, 3000);
+setTimeout(checkForAccount, 5000);
+setTimeout(checkForAccount, 8000);
+setTimeout(createFloatingButton, 2000);
+
+// Watch for SPA navigation (Salesforce is a single-page app).
+let lastUrl = window.location.href;
+const observer = new MutationObserver(() => {
+  if (window.location.href !== lastUrl) {
+    lastUrl = window.location.href;
+    setTimeout(checkForAccount, 3000);
+    setTimeout(checkForAccount, 5000);
+  }
+});
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Manual triggers from the sidebar/background.
+browser.runtime.onMessage.addListener((message) => {
+  if (message.type === 'REQUEST_ACCOUNT') {
+    checkForAccount();
+  }
+  if (message.type === 'CAPTURE_PAGE') {
+    const capturedText = capturePageContent();
+    browser.runtime.sendMessage({
+      type: 'PAGE_CAPTURED',
+      text: capturedText,
+      url: window.location.href,
+      title: document.title,
+    }).catch(() => {});
+  }
+});
+
+// Capture readable text content from the page.
+function capturePageContent() {
+  const excludeSelectors = ['nav', 'footer', 'script', 'style', 'noscript', 'header[role="banner"]'];
+  const body = document.body.cloneNode(true);
+  excludeSelectors.forEach((sel) => {
+    body.querySelectorAll(sel).forEach((el) => el.remove());
+  });
+  let text = body.innerText || body.textContent || '';
+  text = text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
+  return text.slice(0, 15000);
+}

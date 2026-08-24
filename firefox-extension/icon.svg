@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="brainGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#2d1b69" stroke="url(#brainGrad)" stroke-width="3"/>
+  <!-- Left hemisphere -->
+  <path d="M20 28c-2-4 0-10 6-12s10 1 12 5" stroke="#c4b5fd" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M18 34c-1-2 0-6 4-7" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M20 40c-1-3 1-6 5-7" stroke="#ddd6fe" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M24 44c0-3 2-5 5-5" stroke="#ddd6fe" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Right hemisphere -->
+  <path d="M44 28c2-4 0-10-6-12s-10 1-12 5" stroke="#fbcfe8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M46 34c1-2 0-6-4-7" stroke="#fbcfe8" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M44 40c1-3-1-6-5-7" stroke="#fecdd3" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M40 44c0-3-2-5-5-5" stroke="#fecdd3" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Center stem -->
+  <line x1="32" y1="21" x2="32" y2="48" stroke="#e9d5ff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Neural dots - bright -->
+  <circle cx="22" cy="26" r="2.5" fill="#c4b5fd"/>
+  <circle cx="42" cy="26" r="2.5" fill="#fbcfe8"/>
+  <circle cx="18" cy="34" r="2" fill="#ddd6fe"/>
+  <circle cx="46" cy="34" r="2" fill="#fecdd3"/>
+  <circle cx="32" cy="20" r="3" fill="#f97316"/>
+  <circle cx="26" cy="30" r="1.5" fill="#e9d5ff"/>
+  <circle cx="38" cy="30" r="1.5" fill="#fecdd3"/>
+  <circle cx="28" cy="38" r="1.5" fill="#c4b5fd"/>
+  <circle cx="36" cy="38" r="1.5" fill="#fbcfe8"/>
+  <circle cx="32" cy="44" r="2" fill="#f97316"/>
+</svg>
