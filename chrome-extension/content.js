@@ -61,9 +61,10 @@ function sendAccountToExtension(accountName) {
 function createFloatingButton() {
   if (document.getElementById('tc-advisor-fab')) return;
 
+  const appUrl = globalThis.TC_ADVISOR_APP_URL || 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
   const fab = document.createElement('div');
   fab.id = 'tc-advisor-fab';
-  fab.innerHTML = `<img src="https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com/brain.svg" width="28" height="28" style="border-radius:50%;" />`;
+  fab.innerHTML = `<img src="${appUrl}/brain.svg" width="28" height="28" style="border-radius:50%;" />`;
   fab.style.cssText = `
     position: fixed;
     right: 12px;

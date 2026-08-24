@@ -36,7 +36,7 @@
   "content_scripts": [
     {
       "matches": ["https://*.lightning.force.com/*", "https://*.salesforce.com/*", "https://*.my.salesforce.com/*"],
-      "js": ["browser-polyfill.js", "content.js"]
+      "js": ["config.js", "browser-polyfill.js", "content.js"]
     }
   ],
   "background": {

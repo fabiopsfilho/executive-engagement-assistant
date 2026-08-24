@@ -33,6 +33,12 @@ You'll need to add icon files:
 
 You can use any AWS/T&C branded icon. For now, create simple placeholder PNGs.
 
+## Configuration
+
+The web app URL the extension embeds lives in one place: **`config.js`**
+(`TC_ADVISOR_APP_URL`). If the Amplify branch/domain changes, update only that
+value — the side panel, content FAB, and iframe all read from it.
+
 ## Notes
 
 - The extension uses your existing Amplify app URL in an iframe

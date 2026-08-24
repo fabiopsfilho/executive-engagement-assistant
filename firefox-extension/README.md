@@ -44,6 +44,7 @@ identically to the Chrome extension and the standalone site.
 | File | Purpose |
 |------|---------|
 | `manifest.json` | MV3 manifest with `sidebar_action` + Gecko settings |
+| `config.js` | **Single place to set the web app URL** the extension embeds |
 | `browser-polyfill.js` | Minimal `browser`/`chrome` compatibility shim |
 | `background.js` | Opens the sidebar, relays messages |
 | `content.js` | Detects the Salesforce account, captures page text, shows the FAB |

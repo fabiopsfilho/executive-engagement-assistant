@@ -2,7 +2,7 @@
 // Firefox sidebar logic. Mirrors the Chrome side panel: loads the standalone web
 // app in an iframe with ?account=, and relays captured page content via postMessage.
 
-const APP_URL = 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
+const APP_URL = globalThis.TC_ADVISOR_APP_URL || 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
 let currentAccount = null;
 
 function loadAccount(accountName) {

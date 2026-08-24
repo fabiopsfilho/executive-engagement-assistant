@@ -1,4 +1,4 @@
-const APP_URL = 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
+const APP_URL = globalThis.TC_ADVISOR_APP_URL || 'https://v2-redesign.d3uctzirlcp4lr.amplifyapp.com';
 let currentAccount = null;
 
 function loadAccount(accountName) {
