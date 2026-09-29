@@ -9,7 +9,7 @@ import { PersonaView } from './components/PersonaView';
 import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
 import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, generateSlides, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse, type SlidesResponse } from './services/api';
-import { parseAttendeeCSV, attendeesToPersonas } from './services/attendeeParser';
+import { parseAttendeeCSV, parseAttendeeXLSX, parseAttendeeText, extractTextFromDocument, attendeesToPersonas, isExcelFile, isPlainTextFile, ATTENDEE_FILE_EXTENSIONS } from './services/attendeeParser';
 import { exportSlidesToPPTX, exportSlidesToPDF } from './services/slideExport';
 
 type MainTab = 'brief' | 'summary' | 'demo';
@@ -81,16 +81,27 @@ export default function App() {
       .finally(() => setSlidesLoading(false));
   };
 
-  // Handle attendee CSV upload
+  // Handle attendee upload. Three read strategies depending on file type:
+  //   - Excel (.xlsx/.xls)      → ArrayBuffer, parsed by SheetJS
+  //   - Plain text (.csv/.tsv/.txt) → UTF-8 text, parsed as a delimited table
+  //   - Documents (.doc/.docx/.pdf) → binary string, text extracted then parsed
+  //                                    heuristically ("Name - Title" lines / tables)
   const handleAttendeeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset input up front so the same file can be re-uploaded.
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const csvText = ev.target?.result as string;
-      if (!csvText) return;
-      const parsed = parseAttendeeCSV(csvText);
-      const personas = attendeesToPersonas(parsed);
+
+    const fail = (msg: string) => {
+      setAttendeeUploadMsg(msg);
+      setTimeout(() => setAttendeeUploadMsg(null), 4000);
+    };
+
+    const applyPersonas = (personas: Attendee[]) => {
+      if (personas.length === 0) {
+        fail('No attendees found in that file — check the format and try again.');
+        return;
+      }
       setUploadedAttendees(personas);
       const updated = account ? { ...account, ebc_data: { ...account.ebc_data, attendees: personas } } : null;
       setAccount(prev => prev ? { ...prev, ebc_data: { ...prev.ebc_data, attendees: personas } } : prev);
@@ -100,9 +111,44 @@ export default function App() {
       setTimeout(() => setRefreshKey(k => k + 1), 100);
       setTimeout(() => setAttendeeUploadMsg(null), 4000);
     };
-    reader.readAsText(file);
-    // Reset input so same file can be re-uploaded
-    e.target.value = '';
+
+    const reader = new FileReader();
+    reader.onerror = () => fail('Could not read that file. Please try another format.');
+
+    if (isExcelFile(file.name)) {
+      reader.onload = (ev) => {
+        const buffer = ev.target?.result as ArrayBuffer;
+        if (!buffer) return;
+        try {
+          applyPersonas(attendeesToPersonas(parseAttendeeXLSX(buffer)));
+        } catch {
+          fail('Could not read that Excel file. Please try a .csv or .xlsx export.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (isPlainTextFile(file.name)) {
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        if (!text) return;
+        // .csv/.tsv are delimited tables; .txt may be a table or free-form lines.
+        const fromTable = parseAttendeeCSV(text);
+        applyPersonas(attendeesToPersonas(fromTable.length > 0 ? fromTable : parseAttendeeText(text)));
+      };
+      reader.readAsText(file);
+    } else {
+      // Rich documents: .doc / .docx / .pdf → extract text, then parse heuristically.
+      reader.onload = (ev) => {
+        const raw = ev.target?.result as string;
+        if (!raw) return;
+        try {
+          const text = extractTextFromDocument(file.name, raw);
+          applyPersonas(attendeesToPersonas(parseAttendeeText(text)));
+        } catch {
+          fail('Could not extract attendees from that document.');
+        }
+      };
+      reader.readAsBinaryString(file);
+    }
   };
 
   // Read a single file into cleaned text (resolves to null if unusable).
@@ -378,8 +424,8 @@ export default function App() {
               <span className="text-[8px] text-muted mt-0.5">Score</span>
             </button>
             {/* Upload Attendees */}
-            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleAttendeeUpload} className="hidden" />
-            <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload Attendees CSV">
+            <input ref={fileInputRef} type="file" accept={ATTENDEE_FILE_EXTENSIONS.join(',')} onChange={handleAttendeeUpload} className="hidden" />
+            <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center active:opacity-80 relative" title="Upload Attendees (CSV, TSV, Excel, Word, PDF, or TXT)">
               <div className="w-8 h-8 rounded-xl bg-dark-700 border border-dark-600 flex items-center justify-center">
                 <Upload className="w-4 h-4 text-slate-400" />
               </div>
