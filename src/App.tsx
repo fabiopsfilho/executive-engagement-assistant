@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, FileText, BookOpen, Zap, Megaphone, Loader2, Upload, Database, Presentation } from 'lucide-react';
+import { ArrowLeft, FileText, BookOpen, Zap, Megaphone, Loader2, Upload, Database, Presentation, Sparkles, ArrowRight, FileDown } from 'lucide-react';
 import type { Account, Attendee } from './types';
 import { accounts } from './data/accounts';
-import { AccountSelector } from './components/AccountSelector';
+import { AccountSelector, blankAccountFromName } from './components/AccountSelector';
 import { ExecBrief } from './components/ExecBrief';
 import { SummaryView } from './components/SummaryView';
 import { PersonaView } from './components/PersonaView';
@@ -10,7 +10,7 @@ import { ScoreExplainer } from './components/ScoreExplainer';
 import { PersonaPickerSheet } from './components/PersonaPickerSheet';
 import { isBackendAvailable, getIntelligence, getTCData, generateUnifiedAnalysis, generateSlides, type TCAccountSummary, type BuzzNowResponse, type UnifiedAnalysisResponse, type SlidesResponse } from './services/api';
 import { parseAttendeeCSV, parseAttendeeXLSX, parseAttendeeText, extractTextFromDocument, attendeesToPersonas, isExcelFile, isPlainTextFile, ATTENDEE_FILE_EXTENSIONS } from './services/attendeeParser';
-import { exportSlidesToPPTX, exportSlidesToPDF } from './services/slideExport';
+import { exportSlidesToPPTX, exportSlidesToPDF, exportAnalysisToDocx } from './services/slideExport';
 
 type MainTab = 'brief' | 'summary' | 'demo';
 
@@ -25,7 +25,10 @@ export default function App() {
   const [showSlides, setShowSlides] = useState(false);
   const [slides, setSlides] = useState<SlidesResponse | null>(null);
   const [slidesLoading, setSlidesLoading] = useState(false);
+  const [slidesError, setSlidesError] = useState<string | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
+  // Transient status message for the "Export" (download analysis document) action.
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
   const [loadingIntel, setLoadingIntel] = useState(false);
   const [tcData, setTcData] = useState<TCAccountSummary | null>(null);
   // Single unified analysis powers Approach, Buzz, Now, Next Steps, Key Asks — all consistent.
@@ -33,6 +36,10 @@ export default function App() {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [uploadedAttendees, setUploadedAttendees] = useState<Attendee[]>([]);
   const [attendeeUploadMsg, setAttendeeUploadMsg] = useState<string | null>(null);
+  // Extension-detected Salesforce customer that has no scheduled EBC agenda in our
+  // demo list. We hold the name here and wait for the user to confirm "run the
+  // analysis" instead of auto-firing a Bedrock call for every SFDC page detected.
+  const [pendingAccount, setPendingAccount] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [, setAccountPlanText] = useState<string>('');
   const [, setAccountPlanName] = useState<string>('');
@@ -72,13 +79,67 @@ export default function App() {
     if (!account) return;
     setShowSlides(true);
     setSlideIndex(0);
+    setSlidesError(null);
     // If we already have slides for this analysis, keep them; otherwise generate.
-    if (slides || !isBackendAvailable()) return;
+    if (slides) return;
+    if (!isBackendAvailable()) {
+      setSlidesError('Slides need the backend to be configured, and it is not available right now.');
+      return;
+    }
+    if (!analysis) {
+      setSlidesError('Run the analysis first — slides are built from it.');
+      return;
+    }
+    runSlideGeneration();
+  };
+
+  // Actual slide-generation call, split out so the modal can retry it.
+  // Adds a client-side timeout so a hung/slow backend surfaces an error instead of
+  // spinning forever (slide generation is a single blocking call behind API Gateway's
+  // ~29s limit, so long generations can fail silently).
+  const runSlideGeneration = () => {
+    if (!account) return;
+    setSlides(null);
+    setSlidesError(null);
     setSlidesLoading(true);
-    generateSlides(account, analysis)
-      .then(result => setSlides(result))
-      .catch(err => console.error('Slide generation failed:', err))
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 30000));
+    Promise.race([generateSlides(account, analysis), timeout])
+      .then(result => setSlides(result as SlidesResponse))
+      .catch(err => {
+        console.error('Slide generation failed:', err);
+        setSlidesError(
+          err?.message === 'timeout'
+            ? 'Slide generation took too long and timed out. Please try again.'
+            : 'Slide generation failed. Please try again.'
+        );
+      })
       .finally(() => setSlidesLoading(false));
+  };
+
+  // Export the full analysis (Approach + Now + Buzz + Next Steps + Key Asks) as a
+  // downloadable Word document.
+  const exportAnalysis = async () => {
+    if (!account) return;
+    if (!analysis) {
+      setExportMsg('Run the analysis first — there is nothing to export yet.');
+      setTimeout(() => setExportMsg(null), 4000);
+      return;
+    }
+    setExportMsg('Preparing your document...');
+    try {
+      // The quote/conversation-starter lives in ExecBrief; use the analysis'
+      // opening move as a sensible conversation-starter for the document.
+      const quote = analysis.now_opening_move
+        ? { quote: analysis.now_opening_move, followUps: analysis.now_key_asks }
+        : null;
+      await exportAnalysisToDocx(analysis, account.customer_name, quote);
+      setExportMsg('✓ Document downloaded.');
+    } catch (err) {
+      console.error('Analysis export failed:', err);
+      setExportMsg('Could not create the document. Please try again.');
+    }
+    setTimeout(() => setExportMsg(null), 4000);
   };
 
   // Handle attendee upload. Three read strategies depending on file type:
@@ -223,6 +284,11 @@ export default function App() {
         accounts.find(a => a.customer_name.toLowerCase().includes(accountName.toLowerCase()) || accountName.toLowerCase().includes(a.customer_name.toLowerCase()));
       if (found) {
         setAccount(found);
+      } else {
+        // No scheduled EBC agenda for this Salesforce customer. Don't auto-run the
+        // analysis (the extension detects a new account on every SFDC page) — hold
+        // the name and let the user confirm below.
+        setPendingAccount(accountName);
       }
     }
   }, []);
@@ -345,6 +411,40 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account?.customer_name]);
+
+  // Extension loaded a Salesforce customer with no scheduled EBC agenda → let the
+  // user confirm before we run the analysis from the company profile alone.
+  if (!account && pendingAccount) return (
+    <div className="min-h-screen bg-dark-900 flex justify-center">
+      <div className="w-full max-w-[430px] md:max-w-[800px] lg:max-w-[1000px] px-6 py-16 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-purple-600/15 border border-purple-500/30 flex items-center justify-center mx-auto mb-5">
+          <Sparkles className="w-6 h-6 text-purple-400" />
+        </div>
+        <h3 className="text-base font-semibold text-white mb-1">{pendingAccount}</h3>
+        <p className="text-sm text-muted mb-6">No scheduled EBC agenda for this customer — but you can still build the full engagement story from the company profile.</p>
+        <button
+          onClick={() => {
+            setAccount(blankAccountFromName(pendingAccount));
+            setPendingAccount(null);
+            setTab('brief');
+            setAnalysis(null);
+            setUploadedAttendees([]);
+            setAttendeeUploadMsg(null);
+            setAccountPlanText('');
+            setAccountPlanName('');
+            setExternalDocs([]);
+          }}
+          className="inline-flex items-center gap-2 px-5 py-3 bg-purple-600 active:bg-purple-700 text-white rounded-xl text-sm font-medium">
+          Run the analysis for {pendingAccount} <ArrowRight className="w-4 h-4" />
+        </button>
+        <div className="mt-4">
+          <button onClick={() => setPendingAccount(null)} className="text-xs text-muted underline">
+            or browse the account list
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (!account) return (
     <div className="min-h-screen bg-dark-900 flex justify-center">
@@ -491,7 +591,19 @@ export default function App() {
               <Presentation className="w-4 h-4" />
               <span className="text-[9px] font-medium">Slides</span>
             </button>
+            <button onClick={exportAnalysis}
+              className="flex-1 flex flex-col items-center gap-0.5 py-1.5 text-muted active:text-purple-400"
+              title="Download the full analysis (Approach, Now, Buzz, Next Steps, Key Asks) as a Word document">
+              <FileDown className="w-4 h-4" />
+              <span className="text-[9px] font-medium">Export</span>
+            </button>
           </div>
+          {/* Export status */}
+          {exportMsg && (
+            <div className="px-4 py-1.5 flex items-center gap-2 border-t border-dark-700 bg-purple-500/10">
+              <span className="text-[10px] text-purple-300 font-medium">{exportMsg}</span>
+            </div>
+          )}
         </header>
 
         {/* Insight popup — Now / Buzz */}
@@ -699,7 +811,7 @@ export default function App() {
                         className="text-[10px] text-slate-300 border border-dark-600 px-2 py-1 rounded-lg active:bg-dark-700" title="Download PowerPoint">⬇ PPTX</button>
                       <button onClick={() => exportSlidesToPDF(slides, account.customer_name).catch(err => console.error('PDF export failed:', err))}
                         className="text-[10px] text-slate-300 border border-dark-600 px-2 py-1 rounded-lg active:bg-dark-700" title="Download PDF">⬇ PDF</button>
-                      <button onClick={() => { setSlides(null); setSlidesLoading(true); generateSlides(account, analysis).then(setSlides).catch(err => console.error('Slide regen failed:', err)).finally(() => setSlidesLoading(false)); }}
+                      <button onClick={runSlideGeneration}
                         className="text-[10px] text-emerald-400 px-2 py-1 rounded-lg active:bg-dark-700" title="Regenerate">↻</button>
                     </>
                   )}
@@ -711,6 +823,15 @@ export default function App() {
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
                     <span className="text-sm text-slate-400">Building your slides...</span>
+                  </div>
+                ) : slidesError ? (
+                  <div className="flex flex-col items-center justify-center py-14 gap-4 text-center">
+                    <span className="text-3xl">⚠️</span>
+                    <p className="text-sm text-slate-300 max-w-xs">{slidesError}</p>
+                    <button onClick={runSlideGeneration}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 active:bg-emerald-700 text-white rounded-lg text-xs font-medium">
+                      <Loader2 className="w-3.5 h-3.5" /> Try again
+                    </button>
                   </div>
                 ) : slides && slides.slides.length > 0 ? (
                   <div className="space-y-4">

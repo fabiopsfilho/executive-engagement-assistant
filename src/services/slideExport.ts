@@ -1,4 +1,4 @@
-import type { SlidesResponse } from './api';
+import type { SlidesResponse, UnifiedAnalysisResponse } from './api';
 
 // Brand palette for the exported decks (dark, executive look consistent with the app).
 const BG = '0B1220';        // deep navy
@@ -8,8 +8,8 @@ const TEXT = 'E5E7EB';      // slate-200
 const MUTED = '94A3B8';     // slate-400
 const WHITE = 'FFFFFF';
 
-function safeFileName(s: string): string {
-  return (s || 'slides').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'slides';
+export function safeFileName(s: string): string {
+  return (s || 'export').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'export';
 }
 
 /**
@@ -299,4 +299,143 @@ export async function exportSlidesToPDF(deck: SlidesResponse, accountName: strin
   }
 
   doc.save(`${safeFileName(accountName)}-exec-slides.pdf`);
+}
+
+// ─── Analysis document export (Word .docx) ───────────────────────────────────
+
+/** Optional quote (conversation starter) block to include in the exported doc. */
+export interface AnalysisQuote {
+  quote: string;
+  followUps?: string[];
+}
+
+/**
+ * Export the full unified analysis as a downloadable Word document (.docx).
+ *
+ * Includes every section the app shows, using the same labels as the UI:
+ *  - Approach: the four questions (Who to focus on / What conversations /
+ *    Where to start / What's happening) with their "more detail" text.
+ *  - The suggested quote (conversation starter) + follow-ups, if provided.
+ *  - Now: Focus / Initiatives to drive / Ask right now / Your opening move.
+ *  - Buzz: Signal Synthesis / Executive voices / Hiring & Skills Gap /
+ *    Employee Sentiment / Training Opportunity.
+ *  - Next Steps and Key Asks.
+ *
+ * Dynamically imports `docx` so it stays out of the main bundle.
+ */
+export async function exportAnalysisToDocx(
+  analysis: UnifiedAnalysisResponse,
+  accountName: string,
+  quote?: AnalysisQuote | null
+): Promise<void> {
+  const docx = await import('docx');
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+
+  const children: InstanceType<typeof Paragraph>[] = [];
+
+  // Title + subtitle
+  children.push(new Paragraph({
+    heading: HeadingLevel.TITLE,
+    children: [new TextRun({ text: `${accountName} — Engagement Analysis`, bold: true })],
+  }));
+  children.push(new Paragraph({
+    children: [new TextRun({
+      text: `AWS Training & Certification · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+      italics: true, color: '666666',
+    })],
+    spacing: { after: 240 },
+  }));
+
+  // Helpers to build consistent blocks.
+  const sectionHeading = (text: string) =>
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, spacing: { before: 240, after: 80 }, children: [new TextRun({ text })] }));
+  const subHeading = (text: string) =>
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 120, after: 40 }, children: [new TextRun({ text })] }));
+  const body = (text: string) => {
+    if (text && text.trim()) children.push(new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text })] }));
+  };
+  const detail = (text?: string) => {
+    if (text && text.trim()) children.push(new Paragraph({ spacing: { after: 120 }, indent: { left: 360 }, children: [new TextRun({ text, italics: true, color: '555555' })] }));
+  };
+  const bullets = (items?: string[]) => {
+    (items || []).filter(i => i && i.trim()).forEach(i =>
+      children.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: [new TextRun({ text: i })] })));
+  };
+
+  // ── Approach ──
+  sectionHeading('Approach');
+  const approach: { q: string; s?: string; d?: string }[] = [
+    { q: 'Who should we focus on?', s: analysis.who_to_focus, d: analysis.who_to_focus_detail },
+    { q: 'What conversations should we drive?', s: analysis.what_conversations, d: analysis.what_conversations_detail },
+    { q: 'Where should we start?', s: analysis.where_to_start, d: analysis.where_to_start_detail },
+    { q: "What's happening in their world?", s: analysis.whats_happening, d: analysis.whats_happening_detail },
+  ];
+  approach.forEach(({ q, s, d }) => { subHeading(q); body(s || ''); detail(d); });
+
+  // ── Quote ──
+  if (quote && quote.quote && quote.quote.trim()) {
+    sectionHeading('Here is a Quote');
+    children.push(new Paragraph({
+      spacing: { after: 80 }, indent: { left: 360 },
+      children: [new TextRun({ text: `“${quote.quote}”`, italics: true })],
+    }));
+    if (quote.followUps && quote.followUps.length > 0) {
+      subHeading('Follow-ups');
+      bullets(quote.followUps);
+    }
+  }
+
+  // ── Now ──
+  sectionHeading('Now — What to focus on now');
+  if (analysis.now_focus) { subHeading('Focus'); body(analysis.now_focus); }
+  if (analysis.now_initiatives?.length) { subHeading('Initiatives to drive'); bullets(analysis.now_initiatives); }
+  if (analysis.now_key_asks?.length) { subHeading('Ask right now'); bullets(analysis.now_key_asks); }
+  if (analysis.now_opening_move) { subHeading('Your opening move'); body(analysis.now_opening_move); }
+
+  // ── Buzz ──
+  sectionHeading('Buzz — What people are saying');
+  if (analysis.buzz_summary) { subHeading('Signal Synthesis'); body(analysis.buzz_summary); }
+  if (analysis.buzz_executive_insights?.length) { subHeading('Executive voices'); bullets(analysis.buzz_executive_insights); }
+  if (analysis.buzz_hiring_analysis) {
+    subHeading('Hiring & Skills Gap');
+    const h = analysis.buzz_hiring_analysis;
+    if (typeof h === 'object' && h) {
+      bullets((h.roles || []).map(r => r.url ? `${r.title} (${r.url})` : r.title));
+      body(h.why_this_matters || '');
+    } else {
+      body(String(h));
+    }
+  }
+  if (analysis.buzz_sentiment_analysis) {
+    subHeading('Employee Sentiment');
+    const s = analysis.buzz_sentiment_analysis;
+    if (typeof s === 'object' && s) {
+      bullets((s.signals || []).map(sig => `“${sig}”`));
+      body(s.why_this_matters || '');
+    } else {
+      body(String(s));
+    }
+  }
+  if (analysis.buzz_tc_opportunity) { subHeading('Training Opportunity'); body(analysis.buzz_tc_opportunity); }
+
+  // ── Next Steps & Key Asks ──
+  if (analysis.next_steps?.length) { sectionHeading('Next Steps'); bullets(analysis.next_steps); }
+  if (analysis.key_asks?.length) { sectionHeading('Key Asks'); bullets(analysis.key_asks); }
+
+  const doc = new Document({ sections: [{ children }] });
+  const blob = await Packer.toBlob(doc);
+  triggerDownload(blob, `${safeFileName(accountName)}-analysis.docx`);
+}
+
+/** Trigger a browser download for a Blob (docx has no built-in save like jspdf/pptx). */
+function triggerDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Revoke on the next tick so the download has started.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
